@@ -109,7 +109,11 @@ export default function ExerciseCard({
   // left the input behind the keyboard). Fallback timeout covers desktop / an
   // already-open keyboard where no resize fires.
   const handleInputFocus = (e) => {
-    e.target.select();
+    // With the custom keypad the field is never edited through the DOM
+    // selection: KeypadSheet owns a `fresh` buffer whose first key replaces the
+    // value. Selecting here only painted iOS text-selection handles over the
+    // number, so select only on the native-keyboard path.
+    if (!useKeypad) e.target.select();
     // Review r4f minor: when the custom keypad sheet is active, its own
     // effect calls scrollActiveIntoView() via requestAnimationFrame once the
     // sheet's real height is published, and that already owns positioning
@@ -795,9 +799,16 @@ export default function ExerciseCard({
                   Replace exercise
                 </button>
                 )}
-                {/* "Add notes" removed from here — the toolbar row above the
-                    exercise name already has its own Add-notes button, so
-                    this kebab entry was a duplicate (coordinator, r4f). */}
+                <button
+                  onClick={() => {
+                    setEditingNotes(true);
+                    setOpenMenu(false);
+                  }}
+                  className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--glass-edge)] flex items-center gap-2"
+                >
+                  <FileText className="w-4 h-4" />
+                  Add notes
+                </button>
                 <button
                   onClick={() => {
                     setShowCues(true);
@@ -877,38 +888,11 @@ export default function ExerciseCard({
             cell. Volume/Best set stay in the vitals grid below exactly as
             before — they only exist once there's logged data, unlike Target
             which is static program info available from the first render. */}
-        <div className="flex items-center justify-between gap-2 mt-1 -ml-2">
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setShowCues(true)}
-              aria-label="Exercise history and info"
-              className="relative h-11 w-11 flex items-center justify-center text-ink-faint hover:text-ink touch-manipulation"
-            >
-              <HelpCircle className="w-[18px] h-[18px]" />
-              {hasPendingNotes && (
-                <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-brand" aria-hidden="true" />
-              )}
-            </button>
-            {onReplaceExercise && (
-              <button
-                type="button"
-                onClick={() => setShowReplaceDialog(true)}
-                aria-label="Swap exercise"
-                className="h-11 w-11 flex items-center justify-center text-ink-faint hover:text-ink touch-manipulation"
-              >
-                <RefreshCw className="w-[18px] h-[18px]" />
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setEditingNotes(true)}
-              aria-label="Add notes"
-              className="h-11 w-11 flex items-center justify-center text-ink-faint hover:text-ink touch-manipulation"
-            >
-              <FileText className="w-[18px] h-[18px]" />
-            </button>
-          </div>
+        {/* The history/swap/notes icon row is gone: all three live in the kebab
+            ("Notes & cues", "Replace exercise", "Add notes"), so a free-mode
+            card no longer spends a 44px row on four unlabeled controls. */}
+        {vitals?.target && (
+        <div className="flex items-center gap-2 mt-1">
           {vitals?.target && (
             <div className="font-technical text-[13px] tabular-nums truncate pr-1">
               <span className="text-ink-muted">Target </span>
@@ -922,6 +906,7 @@ export default function ExerciseCard({
             </div>
           )}
         </div>
+        )}
       </CardHeader>
       <CardContent className="pt-0">
         {/* Advisory nudge, between-set coaching chip, and shot-list note all moved
@@ -980,53 +965,6 @@ export default function ExerciseCard({
                 )}
               </svg>
             </div>
-          </div>
-        )}
-
-        {/* Per-exercise vitals (DESIGN.md dB .vit4): Volume vs last / Best
-            set. Only rendered cells with real data; the row itself is
-            skipped entirely when there's nothing to show. Target used to
-            live here as a third stacked cell ("TARGET" over "1 × 10") —
-            moved up onto the icon-toolbar row above (coordinator, r4f:
-            Nolan dislikes vertical stacking, and Target is static program
-            info that's available before there's any set data, unlike these
-            two, which appear only once the athlete has actually logged
-            something). vitals.target itself is unchanged (still computed
-            above) — only where it renders moved. */}
-        {(vitals?.volume || vitals?.best) && (
-          <div
-            className="grid gap-2.5 border-t border-charcoal-border pt-2.5 mb-3 font-technical"
-            style={{ gridTemplateColumns: `repeat(${[vitals.volume, vitals.best].filter(Boolean).length}, 1fr)` }}
-          >
-            {vitals.volume && (
-              <div className="border-l border-charcoal-border first:border-l-0 pl-2.5 first:pl-0">
-                <div className="text-[10px] font-bold uppercase tracking-[0.04em] text-ink-muted">Volume</div>
-                <div className="text-[15px] font-bold text-ink mt-0.5 tabular-nums">
-                  {vitals.volume.current.toLocaleString()}<span className="text-[11px] text-ink-muted font-semibold ml-0.5">{weightUnit}</span>
-                </div>
-                <div className="text-[11px] mt-0.5">
-                  {vitals.volume.deltaPct != null ? (
-                    <span className={vitals.volume.deltaPct > 0 ? 'text-leaf font-bold' : 'text-ink-muted'}>
-                      {vitals.volume.deltaPct > 0 ? '+' : ''}{vitals.volume.deltaPct}%
-                    </span>
-                  ) : (
-                    <span className="text-ink-muted">–</span>
-                  )}
-                  <span className="text-ink-muted"> vs last</span>
-                </div>
-              </div>
-            )}
-            {vitals.best && (
-              <div className="border-l border-charcoal-border first:border-l-0 pl-2.5 first:pl-0">
-                <div className="text-[10px] font-bold uppercase tracking-[0.04em] text-ink-muted">Best set</div>
-                <div className="text-[15px] font-bold text-ink mt-0.5 tabular-nums">
-                  {vitals.best.weight}×{vitals.best.reps}
-                </div>
-                {vitals.best.e1rm != null && (
-                  <div className="text-[11px] text-ink-muted mt-0.5">{vitals.best.e1rm} e1RM</div>
-                )}
-              </div>
-            )}
           </div>
         )}
 
@@ -1294,6 +1232,56 @@ export default function ExerciseCard({
           <Plus className="w-4 h-4 mr-1" />
           Add Set
         </Button>
+
+        {/* Volume / Best set sit BELOW the set table now. They only exist once a
+            set is logged, so rendering them above the table made the first tick
+            shove the row being edited down by ~150px mid-set. */}
+        {/* Per-exercise vitals (DESIGN.md dB .vit4): Volume vs last / Best
+            set. Only rendered cells with real data; the row itself is
+            skipped entirely when there's nothing to show. Target used to
+            live here as a third stacked cell ("TARGET" over "1 × 10") —
+            moved up onto the icon-toolbar row above (coordinator, r4f:
+            Nolan dislikes vertical stacking, and Target is static program
+            info that's available before there's any set data, unlike these
+            two, which appear only once the athlete has actually logged
+            something). vitals.target itself is unchanged (still computed
+            above) — only where it renders moved. */}
+        {(vitals?.volume || vitals?.best) && (
+          <div
+            className="grid gap-2.5 border-t border-charcoal-border pt-2.5 mt-3 font-technical"
+            style={{ gridTemplateColumns: `repeat(${[vitals.volume, vitals.best].filter(Boolean).length}, 1fr)` }}
+          >
+            {vitals.volume && (
+              <div className="border-l border-charcoal-border first:border-l-0 pl-2.5 first:pl-0">
+                <div className="text-[10px] font-bold uppercase tracking-[0.04em] text-ink-muted">Volume</div>
+                <div className="text-[15px] font-bold text-ink mt-0.5 tabular-nums">
+                  {vitals.volume.current.toLocaleString()}<span className="text-[11px] text-ink-muted font-semibold ml-0.5">{weightUnit}</span>
+                </div>
+                <div className="text-[11px] mt-0.5">
+                  {vitals.volume.deltaPct != null ? (
+                    <span className={vitals.volume.deltaPct > 0 ? 'text-leaf font-bold' : 'text-ink-muted'}>
+                      {vitals.volume.deltaPct > 0 ? '+' : ''}{vitals.volume.deltaPct}%
+                    </span>
+                  ) : (
+                    <span className="text-ink-muted">–</span>
+                  )}
+                  <span className="text-ink-muted"> vs last</span>
+                </div>
+              </div>
+            )}
+            {vitals.best && (
+              <div className="border-l border-charcoal-border first:border-l-0 pl-2.5 first:pl-0">
+                <div className="text-[10px] font-bold uppercase tracking-[0.04em] text-ink-muted">Best set</div>
+                <div className="text-[15px] font-bold text-ink mt-0.5 tabular-nums">
+                  {vitals.best.weight}×{vitals.best.reps}
+                </div>
+                {vitals.best.e1rm != null && (
+                  <div className="text-[11px] text-ink-muted mt-0.5">{vitals.best.e1rm} e1RM</div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Advisory nudge, between-set coaching chip, and the shot-list note
             do NOT render inline here any more (Phase A: "none of them sit in
@@ -1647,11 +1635,15 @@ function KeypadSheet({
   };
 
   const pickRir = (val) => {
-    commitRir(setIndex, String(val));
-    // RIR is always the last field in fieldOrder when it's shown, so
-    // tapping a pill both sets the value and finishes the set.
-    onClose();
-    onDone(setIndex);
+    // Mirrors pressDigit: fills the buffer/commits the value, same as typing
+    // a digit for weight/reps. It does NOT close the sheet or finish the set
+    // on its own anymore -- that was the inconsistency (a pill tap used to
+    // commit-and-finish in one tap, unlike weight/reps needing an explicit
+    // Next/Done). Finishing now always goes through the same Done button.
+    const str = String(val);
+    setBuffer(str);
+    setFresh(false);
+    commitRir(setIndex, str);
   };
 
   const label =
@@ -1666,7 +1658,10 @@ function KeypadSheet({
       ? `Prev ${lastPerformance.lastReps}`
       : null;
 
-  const currentRir = set?.rir != null ? set.rir : (set?.rpe != null ? 10 - set.rpe : null);
+  // Driven off the same `buffer` the header number shows (not `set.rir` directly), so a
+  // pill tap highlights immediately like a typed digit does, without waiting on the
+  // commit round-trip through the parent's state.
+  const currentRir = buffer !== "" ? Number(buffer) : null;
 
   const key = "min-h-[52px] rounded-xl bg-[var(--key-surface)] text-[var(--key-text)] text-xl font-bold flex items-center justify-center active:bg-[var(--key-surface-active)] touch-manipulation select-none";
   const stop = (e) => e.preventDefault();
@@ -1698,33 +1693,41 @@ function KeypadSheet({
       </div>
 
       {field === "rir" ? (
-        <div className="px-4 pb-4 space-y-1.5">
-          <div className="flex gap-1.5">
-            {[0, 1, 2, 3, 4, 5, 6].map((v) => (
+        // Same outer grid-cols-4 shape as weight/reps below: a col-span-3 input
+        // area on the left, a col-span-1 confirm button on the right, in the
+        // SAME position every field uses. A pill tap now only fills the buffer
+        // (like a digit) -- it no longer commits-and-finishes the set by
+        // itself, so the confirm step is consistent across all three fields.
+        <div className="px-4 pb-4 grid grid-cols-4 gap-1.5">
+          {/* Six pills (0-5+), not seven: RIR 5+ earns zero stimulus credit in
+              the engine, so 6+ was a redundant value. Six fit at >=44pt wide. */}
+          <div className="col-span-3 flex gap-1.5">
+            {[0, 1, 2, 3, 4, 5].map((v) => (
               <button
                 key={v}
                 type="button"
                 onPointerDown={stop}
                 onClick={() => pickRir(v)}
-                aria-label={`RIR ${v === 6 ? "6+" : v}`}
-                className={`flex-1 min-h-[52px] rounded-xl text-sm font-extrabold touch-manipulation ${rirPillTint(v, currentRir === v)}`}
+                aria-label={`RIR ${v === 5 ? "5+" : v}`}
+                className={`flex-1 min-h-[52px] rounded-xl text-sm font-extrabold touch-manipulation ${rirPillTint(v, v === 5 ? currentRir >= 5 : currentRir === v)}`}
               >
-                {v === 6 ? "6+" : v}
+                {v === 5 ? "5+" : v}
               </button>
             ))}
           </div>
-          {/* A pill tap both sets RIR and finishes the set (it's always the
-              last field), but the set can also be finished without picking
-              one -- RIR is optional data, not a gate on completion. */}
-          <button
-            type="button"
-            onPointerDown={stop}
-            onClick={goNext}
-            aria-label="Done, mark set complete"
-            className="w-full min-h-[52px] rounded-xl bg-brand text-[var(--key-ink-on-brand)] text-base font-extrabold flex items-center justify-center active:bg-brand/80 touch-manipulation"
-          >
-            Done ✓
-          </button>
+          <div className="col-span-1 flex flex-col gap-1.5">
+            {/* RIR is optional data, not a gate on completion -- Done still
+                works with no pill picked. */}
+            <button
+              type="button"
+              onPointerDown={stop}
+              onClick={goNext}
+              aria-label="Done, mark set complete"
+              className="flex-1 min-h-[52px] rounded-xl bg-brand text-[var(--key-ink-on-brand)] text-base font-extrabold flex items-center justify-center active:bg-brand/80 touch-manipulation"
+            >
+              Done ✓
+            </button>
+          </div>
         </div>
       ) : (
         <div className="px-4 pb-4 grid grid-cols-4 gap-1.5">

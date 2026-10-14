@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { CheckCircle2, AlertTriangle, Timer, ChevronLeft } from "lucide-react";
+import { CheckCircle2, AlertTriangle, Timer, ChevronLeft, Pencil } from "lucide-react";
 
 // MacroFactor-referenced rebuild (Phase A, design-reference only — no MF
 // logos/icons/assets): header is now the four things that matter mid-set
@@ -45,6 +45,13 @@ export default function WorkoutLoggingHeader({
   exercises = null,
   focusedExerciseIndex = 0,
   onSelectExercise = null,
+  // Tapping the workout-name line renames the session (replaces a standalone
+  // "Rename session" row in the page body).
+  onRenameTitle = null,
+  // Opt-in: hide Layout's page header (a second back chevron + title) while
+  // this bar is mounted, so the logger owns the top edge. Off by default
+  // because other pages' body padding still assumes that header.
+  hideLayoutHeader = false,
 }) {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showRestPopover, setShowRestPopover] = useState(false);
@@ -59,6 +66,19 @@ export default function WorkoutLoggingHeader({
     const chip = chipRefs.current[focusedExerciseIndex];
     if (chip) chip.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
   }, [focusedExerciseIndex]);
+
+  useEffect(() => {
+    if (!hideLayoutHeader) return;
+    const root = document.documentElement;
+    root.setAttribute("data-logging-bar", "");
+    root.style.setProperty("--layout-header-height", "0px");
+    return () => {
+      root.removeAttribute("data-logging-bar");
+      // Layout re-measures its header on resize; nudge it so the offset is not
+      // left at 0 for the next page.
+      window.dispatchEvent(new Event("resize"));
+    };
+  }, [hideLayoutHeader]);
 
   const restActive = restTimer !== null && restTimer >= 0;
   const restUrgent = restActive && restTimer > 0 && restTimer <= 10;
@@ -303,12 +323,25 @@ export default function WorkoutLoggingHeader({
               style={{ width: `${setCount * 100}%` }}
             />
           </div>
-          {workoutTitle && (
+          {workoutTitle && (onRenameTitle ? (
+            <button
+              type="button"
+              onClick={onRenameTitle}
+              aria-label="Rename session"
+              className="flex items-center gap-1.5 max-w-full min-h-[32px] text-left text-[11px] font-bold uppercase tracking-[0.02em] text-ink-muted touch-manipulation"
+            >
+              <span className="truncate">
+                {workoutTitle}
+                {totalSets > 0 && <span className="text-ink-faint"> · {doneSets}/{totalSets} sets</span>}
+              </span>
+              <Pencil className="w-3 h-3 flex-shrink-0 text-ink-faint" aria-hidden="true" />
+            </button>
+          ) : (
             <div className="text-[11px] font-bold uppercase tracking-[0.02em] text-ink-muted truncate py-1">
               {workoutTitle}
               {totalSets > 0 && <span className="text-ink-faint"> · {doneSets}/{totalSets} sets</span>}
             </div>
-          )}
+          ))}
 
           {/* Exercise chip strip (Phase A, MF-referenced): a horizontally-
               scrolling row of every exercise in the workout, so the athlete

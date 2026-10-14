@@ -255,12 +255,13 @@ export default function QuickWorkout() {
     moveExercise(Number(active.id), Number(over.id));
   };
 
-  // Wrapper for addExercise that autofills weight from last performance or insight suggestion
+  // Wrapper for addExercise that autofills weight (last performance or insight
+  // suggestion) and reps (last performance)
   const addExercise = (exerciseName) => {
     const suggestion = insightSuggestions[exerciseName.toLowerCase()];
     const lastPerf = getLastExercisePerformance(allWorkoutLogs, exerciseName);
     const defaultWeight = suggestion || lastPerf?.lastWeight || 0;
-    return addExerciseRaw(exerciseName, defaultWeight);
+    return addExerciseRaw(exerciseName, defaultWeight, lastPerf?.lastReps || 0);
   };
 
   // Same autofill on swap: seed the replacement's load from its own history so a
@@ -519,6 +520,31 @@ export default function QuickWorkout() {
     saveWorkoutLogMutation.mutate();
   };
 
+  // "Done?" prompt. When the tick that was just made completes EVERY set in the
+  // session, ask whether the lifter is finished instead of leaving them to hunt
+  // for Finish. It fires only on the single-set transition (done: N-1 -> N with
+  // the set count unchanged), so restoring an already-complete session (counts
+  // jump from 0) or editing the plan never triggers it. It never finishes or
+  // cancels anything itself -- Finish stays a deliberate tap (CLAUDE.md: a
+  // workout must never stop on its own once anything is logged).
+  const doneSetCount = exercises.reduce((n, ex) => n + (ex.sets?.filter((s) => s.completed).length || 0), 0);
+  const totalSetCount = exercises.reduce((n, ex) => n + (ex.sets?.length || 0), 0);
+  const prevSetCountsRef = useRef({ done: 0, total: 0 });
+  const [showAllDonePrompt, setShowAllDonePrompt] = useState(false);
+  useEffect(() => {
+    const prev = prevSetCountsRef.current;
+    prevSetCountsRef.current = { done: doneSetCount, total: totalSetCount };
+    if (resumeSession) return;
+    if (
+      totalSetCount > 0
+      && doneSetCount === totalSetCount
+      && prev.total === totalSetCount
+      && prev.done === totalSetCount - 1
+    ) {
+      setShowAllDonePrompt(true);
+    }
+  }, [doneSetCount, totalSetCount, resumeSession]);
+
   if (!user) {
     return <LoadingScreen />;
   }
@@ -542,6 +568,8 @@ export default function QuickWorkout() {
           else navigate("/dashboard");
         }}
         onFinish={handleSave}
+        onRenameTitle={() => setEditingTitle(true)}
+        hideLayoutHeader
         isSaving={saveWorkoutLogMutation.isPending || saveWorkoutLogMutation.isSuccess}
         weightUnit={weightUnit}
         saveFailed={saveFailed}
@@ -561,7 +589,7 @@ export default function QuickWorkout() {
       />
 
       <div
-        className={`max-w-5xl mx-auto p-4 md:p-6 pt-[calc(96px+env(safe-area-inset-top,0px))] lg:pt-32 pb-[calc(var(--logging-bar-clearance,132px)+16px)] lg:pb-6 ${
+        className={`max-w-5xl mx-auto p-4 md:p-6 pt-[calc(var(--logging-top-clearance,96px)+12px)] lg:pt-32 pb-[calc(var(--logging-bar-clearance,132px)+16px)] lg:pb-6 ${
           // Empty canvas: make the body a viewport-tall flex column so the
           // add-exercise form can be pushed into the lower (thumb) third with
           // no dead void between the hero and the form. lg keeps the normal
@@ -658,21 +686,9 @@ export default function QuickWorkout() {
               </p>
             )}
           </div>
-        ) : !resumeSession ? (
-          // Default-titled session: the chrome already prints "Quick Workout" +
-          // today's date, so DON'T reprint the title here. Show only a quiet
-          // "Rename session" affordance. Gated on !resumeSession so this row
-          // doesn't bleed through the Resume scrim before the user decides.
-          <button
-            type="button"
-            aria-label="Rename session"
-            onClick={() => setEditingTitle(true)}
-            className="mb-3 lg:hidden flex items-center gap-1.5 min-h-[44px] -my-2 text-sm font-semibold text-ink-muted hover:text-ink touch-manipulation"
-          >
-            <Pencil className="w-4 h-4 shrink-0" />
-            Rename session
-          </button>
         ) : null}
+        {/* Default-titled sessions rename from the logging bar's title line
+            (WorkoutLoggingHeader onRenameTitle); no standalone row here. */}
 
         {isRunCardio && <VdotZonesCard className="mb-6" />}
 
@@ -796,7 +812,8 @@ export default function QuickWorkout() {
             already prescribed loads, to avoid two coaches contradicting. Once
             exercises exist it's the full insight card with its accept/dismiss
             actions. */}
-        {!prescribed && preSessionInsight && (
+        {!prescribed && preSessionInsight &&
+          exercises.some((ex) => (ex.name || "").toLowerCase().trim() === preSessionInsight.exerciseName.toLowerCase().trim()) && (
           <PreSessionInsightCard
             insight={preSessionInsight}
             onAccept={handleInsightAccept}
@@ -948,6 +965,32 @@ export default function QuickWorkout() {
               onClick={() => { setShowCancelConfirm(false); handleCancelLogging(); }}
             >
               Cancel Workout
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
+      {/* "All sets done" confirm. Opened only by the transition effect above;
+          "Not yet" just closes it, nothing is saved or ended on its own. */}
+      <Dialog open={showAllDonePrompt} onOpenChange={setShowAllDonePrompt}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>All sets done. Finish workout?</DialogTitle>
+          </DialogHeader>
+          <DialogDescription>
+            That was the last set. Finish and save this session, or keep going if you want to add more.
+          </DialogDescription>
+          <div className="flex gap-3 pt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setShowAllDonePrompt(false)}>
+              Not yet
+            </Button>
+            <Button
+              variant="volt"
+              className="flex-1"
+              onClick={() => { setShowAllDonePrompt(false); handleSave(); }}
+            >
+              Finish workout
             </Button>
           </div>
         </DialogContent>

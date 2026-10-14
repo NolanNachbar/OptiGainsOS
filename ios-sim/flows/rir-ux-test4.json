@@ -1,0 +1,18 @@
+[
+  { "goto": "/quick-workout" },
+  { "wait": 2500 },
+  { "tapText": "Bench Press" },
+  { "wait": 1500 },
+  { "tapText": "295" },
+  { "wait": 1000 },
+  { "shot": "a-weight-keypad" },
+  { "tapText": "Next" },
+  { "wait": 800 },
+  { "shot": "b-reps-keypad" },
+  { "tapText": "8" },
+  { "wait": 500 },
+  { "tapText": "Next" },
+  { "wait": 800 },
+  { "shot": "c-rir-screen" },
+  { "dump": "c-rir-screen" }
+]

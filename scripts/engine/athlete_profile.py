@@ -102,6 +102,10 @@ TARGET_EXERCISES_CUT_MULT         = 0.75  # [ENG] a cut shrinks the session, not
 # Exempting them from the count is what makes the two rules compatible. Counted,
 # a 5-exercise lower day would be three-fifths arm work; uncounted, it is the leg
 # template plus the arm/delt tail TBJP puts at the end of the session anyway.
+# Intentional exception to "per-muscle frequency is derived" (Science-Unified.md,
+# "Documented exception"): Nolan is deliberately training shoulders and arms every
+# day as an experiment. Owned as a coaching prior, not derived from weekly volume.
+# Empty this tuple to hand the three muscles back to the derived-frequency path.
 MANDATORY_ISOLATION_MUSCLES       = ("side_delts", "triceps", "biceps")  # [COACH]
 
 # A goal lift's top set and its back-off are ONE exercise for counting purposes

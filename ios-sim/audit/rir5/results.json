@@ -1,0 +1,112 @@
+[
+  {
+    "i": 0,
+    "kind": "goto",
+    "ok": true
+  },
+  {
+    "i": 1,
+    "kind": "wait",
+    "ok": true
+  },
+  {
+    "i": 2,
+    "kind": "tapText",
+    "ok": true
+  },
+  {
+    "i": 3,
+    "kind": "wait",
+    "ok": true
+  },
+  {
+    "i": 4,
+    "kind": "tapText",
+    "ok": true
+  },
+  {
+    "i": 5,
+    "kind": "wait",
+    "ok": true
+  },
+  {
+    "i": 6,
+    "kind": "tapText",
+    "ok": true
+  },
+  {
+    "i": 7,
+    "kind": "wait",
+    "ok": true
+  },
+  {
+    "i": 8,
+    "kind": "tapText",
+    "ok": true
+  },
+  {
+    "i": 9,
+    "kind": "wait",
+    "ok": true
+  },
+  {
+    "i": 10,
+    "kind": "tapText",
+    "ok": true
+  },
+  {
+    "i": 11,
+    "kind": "wait",
+    "ok": true
+  },
+  {
+    "i": 12,
+    "kind": "tapText",
+    "ok": true
+  },
+  {
+    "i": 13,
+    "kind": "wait",
+    "ok": true
+  },
+  {
+    "i": 14,
+    "kind": "shot",
+    "ok": true
+  },
+  {
+    "i": 15,
+    "kind": "tapText",
+    "ok": true
+  },
+  {
+    "i": 16,
+    "kind": "wait",
+    "ok": true
+  },
+  {
+    "i": 17,
+    "kind": "shot",
+    "ok": true
+  },
+  {
+    "i": 18,
+    "kind": "tapText",
+    "ok": true
+  },
+  {
+    "i": 19,
+    "kind": "wait",
+    "ok": true
+  },
+  {
+    "i": 20,
+    "kind": "shot",
+    "ok": true
+  },
+  {
+    "i": 21,
+    "kind": "dump",
+    "ok": true
+  }
+]

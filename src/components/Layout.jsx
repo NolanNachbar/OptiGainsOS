@@ -347,10 +347,11 @@ export default function Layout({ children, currentPageName }) {
   const dockLeftItems = dockItems.slice(0, 2);
   const dockRightItems = dockItems.slice(2);
 
-  // The mobile dock is suppressed on /program-builder: that screen owns a
-  // full-width sticky footer (its save/next CTA), so the floating dock would
-  // stack over it and steal the thumb zone. Suppress HERE only.
-  const showDock = !location.pathname.startsWith("/program-builder");
+  // The mobile dock is suppressed on /program-builder and /create-workout:
+  // those screens own a full-width sticky footer (save/next CTA), so the
+  // floating dock would stack under it and together they cover ~20% of the
+  // viewport. Suppress HERE only.
+  const showDock = !["/program-builder", "/create-workout"].some((p) => location.pathname.startsWith(p));
 
   const renderDockLink = (item) => {
     const isActive = isNavActive(item, location.pathname);

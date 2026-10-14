@@ -1,0 +1,6 @@
+[
+  { "goto": "/quick-workout" },
+  { "wait": 2500 },
+  { "shot": "qw-landing" },
+  { "dump": "qw-landing" }
+]

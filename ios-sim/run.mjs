@@ -84,6 +84,19 @@ async function tapText(text) {
   await lastTapped.click();
 }
 
+// iOS offers to save the just-typed password in Keychain. It's a system sheet
+// (not a web/Safari element), sits on top of everything, and blocks every
+// subsequent native tap (e.g. the PWA install flow's Share button) until
+// dismissed. "Not Now" leaves Keychain untouched.
+async function dismissSavePasswordPrompt() {
+  await native();
+  const btn = await driver.$('-ios predicate string:type == "XCUIElementTypeButton" AND label == "Not Now"');
+  if (await btn.isExisting().catch(() => false)) {
+    await btn.click();
+    await driver.pause(500);
+  }
+}
+
 // Safari shows first-run tips (e.g. "View Bookmarks, Share Menu…") over the page.
 async function dismissTips() {
   await native();
@@ -166,7 +179,9 @@ async function login() {
   await type('$SIM_PASSWORD');
   await lastTapped.addValue('\n');
   lastTapped = null;
-  await driver.pause(5000); shot('login-done');
+  await driver.pause(5000);
+  await dismissSavePasswordPrompt();
+  shot('login-done');
 }
 
 try {

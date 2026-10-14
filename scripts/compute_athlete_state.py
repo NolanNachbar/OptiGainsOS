@@ -316,6 +316,22 @@ def compute_strength(workout_logs: list) -> dict:
 
 # ── Hypertrophy computation ───────────────────────────────────────────────────
 
+def _effective_set_credit(s: dict) -> float:
+    """[ENG] Science-Unified.md:226-231 stimulus weighting: Reps_eff = max(0, 5-RIR), a
+    set at RIR 5+ contributes no hypertrophic stimulus. Returned as a 0-1 fraction of one
+    hard set (Reps_eff / 5) so compute_hypertrophy's weekly_sets stays in the same "sets"
+    units it already reports. Missing/malformed RIR defaults to failure (RIR 0 → full
+    credit), matching log_ingest.FAILURE_RIR's convention — legacy sets logged before RIR
+    tracking existed keep their current full-credit behavior; this only discounts sets
+    that were actually logged with real reserve."""
+    rir_raw = s.get("rir")
+    try:
+        rir = float(rir_raw) if rir_raw not in (None, "") else 0.0
+    except (ValueError, TypeError):
+        rir = 0.0
+    return max(0.0, min(1.0, (5.0 - rir) / 5.0))
+
+
 def compute_hypertrophy(workout_logs: list) -> dict:
     # Current week starts on Monday
     today = datetime.date.today()
@@ -338,8 +354,10 @@ def compute_hypertrophy(workout_logs: list) -> dict:
                 continue
             credit = get_muscle_credit(ex.get("name", ""))
             sets = ex.get("sets", []) or []
-            # Count sets that have either weight or reps data
-            hard_sets = len([s for s in sets if s.get("weight") or s.get("reps")])
+            # Weight each logged set by its effective-reps stimulus fraction (N1: a set
+            # with weight/reps but RIR>=5 used to count as a full hard set; it now counts
+            # for ~0, per the spec's own stimulus model).
+            hard_sets = sum(_effective_set_credit(s) for s in sets if s.get("weight") or s.get("reps"))
             if not hard_sets:
                 continue
             for muscle, weight in credit.items():

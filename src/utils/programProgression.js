@@ -22,10 +22,11 @@ function deriveSuggestedIncrement(exercise, currentWeight) {
 }
 
 // One short factual line, only when the data says so. Callers render nothing for null.
-// Deload is suggested only after 5+ sessions at the same weight.
+// Never suggests a deload: the engine has none by design (Science-Unified.md, "No
+// scheduled deloads"); the athlete may schedule one manually if they want.
 function deriveStallSuggestion(sessionsAtWeight, weight, reps) {
   if (!(sessionsAtWeight >= STALL_THRESHOLD)) return null;
-  if (sessionsAtWeight >= 5) return `Stalled ${sessionsAtWeight} sessions \u2014 deload suggested`;
+  if (sessionsAtWeight >= 5) return `Stalled ${sessionsAtWeight} sessions at ${weight}${reps ? ` \u00d7 ${reps}` : ''}`;
   if (weight && reps) return `${sessionsAtWeight} sessions at ${weight} \u00d7 ${reps}`;
   if (weight) return `${sessionsAtWeight} sessions at ${weight}`;
   return null;
@@ -173,7 +174,13 @@ export function updateProgressionState(currentState, exercise, completedSets) {
 
   // Progress only when the user hit all target reps AND still had adequate reserve (≥2 RIR).
   // Grinding near failure (RIR 0-1) means the weight is already at the edge — don't add more.
-  const readyToProgress = allSetsHitTarget && avgRir != null && avgRir >= 2;
+  // EXCEPTION: accessories trained to true failure by design (rir_target 0, 1-2 sets per
+  // athlete_profile.ACCESSORY_RIR_TARGET/apply_philosophy) have no non-final set to average
+  // in the first place, so avgRir is structurally null/near-0 for them always — that gate
+  // can never pass. For those, hitting the full rep target at failure IS the progression
+  // signal (that's what training to failure for size means), not a reason to withhold it.
+  const trainedToFailure = Number(rir_target) === 0;
+  const readyToProgress = allSetsHitTarget && (trainedToFailure || (avgRir != null && avgRir >= 2));
 
   const prevState = state[name] || {};
   const sessionsAtWeight =

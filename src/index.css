@@ -931,3 +931,11 @@ svg.rbh path:hover, svg.rbh polygon:hover,
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
   cursor: pointer;
 }
+
+/* The logging bar (WorkoutLoggingHeader hideLayoutHeader) owns the top edge:
+   hide the page header's duplicate back chevron + title while it is mounted. */
+html[data-logging-bar] [data-mobile-header] { display: none; }
+/* ...and the floating dock: while logging, the bar owns navigation (back, Finish)
+   and the dock only covered ~15% of the screen. Drop its reserved padding too. */
+html[data-logging-bar] [data-mobile-dock] { display: none; }
+html[data-logging-bar] .content-bottom-clearance { padding-bottom: 0; }

@@ -370,7 +370,7 @@ function StrengthSection({ data }) {
                 <span className="glass-inset px-2 py-0.5 text-[10px] font-bold text-muted-2 uppercase tracking-[0.06em]">
                   {{
                     INCREASE_LOAD: "Load ready",
-                    DELOAD: "Deload due",
+                    DELOAD: "Trending down",
                     SWAP_EXERCISE: "Swap due",
                   }[d.progression_command] ?? d.progression_command}
                 </span>
