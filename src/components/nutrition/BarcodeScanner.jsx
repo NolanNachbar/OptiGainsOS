@@ -94,7 +94,7 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound,
       );
       controlsRef.current = controls;
     } catch (err) {
-      setErrorMessage("Scanner failed to start: " + err.message);
+      setErrorMessage("Scanner could not start: " + err.message + ". Check camera permission and try again.");
       setScanState("error");
       stream.getTracks().forEach((t) => t.stop());
     }

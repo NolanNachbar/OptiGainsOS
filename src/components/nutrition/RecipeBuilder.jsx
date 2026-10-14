@@ -86,7 +86,7 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
       invalidateRecipes(queryClient);
       toast.success("Recipe deleted");
     },
-    onError: () => toast.error("Failed to delete recipe"),
+    onError: () => toast.error("Recipe not deleted. Check your connection and try again."),
   });
 
   const handleEdit = (recipe) => {
@@ -118,7 +118,7 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
           <div className="text-center py-6 text-ink-muted text-sm">
             <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-40" />
             <p className="text-ink font-semibold">No recipes yet</p>
-            <p className="text-xs mt-1">Use the + button to create your first recipe</p>
+            <p className="text-xs mt-1">Recipes you create with the + button appear here.</p>
           </div>
         ) : recipes.map((recipe) => {
           const perServing = scaleRecipeToServings(recipe, 1);
@@ -199,7 +199,7 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
         <div className="text-center py-12 rounded-xl border border-dashed border-charcoal-border">
           <BookOpen className="w-12 h-12 text-ink-muted mx-auto mb-3" />
           <h3 className="text-base font-semibold text-ink mb-1">No recipes yet</h3>
-          <p className="text-sm text-ink-muted">Use the "New Recipe" button above to create your first recipe</p>
+          <p className="text-sm text-ink-muted">Recipes you create with the New Recipe button appear here.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -860,7 +860,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
         const results = await searchFoods(searchQuery);
         setSearchResults(results);
       } catch {
-        toast.error("Failed to search foods");
+        toast.error("Food search failed. Check your connection and try again.");
       } finally {
         setIsSearching(false);
       }
@@ -974,20 +974,20 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
     mutationFn: (data) => db.entities.Recipe.create(data),
     onSuccess: () => {
       invalidateRecipes(queryClient);
-      toast.success("Recipe created!");
+      toast.success("Recipe created");
       onOpenChange(false);
     },
-    onError: () => toast.error("Failed to save recipe"),
+    onError: () => toast.error("Recipe not saved. Check your connection and try again."),
   });
 
   const updateRecipeMutation = useMutation({
     mutationFn: ({ id, ...data }) => db.entities.Recipe.update(id, data),
     onSuccess: () => {
       invalidateRecipes(queryClient);
-      toast.success("Recipe updated!");
+      toast.success("Recipe updated");
       onOpenChange(false);
     },
-    onError: () => toast.error("Failed to update recipe"),
+    onError: () => toast.error("Recipe not updated. Check your connection and try again."),
   });
 
   const handleSave = () => {
@@ -1383,10 +1383,10 @@ function LogRecipeDialog({ open, onOpenChange, recipe, userId }) {
     mutationFn: (entry) => db.entities.FoodEntry.create(entry),
     onSuccess: () => {
       invalidateFood(queryClient);
-      toast.success(`${recipe.name} logged!`);
+      toast.success(`${recipe.name} logged`);
       onOpenChange(false);
     },
-    onError: () => toast.error("Failed to log recipe"),
+    onError: () => toast.error("Recipe not logged. Check your connection and try again."),
   });
 
   const handleLog = () => {
