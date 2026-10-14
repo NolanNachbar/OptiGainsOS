@@ -7,6 +7,7 @@ import { searchGenericFoods, searchBrandedFoods } from "@/api/usda";
 import {
   calculateMacros,
   getDailyCalorieTrend,
+  eatenOnly,
   getRecentFoods,
   UNIT_TO_GRAMS,
   isServingLikeUnit,
@@ -1594,7 +1595,7 @@ const handleSaveMealTemplate = () => {
 
   // Consumed macros count only EATEN entries — planned (not-yet-checked-off) plan
   // items are shown in the list but don't inflate today's intake until checked.
-  const eatenEntries = foodEntries.filter((e) => !e.planned);
+  const eatenEntries = eatenOnly(foodEntries);
   const totals = calculateMacros(eatenEntries);
 
   // Keep this day's planned portions pinned to the day's CURRENT budget. The
@@ -1659,7 +1660,9 @@ const handleSaveMealTemplate = () => {
   // ── Copy a previous day forward ────────────────────────────────────────────
   // The recents list handles one food at a time; this handles "yesterday again",
   // which is most of a repeatable diet.
-  const copySourceEntries = allFoodEntries.filter((e) => e.date === copyFromDate);
+  // Planned rows are suggestions, not a day that was eaten: copying them would
+  // log un-eaten plan items as eaten.
+  const copySourceEntries = eatenOnly(allFoodEntries).filter((e) => e.date === copyFromDate);
 
   const copyDayMutation = useMutation({
     mutationFn: async (entries) => {
@@ -1700,8 +1703,8 @@ const handleSaveMealTemplate = () => {
   // by 7 when only 4 days were logged reports a deficit that never happened.
   const intakeStats = useMemo(() => {
     const start = format(subDays(parseISO(selectedDate), statsWindow - 1), "yyyy-MM-dd");
-    const inWindow = allFoodEntries.filter(
-      (e) => e.date >= start && e.date <= selectedDate && !e.planned
+    const inWindow = eatenOnly(allFoodEntries).filter(
+      (e) => e.date >= start && e.date <= selectedDate
     );
     const byDate = {};
     for (const e of inWindow) {

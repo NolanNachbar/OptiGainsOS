@@ -24,6 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { nowInTz } from "@/utils/dateUtils";
 import { useProfile, useAllFoodEntries, useBodyWeightEntries } from "@/hooks/useUserQueries";
 import { calculateEWMA } from "@/utils/coachingUtils";
+import { eatenOnly } from "@/utils/nutritionUtils";
 import { useNowDay } from "@/hooks/useNowDay";
 import { useActiveWorkoutSession } from "@/hooks/useActiveWorkoutSession";
 import { useStaleWorkoutSessions } from "@/hooks/useStaleWorkoutSessions";
@@ -270,7 +271,7 @@ export default function Today() {
 
     const dayStart = new Date(`${today}T00:00:00`);
     const dayEnd = new Date(`${today}T23:59:59.999`);
-    const todaysEntries = (allFoodEntries || []).filter((e) => e.date === today && e.eaten_at);
+    const todaysEntries = eatenOnly(allFoodEntries).filter((e) => e.date === today && e.eaten_at);
     const carbsBetween = (from, to) => todaysEntries
       .filter((e) => { const t = new Date(e.eaten_at); return t >= from && t < to; })
       .reduce((sum, e) => sum + (Number(e.carbs_grams) || 0), 0);
@@ -566,7 +567,8 @@ export default function Today() {
   // log" ring/bars use — just today's totals in the B mockup's flat 4-column
   // layout instead of a ring, so it fits the module budget here.
   const todayTotals = useMemo(() => {
-    const rows = (allFoodEntries || []).filter((e) => e.date === today);
+    // Eaten only: the Fuel ring excludes planned plan rows, so Today must too.
+    const rows = eatenOnly(allFoodEntries).filter((e) => e.date === today);
     return rows.reduce((acc, e) => ({
       calories: acc.calories + (Number(e.calories) || 0),
       protein: acc.protein + (Number(e.protein_grams) || 0),
