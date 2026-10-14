@@ -1247,6 +1247,29 @@ export default function WorkoutDetail() {
 
   const totalSetsCount = exerciseLogs.reduce((n, ex) => n + (ex.sets?.length || 0), 0);
 
+  // "Done?" prompt, same rule as QuickWorkout: when the tick that was just made
+  // completes EVERY set, ask whether the lifter is finished. It fires only on
+  // the single-set transition (done: N-1 -> N with the set count unchanged), so
+  // restoring a finished session, "Complete All", or editing the plan never
+  // triggers it. It never finishes anything itself: "Finish workout" runs the
+  // same handler as the header's Finish (RIR warning included), and Finish
+  // stays a deliberate tap (CLAUDE.md: a workout never stops on its own).
+  const prevSetCountsRef = useRef({ done: 0, total: 0 });
+  const [showAllDonePrompt, setShowAllDonePrompt] = useState(false);
+  useEffect(() => {
+    const prev = prevSetCountsRef.current;
+    prevSetCountsRef.current = { done: loggedSetsCount, total: totalSetsCount };
+    if (resumeSession || isTutorialDemo) return;
+    if (
+      totalSetsCount > 0
+      && loggedSetsCount === totalSetsCount
+      && prev.total === totalSetsCount
+      && prev.done === totalSetsCount - 1
+    ) {
+      setShowAllDonePrompt(true);
+    }
+  }, [loggedSetsCount, totalSetsCount, resumeSession, isTutorialDemo]);
+
   // Focused-exercise model (Ledger rebuild): exactly one exercise renders the
   // full rich card; every other exercise (before or after it) renders as a
   // compact one-line row (ExerciseCard's own isFocused=false branch), which
@@ -2003,6 +2026,31 @@ export default function WorkoutDetail() {
             </Button>
             <Button variant="volt" className="flex-1" onClick={handleResumeSession}>
               Resume
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* "All sets done" confirm: opened only by the transition effect above.
+          "Not yet" just closes it; nothing is saved or ended on its own. */}
+      <Dialog open={showAllDonePrompt} onOpenChange={setShowAllDonePrompt}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>All sets done. Finish workout?</DialogTitle>
+          </DialogHeader>
+          <DialogDescription>
+            That was the last set. Finish and save this session, or keep going if you want to add more.
+          </DialogDescription>
+          <div className="flex gap-3 pt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setShowAllDonePrompt(false)}>
+              Not yet
+            </Button>
+            <Button
+              variant="volt"
+              className="flex-1"
+              onClick={() => { setShowAllDonePrompt(false); handleSaveWorkoutLog(); }}
+            >
+              Finish workout
             </Button>
           </div>
         </DialogContent>

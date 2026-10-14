@@ -39,8 +39,13 @@ const json = (body: unknown, status = 200) =>
     headers: { ...CORS, "Content-Type": "application/json" },
   });
 
+import { guardAiRequest } from "../_shared/ai-guard.ts";
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+
+  const guard = await guardAiRequest(req, "replan-day");
+  if (!guard.ok) return json({ error: guard.error }, guard.status);
 
   if (!GITHUB_TOKEN) {
     return json({ error: "GITHUB_DISPATCH_TOKEN is not set on this function" }, 500);

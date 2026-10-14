@@ -12,6 +12,8 @@
 // Text uses GROQ_MODEL; photo uses GROQ_VISION_MODEL (same keys the other
 // functions already rely on). Mirrors estimate-food-macros' helpers.
 
+import { guardAiRequest } from "../_shared/ai-guard.ts";
+
 const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY")!;
 const GROQ_MODEL = Deno.env.get("GROQ_MODEL") || "llama-3.3-70b-versatile";
 const GROQ_VISION_MODEL = Deno.env.get("GROQ_VISION_MODEL") || "meta-llama/llama-4-scout-17b-16e-instruct";
@@ -48,6 +50,9 @@ const INSTRUCTIONS =
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+
+  const guard = await guardAiRequest(req, "estimate-meal");
+  if (!guard.ok) return json({ error: guard.error }, guard.status);
 
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return json({ error: "invalid JSON body" }, 400); }

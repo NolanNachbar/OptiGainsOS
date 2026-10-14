@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- C · Basis: a reading on a scale. Rule with end ticks (the measure) and one point (the evidence). -->
+  <rect width="512" height="512" fill="#0B0C0E"/>
+  <rect x="96" y="292" width="320" height="16" fill="#ECEEF1"/>
+  <rect x="96" y="252" width="16" height="96" fill="#ECEEF1"/>
+  <rect x="400" y="252" width="16" height="96" fill="#ECEEF1"/>
+  <circle cx="330" cy="200" r="34" fill="#ECEEF1"/>
+  <rect x="322" y="236" width="16" height="56" fill="#ECEEF1"/>
+</svg>

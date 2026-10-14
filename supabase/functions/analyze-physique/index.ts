@@ -35,6 +35,8 @@ function extractJSON(raw: string): Record<string, unknown> | null {
   return null;
 }
 
+import { guardAiRequest } from "../_shared/ai-guard.ts";
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", {
@@ -45,6 +47,9 @@ Deno.serve(async (req) => {
       },
     });
   }
+
+  const guard = await guardAiRequest(req, "analyze-physique");
+  if (!guard.ok) return json({ error: guard.error }, guard.status);
 
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return json({ error: "invalid JSON body" }, 400); }

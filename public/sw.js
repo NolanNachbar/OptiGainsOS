@@ -8,7 +8,7 @@ const MAX_RUNTIME_ENTRIES = 60;
 const BASE = new URL(self.registration.scope).pathname;
 
 // App shell — cached on first install for offline support
-const APP_SHELL = [BASE, BASE + "index.html", BASE + "manifest.json", BASE + "optigains-icon.svg"];
+const APP_SHELL = [BASE, BASE + "index.html", BASE + "manifest.json", BASE + "optigains-icon.svg", BASE + "icon-192.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -88,7 +88,7 @@ self.addEventListener("push", (event) => {
   } catch {
     payload = { title: "OptiGainsOS", body: event.data.text() };
   }
-  const { title, body, url = BASE + "dashboard", icon = BASE + "optigains-icon.svg" } = payload;
+  const { title, body, url = BASE + "dashboard", icon = BASE + "icon-192.png" } = payload;
   // Edge functions send app-relative paths ("/physique", "/"). On GitHub Pages the
   // app is served under a sub-path, so a bare "/foo" 404s. Rebase anything that
   // isn't already under BASE.
@@ -98,7 +98,7 @@ self.addEventListener("push", (event) => {
     self.registration.showNotification(title, {
       body,
       icon,
-      badge: BASE + "optigains-icon.svg",
+      badge: BASE + "icon-192.png",
       data: { url: target },
       vibrate: [200, 100, 200],
     })
@@ -155,8 +155,8 @@ self.addEventListener("message", (event) => {
           if (windowClients.some((c) => c.visibilityState === "visible")) return;
           return self.registration.showNotification("Rest over", {
             body: "Time to get back to work.",
-            icon: BASE + "optigains-icon.svg",
-            badge: BASE + "optigains-icon.svg",
+            icon: BASE + "icon-192.png",
+            badge: BASE + "icon-192.png",
             data: { url: BASE + "dashboard" },
             vibrate: [200, 100, 200],
             tag: "optigains-rest",
