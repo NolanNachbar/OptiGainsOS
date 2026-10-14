@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { BrowserMultiFormatReader } from "@zxing/browser";
 import { lookupBarcode } from "@/api/openFoodFacts";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { X, ScanLine, Loader2, AlertTriangle, PackageSearch, Camera } from "lucide-react";
 
 // BarcodeScanner renders its own fixed overlay (not inside Dialog) so it can
@@ -17,6 +18,24 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound,
   const [scanState, setScanState] = useState("idle"); // idle | requesting | scanning | looking_up | not_found | error
   const [errorMessage, setErrorMessage] = useState("");
   const [foundBarcode, setFoundBarcode] = useState("");
+  const [typedCode, setTypedCode] = useState("");
+
+  // Look up a barcode typed by hand (the camera is unavailable or can't read
+  // the label). Same lookup and same not-found recovery as a scan.
+  const lookupTyped = async () => {
+    const code = typedCode.replace(/\D/g, "");
+    if (code.length < 8) {
+      setErrorMessage("Barcodes are 8 to 14 digits. Check the number under the bars.");
+      return;
+    }
+    activeRef.current = true;
+    setFoundBarcode(code);
+    setScanState("looking_up");
+    const food = await lookupBarcode(code);
+    if (!activeRef.current) return;
+    if (food) onFoodFound(food);
+    else setScanState("not_found");
+  };
 
   const stopCamera = () => {
     activeRef.current = false;
@@ -112,6 +131,8 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound,
     // startScanning sets scan state as the async camera/permission flow resolves.
     // The set-state-in-effect heuristic can't see that this is camera lifecycle,
     // not derived state, so it's suppressed for this call.
+    // The Add Food keyboard would otherwise stay open behind the scanner.
+    document.activeElement?.blur?.();
     // eslint-disable-next-line react-hooks/set-state-in-effect
     startScanning();
     return stopCamera;
@@ -290,8 +311,22 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound,
               it carries the single teal action color; Close is the neutral
               escape beside it. */}
           <div className="flex gap-2 w-full">
-            <Button variant="primary" size="lg" className="flex-1" onClick={() => onNotFound(foundBarcode)}>
-              Enter manually
+            <Input
+              value={typedCode}
+              onChange={(e) => setTypedCode(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); lookupTyped(); } }}
+              inputMode="numeric"
+              placeholder="Type the barcode number"
+              aria-label="Barcode number"
+              className="flex-1"
+            />
+            <Button variant="primary" size="lg" onClick={lookupTyped}>
+              Look up
+            </Button>
+          </div>
+          <div className="flex gap-2 w-full">
+            <Button variant="dim" size="lg" className="flex-1" onClick={() => onNotFound(foundBarcode)}>
+              Fill in by hand
             </Button>
             <Button variant="ghost" size="lg" className="flex-1" onClick={onClose}>
               Close

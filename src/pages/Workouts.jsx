@@ -1090,7 +1090,7 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
       <div className="flex items-stretch gap-4 p-4 glass-elevated rounded-[20px] mb-4">
         {/* Hero: This Week */}
         <div className="flex flex-col justify-center shrink-0 pr-4 border-r hairline">
-          <span className="section-label mb-1">This Week</span>
+          <span className="section-label mb-1">Last 7 days</span>
           <span className="hero-metric text-[34px] text-ink">
             {thisWeek.length}<span className="text-[12px] font-semibold text-ink-muted ml-1 align-baseline">sess</span>
           </span>

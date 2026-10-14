@@ -146,6 +146,9 @@ function AppToaster() {
             { bottom: 'calc(var(--dock-total-height, 80px) + 16px + env(safe-area-inset-bottom))' }
           : { top: 'calc(var(--layout-header-height, 0px) + env(safe-area-inset-top) + 12px)' }
       }
+      // Sonner swaps `offset` for `mobileOffset` (default 16px) at <=600px, so
+      // without this the toast parked on top of the dock on phones.
+      mobileOffset={{ bottom: 'calc(var(--dock-total-height, 80px) + 16px + env(safe-area-inset-bottom))' }}
       closeButton
       toastOptions={{
         // This flat default is the ACTIONABLE lifetime: error / CTA toasts are
