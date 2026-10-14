@@ -296,8 +296,8 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
         {!hideHeader && (
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
             <div>
-              <h1 className="text-[22px] font-bold text-ink leading-tight">Workouts</h1>
-              <p className="text-[13px] text-ink-muted mt-0.5">Library & session history</p>
+              <h1 className="text-[28px] font-bold text-ink leading-tight">Workouts</h1>
+              <p className="text-[14px] text-ink-muted mt-0.5">Library & session history</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <Link to="/weekly-schedule">
@@ -865,8 +865,8 @@ function StrengthEntryCard({ entry }) {
         </div>
         {/* Dominant figure — the row's one hero metric. */}
         <div className="flex items-baseline gap-1 shrink-0">
-          <span className="font-technical font-extrabold text-[24px] leading-none text-ink whitespace-nowrap">{hero.value}</span>
-          {hero.suffix && <span className="text-[10px] text-ink-muted uppercase">{hero.suffix}</span>}
+          <span className="font-technical font-extrabold text-[28px] leading-none text-ink whitespace-nowrap">{hero.value}</span>
+          {hero.suffix && <span className="text-[11px] text-ink-muted uppercase">{hero.suffix}</span>}
         </div>
       </div>
       {/* Stable 4-cell scaffold. Dividers derive from grid position so a wrapped
@@ -881,7 +881,7 @@ function StrengthEntryCard({ entry }) {
             <span className="section-label">{cell.label}</span>
             <div className="flex items-baseline gap-1 mt-1">
               <span className={`font-technical font-bold text-[15px] whitespace-nowrap ${cell.value === '—' ? 'text-ink-faint' : 'text-ink-secondary'}`}>{cell.value}</span>
-              {cell.suffix && <span className="text-[10px] text-ink-muted uppercase">{cell.suffix}</span>}
+              {cell.suffix && <span className="text-[11px] text-ink-muted uppercase">{cell.suffix}</span>}
             </div>
           </div>
         ))}
@@ -960,8 +960,8 @@ function CardioEntryCard({ entry }) {
         </div>
         {/* Dominant figure — the row's one hero metric. */}
         <div className="flex items-baseline gap-1 shrink-0">
-          <span className="font-technical font-extrabold text-[24px] leading-none text-ink whitespace-nowrap">{hero.value}</span>
-          {hero.suffix && <span className="text-[10px] text-ink-muted uppercase">{hero.suffix}</span>}
+          <span className="font-technical font-extrabold text-[28px] leading-none text-ink whitespace-nowrap">{hero.value}</span>
+          {hero.suffix && <span className="text-[11px] text-ink-muted uppercase">{hero.suffix}</span>}
         </div>
       </div>
 
@@ -975,7 +975,7 @@ function CardioEntryCard({ entry }) {
               <span className="section-label">{cell.label}</span>
               <div className="flex items-baseline gap-1 mt-1">
                 <span className="font-technical font-bold text-[15px] text-ink-secondary">{cell.value}</span>
-                {cell.suffix && <span className="text-[10px] text-ink-muted uppercase">{cell.suffix}</span>}
+                {cell.suffix && <span className="text-[11px] text-ink-muted uppercase">{cell.suffix}</span>}
               </div>
             </div>
           ))}
@@ -1092,7 +1092,7 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, isLoading, erro
         {/* Hero: This Week */}
         <div className="flex flex-col justify-center shrink-0 pr-4 border-r hairline">
           <span className="section-label mb-1">This Week</span>
-          <span className="hero-metric text-[34px] text-ink">
+          <span className="hero-metric text-[28px] text-ink">
             {thisWeek.length}<span className="text-[12px] font-semibold text-ink-muted ml-1 align-baseline">sess</span>
           </span>
         </div>

@@ -961,3 +961,7 @@ html[data-logging-bar] [data-mobile-header] { display: none; }
    and the dock only covered ~15% of the screen. Drop its reserved padding too. */
 html[data-logging-bar] [data-mobile-dock] { display: none; }
 html[data-logging-bar] .content-bottom-clearance { padding-bottom: 0; }
+
+/* The mark is off-white on transparent (dark field). On the light theme it
+   inverts to ink so it never disappears into a light surface. */
+html.light .brand-mark { filter: invert(1); }

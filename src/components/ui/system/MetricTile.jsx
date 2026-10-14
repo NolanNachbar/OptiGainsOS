@@ -29,7 +29,7 @@ export default function MetricTile({
         <span className="section-label !text-[11px]">{label}</span>
       </div>
       <div className="flex items-baseline gap-1 mt-1.5">
-        <span className="hero-metric text-ink text-[20px]">{value ?? "—"}</span>
+        <span className="hero-metric text-ink text-[17px]">{value ?? "—"}</span>
         {unit && <span className="text-[11px] font-semibold text-muted-2">{unit}</span>}
         {delta != null && (
           <span className="font-technical text-[11px] font-bold ml-auto" style={{ color: dc }}>{delta}</span>

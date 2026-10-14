@@ -41,7 +41,7 @@ export default function VdotZonesCard({ className = "" }) {
       <div className="flex items-center gap-2 mb-3">
         <Footprints className="w-3.5 h-3.5 text-carb" />
         <span className="section-label !text-ink">Run Pace Zones</span>
-        <span className="ml-auto text-[10px] text-muted-2 uppercase tracking-wider font-bold">
+        <span className="ml-auto text-[11px] text-muted-2 uppercase tracking-wider font-bold">
           {zones.weekly_split || "VDOT zones"}
         </span>
       </div>
@@ -49,9 +49,9 @@ export default function VdotZonesCard({ className = "" }) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {ZONES.map((z) => (
           <div key={z.key} title={z.hint} className="glass-inset px-2 py-2 text-center">
-            <div className="text-[9.5px] uppercase tracking-[0.08em] text-muted-2 font-bold mb-1">{z.label}</div>
+            <div className="text-[11px] uppercase tracking-[0.08em] text-muted-2 font-bold mb-1">{z.label}</div>
             <div className={`text-lg font-technical font-extrabold ${z.color}`}>{zones[z.key] || "—"}</div>
-            <div className="text-[9px] font-semibold text-faint">/mi</div>
+            <div className="text-[11px] font-semibold text-faint">/mi</div>
           </div>
         ))}
       </div>

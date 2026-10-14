@@ -89,7 +89,7 @@ export default function SorenessCheckin({ today }) {
             {sore.map(r => (
               <span
                 key={r.muscle_group}
-                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border-[0.5px] ${LEVEL_COLORS[r.level]}`}
+                className={`text-[11px] font-bold px-2 py-0.5 rounded-full border-[0.5px] ${LEVEL_COLORS[r.level]}`}
               >
                 {r.muscle_group.toUpperCase()} · {LEVEL_LABELS[r.level].toUpperCase()}
               </span>
@@ -113,7 +113,7 @@ export default function SorenessCheckin({ today }) {
             className={`text-xs font-bold py-1.5 px-1 rounded-lg border-[0.5px] transition-all ${LEVEL_COLORS[levels[muscle]]}`}
           >
             <span className="block truncate capitalize">{muscle}</span>
-            <span className="block text-[10px] opacity-70 mt-0.5">{LEVEL_LABELS[levels[muscle]]}</span>
+            <span className="block text-[11px] opacity-70 mt-0.5">{LEVEL_LABELS[levels[muscle]]}</span>
           </button>
         ))}
       </div>

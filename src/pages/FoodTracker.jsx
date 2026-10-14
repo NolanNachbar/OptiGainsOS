@@ -2032,10 +2032,10 @@ const handleSaveMealTemplate = () => {
               return (
                 <Module bleed className="rise-in" data-tutorial="nutrition-rings">
                   <div className="flex items-center justify-between gap-2 mb-2.5">
-                    <span className="text-[13px] font-semibold text-muted-2 flex items-center gap-1.5 truncate">
+                    <span className="text-[14px] font-semibold text-muted-2 flex items-center gap-1.5 truncate">
                       Intake vs pace
                       {targets.engineSet && (
-                        <span className="text-[9px] font-extrabold tracking-wider text-ink-muted glass-inset px-1.5 py-0.5 shrink-0">
+                        <span className="text-[11px] font-extrabold tracking-wider text-ink-muted glass-inset px-1.5 py-0.5 shrink-0">
                           ENGINE-SET
                         </span>
                       )}
@@ -2100,7 +2100,7 @@ const handleSaveMealTemplate = () => {
                   {/* Fiber: already counted inside carbs, so it gets a plain line
                       rather than a 5th bar that would double-draw the same grams. */}
                   <div className="flex items-center justify-between gap-2 mt-2.5 pt-2 border-t hairline">
-                    <span className="text-[10px] text-ink-faint truncate">
+                    <span className="text-[11px] text-ink-faint truncate">
                       Fiber{targets.fiberIsDefault ? ' · 14 g / 1000 kcal' : ''}
                     </span>
                     <span className="font-technical text-[11px] font-semibold tabular-nums text-secondary">
@@ -2206,7 +2206,7 @@ const handleSaveMealTemplate = () => {
                         key={w}
                         type="button"
                         onClick={() => setStatsWindow(w)}
-                        className={`font-technical text-[10.5px] font-bold px-2 py-1 ${
+                        className={`font-technical text-[11px] font-bold px-2 py-1 ${
                           statsWindow === w ? "text-ink glass-inset" : "text-ink-faint hover:text-ink-secondary"
                         }`}
                       >
@@ -2222,7 +2222,7 @@ const handleSaveMealTemplate = () => {
                     {/* Averaged over days actually logged, not over the calendar
                         window — dividing by 28 when 9 days were logged reports a
                         deficit that never happened. */}
-                    <p className="text-[10.5px] text-ink-muted mb-2">
+                    <p className="text-[11px] text-ink-muted mb-2">
                       Average of {intakeStats.daysLogged} logged {intakeStats.daysLogged === 1 ? "day" : "days"} out of the last {intakeStats.windowDays}
                     </p>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -2238,7 +2238,7 @@ const handleSaveMealTemplate = () => {
                         </div>
                       ))}
                     </div>
-                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10.5px] text-ink-secondary">
+                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-ink-secondary">
                       {intakeStats.split && (
                         <span>
                           Split{' '}
@@ -2341,9 +2341,9 @@ const handleSaveMealTemplate = () => {
                     <div className="grid grid-cols-[1fr_42px_32px_32px_32px] gap-x-1.5 items-center py-2.5 border-b hairline">
                       <div className="flex items-center gap-2 min-w-0">
                         <div className={`w-2 h-2 rounded-full shrink-0 ${hasEntries ? 'bg-ink-secondary' : 'bg-track'}`} />
-                        <span className="text-[14.5px] font-bold text-ink truncate">{label}</span>
+                        <span className="text-[14px] font-bold text-ink truncate">{label}</span>
                         {plannedInMeal > 0 && (
-                          <span className="font-technical text-[10px] font-semibold text-ink-muted shrink-0">
+                          <span className="font-technical text-[11px] font-semibold text-ink-muted shrink-0">
                             +{plannedInMeal} planned
                           </span>
                         )}
@@ -2353,7 +2353,7 @@ const handleSaveMealTemplate = () => {
                           </span>
                         )}
                         {mealCost > 0 && (
-                          <span className="font-technical text-[10px] font-semibold text-ink-muted shrink-0">
+                          <span className="font-technical text-[11px] font-semibold text-ink-muted shrink-0">
                             ${mealCost.toFixed(2)}
                           </span>
                         )}
@@ -2370,10 +2370,10 @@ const handleSaveMealTemplate = () => {
                       </div>
                       {hasEntries ? (
                         <>
-                          <span className="font-technical text-[13px] font-bold text-ink text-right tabular-nums">{Math.round(mealCals)}</span>
-                          <span className="font-technical text-[13px] font-bold text-coral text-right tabular-nums">{Math.round(mealP)}</span>
-                          <span className="font-technical text-[13px] font-bold text-carb text-right tabular-nums">{Math.round(mealC)}</span>
-                          <span className="font-technical text-[13px] font-bold text-fat text-right tabular-nums">{Math.round(mealF)}</span>
+                          <span className="font-technical text-[14px] font-bold text-ink text-right tabular-nums">{Math.round(mealCals)}</span>
+                          <span className="font-technical text-[14px] font-bold text-coral text-right tabular-nums">{Math.round(mealP)}</span>
+                          <span className="font-technical text-[14px] font-bold text-carb text-right tabular-nums">{Math.round(mealC)}</span>
+                          <span className="font-technical text-[14px] font-bold text-fat text-right tabular-nums">{Math.round(mealF)}</span>
                         </>
                       ) : <span className="col-span-4" />}
                     </div>
@@ -2405,7 +2405,7 @@ const handleSaveMealTemplate = () => {
                           )}
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5 min-w-0">
-                              <span className={`text-[13px] font-bold tracking-tight truncate ${entry.planned ? 'text-ink-muted' : 'text-ink'}`}>{entry.food_name}</span>
+                              <span className={`text-[14px] font-bold tracking-tight truncate ${entry.planned ? 'text-ink-muted' : 'text-ink'}`}>{entry.food_name}</span>
                               {entry.tag && (
                                 <span className="section-label shrink-0 glass-inset px-1.5 py-0.5">
                                   {entry.tag === 'pre' ? 'Pre-WO' : 'Post-WO'}
@@ -2416,7 +2416,7 @@ const handleSaveMealTemplate = () => {
                                 serving OR cost so an entry with a cost but no
                                 parseable serving still shows its $ amount. */}
                             {(formatEntryServing(entry) || entry.cost_usd != null) && (
-                              <span className="block text-[10.5px] font-technical mt-0.5 font-semibold text-ink-muted truncate">
+                              <span className="block text-[11px] font-technical mt-0.5 font-semibold text-ink-muted truncate">
                                 {formatEntryServing(entry)}{entry.planned ? ' · planned' : ''}
                                 {entry.cost_usd != null && ` · $${entry.cost_usd.toFixed(2)}`}
                               </span>
@@ -2445,10 +2445,10 @@ const handleSaveMealTemplate = () => {
                             </button>
                           </div>
                         </div>
-                        <span data-field="kcal" className={`font-technical text-[13px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{entry.calories ?? 0}</span>
-                        <span data-field="protein" className={`font-technical text-[13px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{entry.protein_grams ?? 0}</span>
-                        <span data-field="carbs" className={`font-technical text-[13px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{entry.carbs_grams ?? 0}</span>
-                        <span data-field="fats" className={`font-technical text-[13px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{entry.fats_grams ?? 0}</span>
+                        <span data-field="kcal" className={`font-technical text-[14px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{entry.calories ?? 0}</span>
+                        <span data-field="protein" className={`font-technical text-[14px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{entry.protein_grams ?? 0}</span>
+                        <span data-field="carbs" className={`font-technical text-[14px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{entry.carbs_grams ?? 0}</span>
+                        <span data-field="fats" className={`font-technical text-[14px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{entry.fats_grams ?? 0}</span>
                       </div>
                     ))}
 
@@ -2463,7 +2463,7 @@ const handleSaveMealTemplate = () => {
                       aria-label={`Add item to ${mealType}`}
                     >
                       <Plus className="w-3.5 h-3.5 text-ink-faint group-hover:text-brand shrink-0" />
-                      <span className="text-[13px] font-bold text-ink-muted group-hover:text-brand">Add to {label.toLowerCase()}</span>
+                      <span className="text-[14px] font-bold text-ink-muted group-hover:text-brand">Add to {label.toLowerCase()}</span>
                     </button>
                   </section>
                 );
@@ -2765,7 +2765,7 @@ const handleSaveMealTemplate = () => {
                               {matchingCustomFoods.map((food) => (
                                 <div key={food.id} className="flex items-center hover:bg-charcoal-elevated transition-colors duration-200 [transition-timing-function:var(--ease)]">
                                   <button onClick={() => selectCustomFood(food)} className="flex-1 text-left px-4 py-3 min-h-[44px]">
-                                    <div className="font-medium text-ink text-sm">{food.food_name}{FOOD_SOURCE_LABELS[food.source] && <span className="ml-1.5 text-[10px] font-normal text-ink-muted">{FOOD_SOURCE_LABELS[food.source]}</span>}</div>
+                                    <div className="font-medium text-ink text-sm">{food.food_name}{FOOD_SOURCE_LABELS[food.source] && <span className="ml-1.5 text-[11px] font-normal text-ink-muted">{FOOD_SOURCE_LABELS[food.source]}</span>}</div>
                                     <MacroResultLine cal={food.calories} p={food.protein_grams} c={food.carbs_grams} f={food.fats_grams} />
                                   </button>
                                   <FavoriteToggle food={food} onToggle={toggleFavoriteFoodMutation.mutate} />
@@ -2939,7 +2939,7 @@ const handleSaveMealTemplate = () => {
                                 {sortedCustomFoods.map((food) => (
                                   <div key={food.id} className="flex items-center hover:bg-charcoal-elevated border-b border-charcoal-border last:border-b-0 transition-colors duration-200 [transition-timing-function:var(--ease)]">
                                     <button onClick={() => selectCustomFood(food)} className="flex-1 text-left px-4 py-3 min-h-[44px]">
-                                      <div className="font-medium text-ink text-sm">{food.food_name}{FOOD_SOURCE_LABELS[food.source] && <span className="ml-1.5 text-[10px] font-normal text-ink-muted">{FOOD_SOURCE_LABELS[food.source]}</span>}</div>
+                                      <div className="font-medium text-ink text-sm">{food.food_name}{FOOD_SOURCE_LABELS[food.source] && <span className="ml-1.5 text-[11px] font-normal text-ink-muted">{FOOD_SOURCE_LABELS[food.source]}</span>}</div>
                                       <MacroResultLine cal={food.calories} p={food.protein_grams} c={food.carbs_grams} f={food.fats_grams} />
                                     </button>
                                     <FavoriteToggle food={food} onToggle={toggleFavoriteFoodMutation.mutate} />
@@ -3091,7 +3091,7 @@ const handleSaveMealTemplate = () => {
                               </Select>
                             </div>
                             {servingEquivalence && (
-                              <p className="font-technical text-[10.5px] font-semibold text-ink-faint mt-1">{servingEquivalence}</p>
+                              <p className="font-technical text-[11px] font-semibold text-ink-faint mt-1">{servingEquivalence}</p>
                             )}
                           </div>
                         </div>
@@ -3129,7 +3129,7 @@ const handleSaveMealTemplate = () => {
                               min="0"
                               step="1"
                             />
-                            <p className="text-[10.5px] text-ink-muted mt-1">
+                            <p className="text-[11px] text-ink-muted mt-1">
                               {foodServingSizeGrams > 0
                                 ? "Saved with the food, so grams and servings stay interchangeable."
                                 : "Optional. Weigh one serving once and every log after it is exact."}
@@ -3157,7 +3157,7 @@ const handleSaveMealTemplate = () => {
                             {portionsExpanded && (
                               <div className="mt-2 space-y-2">
                                 {activePortions.length === 0 && (
-                                  <p className="text-[10.5px] text-ink-muted">
+                                  <p className="text-[11px] text-ink-muted">
                                     Weigh one and name it. "slice = 62 g" turns every future log into a count.
                                   </p>
                                 )}
@@ -3792,7 +3792,7 @@ const handleSaveMealTemplate = () => {
                   {matchingCustomFoods.map((food) => (
                     <div key={food.id} className="flex items-center hover:bg-charcoal-elevated transition-colors duration-200 [transition-timing-function:var(--ease)]">
                       <button onClick={() => selectCustomFood(food)} className="flex-1 text-left px-4 py-3 min-h-[44px]">
-                        <div className="font-medium text-ink text-sm">{food.food_name}{FOOD_SOURCE_LABELS[food.source] && <span className="ml-1.5 text-[10px] font-normal text-ink-muted">{FOOD_SOURCE_LABELS[food.source]}</span>}</div>
+                        <div className="font-medium text-ink text-sm">{food.food_name}{FOOD_SOURCE_LABELS[food.source] && <span className="ml-1.5 text-[11px] font-normal text-ink-muted">{FOOD_SOURCE_LABELS[food.source]}</span>}</div>
                         <MacroResultLine cal={food.calories} p={food.protein_grams} c={food.carbs_grams} f={food.fats_grams} />
                       </button>
                       <FavoriteToggle food={food} onToggle={toggleFavoriteFoodMutation.mutate} />
@@ -3883,7 +3883,7 @@ const handleSaveMealTemplate = () => {
                 </Select>
               </div>
               {servingEquivalence && (
-                <p className="font-technical text-[10.5px] font-semibold text-ink-faint mt-1">{servingEquivalence}</p>
+                <p className="font-technical text-[11px] font-semibold text-ink-faint mt-1">{servingEquivalence}</p>
               )}
             </div>
             {isServingLikeUnit(newFood.serving_unit) && (
@@ -4107,7 +4107,7 @@ const handleSaveMealTemplate = () => {
                     />
                     <span className="flex-1 min-w-0">
                       <span className="block text-sm text-ink truncate">{entry.food_name}</span>
-                      <span className="block text-[10.5px] text-ink-muted">
+                      <span className="block text-[11px] text-ink-muted">
                         {entry.meal_type} · {formatEntryServing(entry)}
                       </span>
                     </span>

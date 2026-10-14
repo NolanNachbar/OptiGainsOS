@@ -617,7 +617,7 @@ export default function ProgramDetail() {
                       </div>
                       <div className="text-right">
                         <p className="pill-value inline-block text-ink">
-                          {state.working_weight ?? '—'} <small className="text-[10px] font-semibold text-ink-muted">lbs</small>
+                          {state.working_weight ?? '—'} <small className="text-[11px] font-semibold text-ink-muted">lbs</small>
                         </p>
                         {state.stalled ? (
                           <Badge variant="outline" className="text-xs mt-1 bg-warn/10 text-warn border-warn/25">
@@ -710,7 +710,7 @@ export default function ProgramDetail() {
                         </div>
                         {targets?.workingWeight && (
                           <div className="text-right">
-                            <p className="pill-value inline-block text-ink">{targets.workingWeight} <small className="text-[10px] font-semibold text-ink-muted">lbs</small></p>
+                            <p className="pill-value inline-block text-ink">{targets.workingWeight} <small className="text-[11px] font-semibold text-ink-muted">lbs</small></p>
                             <p className="font-technical text-xs text-ink-muted mt-0.5">
                               Min: {targets.dailyMin} lbs
                             </p>
@@ -733,7 +733,7 @@ export default function ProgramDetail() {
                           </p>
                         </div>
                       </div>
-                      <span className="rounded-full px-2 py-[3px] text-[9.5px] font-extrabold uppercase tracking-wide bg-carb/[0.14] text-carb whitespace-nowrap">
+                      <span className="rounded-full px-2 py-[3px] text-[11px] font-extrabold uppercase tracking-wide bg-carb/[0.14] text-carb whitespace-nowrap">
                         Cardio
                       </span>
                     </div>

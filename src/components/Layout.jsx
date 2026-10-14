@@ -516,7 +516,7 @@ export default function Layout({ children, currentPageName }) {
             ) : (
               <>
                 <div className="flex-1 min-w-0">
-                  <h1 className={`type-display truncate ${isTabRoot ? "text-[32px]" : "text-[22px]"}`}>
+                  <h1 className={`type-display truncate ${isTabRoot ? "text-[28px]" : "text-[28px]"}`}>
                     {pageDisplayName}
                   </h1>
                   {mobileSubtitle && (

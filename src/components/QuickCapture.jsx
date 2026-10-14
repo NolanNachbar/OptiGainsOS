@@ -82,7 +82,7 @@ export default function QuickCapture({
             phone (the primary surface) has no such keys, so gate the hint to md+.
             The redundant domain label is dropped: the section heading already
             names the surface, so repeating "MIND" here was decoration. */}
-        <span className="hidden md:inline text-[10.5px] font-technical text-ink-faint shrink-0">
+        <span className="hidden md:inline text-[11px] font-technical text-ink-faint shrink-0">
           ⌘/Ctrl + Enter to capture
         </span>
         <Button

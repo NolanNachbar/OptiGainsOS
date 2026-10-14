@@ -307,7 +307,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
             route title is lg:hidden, so without this lg:block heading the page
             has no title on lg+. The two never overlap (mutually exclusive
             breakpoints). */}
-        <h1 className="hidden lg:block type-display text-[22px] mb-4 rise-in">Physique</h1>
+        <h1 className="hidden lg:block type-display text-[28px] mb-4 rise-in">Physique</h1>
 
         {/* Hidden file input — every upload trigger drives it. `multiple` lets a
             check-in morning stage all its shots at once; the review sheet steps
@@ -604,7 +604,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                           alt={`${POSE_LABEL[filterPose]} on ${format(parseISO(e.taken_at), "MMM d, yyyy")}`}
                           className="w-20 h-28 object-cover rounded-md glass-inset"
                         />
-                        <div className="mt-1 font-technical text-[10px] font-semibold text-muted-2">
+                        <div className="mt-1 font-technical text-[11px] font-semibold text-muted-2">
                           {format(parseISO(e.taken_at), "MMM d")}
                         </div>
                         {e.bodyfat_estimate != null && (

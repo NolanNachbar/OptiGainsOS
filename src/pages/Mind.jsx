@@ -320,12 +320,12 @@ function BookCard({ book, onEdit, onDelete, onStatusChange }) {
       <div className="flex items-center gap-2 flex-wrap">
         <button
           onClick={() => onStatusChange({ book, status: STATUS_NEXT[book.status] })}
-          className={`text-[10px] font-bold px-2 py-0.5 rounded-full border-[0.5px] transition-colors ${STATUS_COLORS[book.status]}`}
+          className={`text-[11px] font-bold px-2 py-0.5 rounded-full border-[0.5px] transition-colors ${STATUS_COLORS[book.status]}`}
         >
           {STATUS_LABELS[book.status]}
         </button>
         {book.category && (
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border-[0.5px] ${CHIP_NEUTRAL}`}>
+          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border-[0.5px] ${CHIP_NEUTRAL}`}>
             {book.category}
           </span>
         )}
@@ -439,11 +439,11 @@ function StudyTab() {
       <div className="grid grid-cols-2 gap-3">
         <div className="glass-inset p-4 text-center">
           <p className="hero-metric text-3xl text-ink">{weekMinutesError ? "—" : weeklyHours.toFixed(1)}</p>
-          <p className="text-[10px] font-bold text-muted-2 uppercase tracking-[0.08em] mt-0.5">hrs this week</p>
+          <p className="text-[11px] font-bold text-muted-2 uppercase tracking-[0.08em] mt-0.5">hrs this week</p>
         </div>
         <div className="glass-inset p-4 text-center">
           <p className="font-technical text-base font-bold text-muted-2">{totalSessionsError ? "—" : (totalSessions ?? logs.length)}</p>
-          <p className="text-[10px] font-bold text-muted-2 uppercase tracking-[0.08em] mt-0.5">total sessions</p>
+          <p className="text-[11px] font-bold text-muted-2 uppercase tracking-[0.08em] mt-0.5">total sessions</p>
         </div>
       </div>
 
@@ -466,11 +466,11 @@ function StudyTab() {
                   <span className="text-sm font-bold text-ink truncate">{log.topic}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 font-technical text-[10px] font-semibold text-muted-2">
+                  <div className="flex items-center gap-1 font-technical text-[11px] font-semibold text-muted-2">
                     <Timer className="w-3 h-3" />{log.duration_min} min
                   </div>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border-[0.5px] ${CHIP_NEUTRAL}`}>{log.medium}</span>
-                  <span className="font-technical text-[10px] font-semibold text-muted-2">{format(parseISO(log.logged_at), "MMM d")}</span>
+                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border-[0.5px] ${CHIP_NEUTRAL}`}>{log.medium}</span>
+                  <span className="font-technical text-[11px] font-semibold text-muted-2">{format(parseISO(log.logged_at), "MMM d")}</span>
                 </div>
               </div>
               <button onClick={() => setConfirmDelete(log.id)} className="min-w-11 min-h-11 -m-1.5 inline-flex items-center justify-center opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad transition-all shrink-0">
@@ -587,7 +587,7 @@ function SkillsTab() {
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <p className="text-sm font-extrabold text-ink">{skill.name}</p>
-                  {skill.category && <p className="text-[10px] font-semibold text-muted-2">{skill.category}</p>}
+                  {skill.category && <p className="text-[11px] font-semibold text-muted-2">{skill.category}</p>}
                 </div>
                 <button onClick={() => setConfirmDelete(skill.id)} className="opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad transition-all min-w-11 min-h-11 -m-1.5 inline-flex items-center justify-center">
                   <X className="w-3.5 h-3.5" />
@@ -603,16 +603,16 @@ function SkillsTab() {
                     <span className={`block w-2.5 h-2.5 rounded-full transition-colors ${n <= (skill.level || 0) ? "bg-violet" : "bg-charcoal-surface2"}`} />
                   </button>
                 ))}
-                <span className="font-technical text-[10px] font-semibold text-muted-2 ml-1">Level {skill.level || 0}/5</span>
+                <span className="font-technical text-[11px] font-semibold text-muted-2 ml-1">Level {skill.level || 0}/5</span>
               </div>
               <div className="flex items-center justify-between">
                 {isStale ? (
-                  <span className="text-[10px] font-bold text-violet flex items-center gap-1">
+                  <span className="text-[11px] font-bold text-violet flex items-center gap-1">
                     <AlertTriangle className="w-3 h-3" />
                     {daysSince === null ? "Never practiced" : `${daysSince}d ago`}
                   </span>
                 ) : (
-                  <span className="font-technical text-[10px] font-semibold text-muted-2">{daysSince}d ago</span>
+                  <span className="font-technical text-[11px] font-semibold text-muted-2">{daysSince}d ago</span>
                 )}
                 {/* Neutral ghost so the only solid/tinted teal in the Skills
                     viewport is the header Add action — a per-card teal-tinted
@@ -756,11 +756,11 @@ function CaptureTab() {
             {recentLogs.map(log => (
               <div key={log.id} className="glass p-4">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="font-technical text-[10px] font-semibold text-muted-2 tabular-nums">
+                  <span className="font-technical text-[11px] font-semibold text-muted-2 tabular-nums">
                     {format(parseISO(log.created_at), "MMM d, h:mm a")}
                   </span>
                   {log.processed && (
-                    <span className="font-technical text-[10px] font-semibold text-muted-2">Synced</span>
+                    <span className="font-technical text-[11px] font-semibold text-muted-2">Synced</span>
                   )}
                 </div>
                 <p className="text-sm font-semibold text-muted-2 whitespace-pre-wrap leading-relaxed">{log.content}</p>

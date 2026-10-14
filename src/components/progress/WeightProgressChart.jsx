@@ -24,7 +24,7 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
   if (!data || data.length === 0) {
     return (
       <div className={`w-full ${className || 'h-80'} flex items-center justify-center glass-inset`}>
-        <p className="text-muted-2 font-semibold text-[13px]">No weight data available</p>
+        <p className="text-muted-2 font-semibold text-[14px]">No weight data available</p>
       </div>
     );
   }
@@ -41,7 +41,7 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
       const trendEntry = payload.find(p => p.dataKey === 'trendWeight');
       return (
         <div className="glass-elevated p-3 rounded-xl">
-          <p className="font-bold text-[13px] text-ink">{format(parseISO(label), 'MMM d, yyyy')}</p>
+          <p className="font-bold text-[14px] text-ink">{format(parseISO(label), 'MMM d, yyyy')}</p>
           {rawEntry && <p className="text-[12px] text-muted-2 font-technical font-semibold">{rawEntry.value} {weightUnit}</p>}
           {trendEntry && <p className="text-[12px] font-technical font-bold text-ink">Trend: {trendEntry.value} {weightUnit}</p>}
         </div>
@@ -55,8 +55,8 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
       {/* Current weight is the hero figure: full-width, largest type. The
           Starting / Trend / Change trio reads as quieter supporting context. */}
       <div className="glass-inset p-4 mb-2">
-        <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Current</div>
-        <div className="hero-metric text-ink text-[34px] leading-none">
+        <div className="text-[11px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Current</div>
+        <div className="hero-metric text-ink text-[28px] leading-none">
           {currentWeight}
           <span className="text-[15px] text-muted-2 font-semibold ml-1.5">{weightUnit}</span>
         </div>
@@ -64,15 +64,15 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
 
       <div className="grid grid-cols-3 gap-2 mb-6 items-stretch">
         <div className="glass-inset p-3">
-          <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Starting</div>
+          <div className="text-[11px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Starting</div>
           <div className="font-technical text-[15px] font-extrabold text-secondary">{startWeight} <span className="text-[11px] text-muted-2 font-semibold">{weightUnit}</span></div>
         </div>
         <div className="glass-inset p-3">
-          <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Trend</div>
+          <div className="text-[11px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Trend</div>
           <div className="font-technical text-[15px] font-extrabold text-secondary">{currentTrend} <span className="text-[11px] text-muted-2 font-semibold">{weightUnit}</span></div>
         </div>
         <div className="glass-inset p-3">
-          <div className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Change</div>
+          <div className="text-[11px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Change</div>
           <div className="font-technical text-[15px] font-extrabold text-secondary flex items-center gap-0.5">
             {weightChange !== 0 && (weightChange > 0
               ? <ArrowUpRight className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
@@ -80,7 +80,7 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
             <span>{weightChange > 0 ? '+' : ''}{weightChange.toFixed(1)}</span>
             <span className="text-[11px] text-muted-2 font-semibold">{weightUnit}</span>
           </div>
-          <div className="font-technical text-[10px] text-muted-2 font-semibold mt-0.5">({percentChange > 0 ? '+' : ''}{percentChange}%)</div>
+          <div className="font-technical text-[11px] text-muted-2 font-semibold mt-0.5">({percentChange > 0 ? '+' : ''}{percentChange}%)</div>
         </div>
       </div>
 
@@ -130,7 +130,7 @@ export default function WeightProgressChart({ data, weightUnit = 'lbs', classNam
         </ResponsiveContainer>
       </div>
 
-      <div className="flex items-center justify-center gap-6 mt-3 text-[9.5px] font-bold text-muted-2">
+      <div className="flex items-center justify-center gap-6 mt-3 text-[11px] font-bold text-muted-2">
         <span className="flex items-center gap-1.5">
           <span className="w-3.5 h-[2px] rounded-full bg-ink-muted" />
           Raw

@@ -67,7 +67,7 @@ export default function NotificationSettings() {
         <div className="mt-3 text-xs text-ink-muted border-t border-charcoal-border pt-3">
           <p className="font-mono">VITE_VAPID_PUBLIC_KEY</p>
           <p className="mt-1">not set. Generate VAPID keys and add to your <code className="bg-charcoal-elevated px-1 rounded">.env</code> file to enable push.</p>
-          <p className="mt-1 font-mono text-[10px]">npx web-push generate-vapid-keys</p>
+          <p className="mt-1 font-mono text-[11px]">npx web-push generate-vapid-keys</p>
         </div>
       )}
     </div>

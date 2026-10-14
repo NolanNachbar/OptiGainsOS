@@ -84,7 +84,7 @@ function ExerciseRow({ ex }) {
       </div>
       {load > 0 && (
         <span className="pill-value text-ink">
-          {load}<small className="text-[9.5px] font-semibold text-muted-2"> lb</small>
+          {load}<small className="text-[11px] font-semibold text-muted-2"> lb</small>
         </span>
       )}
     </div>
@@ -557,7 +557,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
             </div>
             <div className="flex flex-wrap gap-x-4 gap-y-1">
               {calItems.map(([name, v]) => (
-                <span key={name} className="text-[13px] font-bold text-ink">
+                <span key={name} className="text-[14px] font-bold text-ink">
                   {titleCase(name)} <span className="font-technical text-[11px] font-semibold text-muted-2">{v.sets}×{v.reps_each}</span>
                 </span>
               ))}
@@ -693,7 +693,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
                     rows={2}
                     autoFocus
                     placeholder="Anything to flag before you train? sleep, soreness, energy…"
-                    className="w-full glass-inset rise-in px-3 py-2 mt-1 text-[13px] text-ink placeholder:text-faint resize-none focus-visible:ring-1 focus-visible:ring-brand"
+                    className="w-full glass-inset rise-in px-3 py-2 mt-1 text-[14px] text-ink placeholder:text-faint resize-none focus-visible:ring-1 focus-visible:ring-brand"
                   />
                 )}
               </div>

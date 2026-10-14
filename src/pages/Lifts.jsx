@@ -48,7 +48,7 @@ export default function Lifts() {
       style={{ paddingBottom: "calc(var(--floating-chrome-bottom) + 64px)" }}
     >
       <div className="hidden lg:block mb-5">
-        <h1 className="type-display text-[26px]">Lifts</h1>
+        <h1 className="type-display text-[28px]">Lifts</h1>
       </div>
 
       {summaries.length === 0 ? (
@@ -71,20 +71,20 @@ export default function Lifts() {
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-extrabold text-ink truncate">{s.name}</p>
-                    <p className="text-[10px] font-semibold text-muted-2 mt-0.5">
+                    <p className="text-[11px] font-semibold text-muted-2 mt-0.5">
                       {format(parseISO(s.lastDate), "MMM d")} · {s.count} session{s.count === 1 ? "" : "s"}
                     </p>
                   </div>
                   <div className="text-right shrink-0">
                     {s.currentE1rm != null ? (
                       <p className="font-technical text-xs font-bold text-ink tabular-nums">
-                        {s.currentE1rm} <span className="text-[10px] font-semibold text-muted-2">{weightUnit}</span>
+                        {s.currentE1rm} <span className="text-[11px] font-semibold text-muted-2">{weightUnit}</span>
                       </p>
                     ) : s.bestWeight != null ? (
                       // Never trained ≤12 reps (calf raises and most isolation
                       // work): no honest e1RM to show, so show the actual PR instead.
                       <p className="font-technical text-xs font-bold text-ink tabular-nums">
-                        {s.bestWeight}<span className="text-[10px] font-semibold text-muted-2">{weightUnit}</span>
+                        {s.bestWeight}<span className="text-[11px] font-semibold text-muted-2">{weightUnit}</span>
                         {" × "}{s.bestReps}
                       </p>
                     ) : s.bodyweightReps != null ? (
@@ -97,7 +97,7 @@ export default function Lifts() {
                       <p className="font-technical text-xs font-bold text-faint tabular-nums">—</p>
                     )}
                     <p
-                      className={`font-technical text-[10px] font-bold tabular-nums mt-0.5 ${
+                      className={`font-technical text-[11px] font-bold tabular-nums mt-0.5 ${
                         s.change4w == null
                           ? "text-faint"
                           : s.change4w > 0
@@ -131,7 +131,7 @@ export default function Lifts() {
                     )}
                     {prTable.length > 0 && (
                       <div className="px-1 pt-3">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted-2 mb-1">
+                        <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted-2 mb-1">
                           Records by reps
                         </p>
                         <table className="w-full text-[11px] font-technical tabular-nums">

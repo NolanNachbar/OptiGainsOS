@@ -227,15 +227,15 @@ export default function TrainingLoadTab({ cardioSessions, workoutLogs, profile, 
               <div className="text-center py-6">
                 <div className="flex items-center justify-center gap-6">
                   <div>
-                    <div className="text-[9.5px] uppercase tracking-[0.08em] text-muted-2 font-bold">Fitness</div>
+                    <div className="text-[11px] uppercase tracking-[0.08em] text-muted-2 font-bold">Fitness</div>
                     <div className="text-xl font-technical font-extrabold text-teal">{Math.round(banister.fitness)}</div>
                   </div>
                   <div>
-                    <div className="text-[9.5px] uppercase tracking-[0.08em] text-muted-2 font-bold">Fatigue</div>
+                    <div className="text-[11px] uppercase tracking-[0.08em] text-muted-2 font-bold">Fatigue</div>
                     <div className="text-xl font-technical font-extrabold text-violet">{Math.round(banister.fatigue)}</div>
                   </div>
                   <div>
-                    <div className="text-[9.5px] uppercase tracking-[0.08em] text-muted-2 font-bold">Form</div>
+                    <div className="text-[11px] uppercase tracking-[0.08em] text-muted-2 font-bold">Form</div>
                     <div className={`text-xl font-technical font-extrabold ${banister.tsb_banister >= 0 ? "text-ok" : "text-bad"}`}>
                       {banister.tsb_banister >= 0 ? "+" : ""}{Number(banister.tsb_banister).toFixed(1)}
                     </div>
@@ -260,7 +260,7 @@ export default function TrainingLoadTab({ cardioSessions, workoutLogs, profile, 
           ) : (
             <>
               <CTLLineChart data={ctlData} />
-              <div className="flex items-center justify-center gap-6 mt-3 text-[9.5px] text-muted-2 font-bold">
+              <div className="flex items-center justify-center gap-6 mt-3 text-[11px] text-muted-2 font-bold">
                 <span className="flex items-center gap-1.5">
                   <svg width="14" height="3" viewBox="0 0 14 3"><line x1="0" y1="1.5" x2="14" y2="1.5" stroke="var(--hue-teal)" strokeWidth="2.5" strokeLinecap="round" /></svg>
                   Fitness (CTL)
@@ -274,7 +274,7 @@ export default function TrainingLoadTab({ cardioSessions, workoutLogs, profile, 
                   Form (TSB)
                 </span>
               </div>
-              <div className="mt-4 grid grid-cols-3 gap-3 text-[10px] border-t hairline pt-4 text-center">
+              <div className="mt-4 grid grid-cols-3 gap-3 text-[11px] border-t hairline pt-4 text-center">
                 <div>
                   <div className="w-1.5 h-1.5 rounded-full bg-teal mx-auto mb-1" />
                   <div className="font-bold text-muted-2">Fitness (CTL)</div>

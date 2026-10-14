@@ -515,7 +515,7 @@ export default function Profile({ hideHeader }) {
                 <h1 className="type-display text-2xl text-ink">
                   {NAV.find(n => n.id === resolvedSection)?.label}
                 </h1>
-                <p className="text-[13px] text-ink-muted mt-0.5">
+                <p className="text-[14px] text-ink-muted mt-0.5">
                   {resolvedSection === 'identity' ? 'Your account details' :
                   resolvedSection === 'body'     ? 'Body stats, nutrition goals, and app preferences' :
                   resolvedSection === 'training' ? 'What the adaptive engine optimizes for' :

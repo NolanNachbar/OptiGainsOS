@@ -296,7 +296,7 @@ export default function CreateWorkout() {
                   onChange={(e) => setWorkout({ ...workout, title: e.target.value })}
                   placeholder="e.g., Upper Body Strength"
                   required
-                  className="mt-1 h-auto py-2.5 text-[20px] font-extrabold tracking-[-0.02em]"
+                  className="mt-1 h-auto py-2.5 text-[17px] font-extrabold tracking-[-0.02em]"
                 />
               </div>
 

@@ -45,8 +45,8 @@ export default function Insights() {
           >
             <Brain className="w-4 h-4 text-teal shrink-0" aria-hidden="true" />
             <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-bold text-ink leading-tight">Mind &amp; Learning</p>
-              <p className="text-[11.5px] font-semibold text-muted-2">Reading, study notes &amp; skills</p>
+              <p className="text-[14px] font-bold text-ink leading-tight">Mind &amp; Learning</p>
+              <p className="text-[11px] font-semibold text-muted-2">Reading, study notes &amp; skills</p>
             </div>
             <ChevronRight className="w-4 h-4 text-faint shrink-0" aria-hidden="true" />
           </Link>

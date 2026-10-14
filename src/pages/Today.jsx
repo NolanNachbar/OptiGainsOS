@@ -133,13 +133,13 @@ function WeighInRow({ today, weightUnit }) {
     <div className="mt-2">
       {already ? (
         <div className="flex items-center justify-between gap-3">
-          <span className="text-[13px] font-semibold text-muted-2">Logged today</span>
+          <span className="text-[14px] font-semibold text-muted-2">Logged today</span>
           <Check className="w-4 h-4 text-leaf shrink-0" />
         </div>
       ) : (
         <form onSubmit={submit}>
           <div className="flex items-center gap-3">
-            <span className="text-[13px] font-semibold text-muted-2 shrink-0">Weigh in</span>
+            <span className="text-[14px] font-semibold text-muted-2 shrink-0">Weigh in</span>
             <input
               type="text"
               inputMode="decimal"
@@ -159,7 +159,7 @@ function WeighInRow({ today, weightUnit }) {
             <button
               type="submit"
               disabled={logWeight.isPending || !typed.trim()}
-              className="cta-action shrink-0 px-4 min-h-[44px] text-[13px]"
+              className="cta-action shrink-0 px-4 min-h-[44px] text-[14px]"
             >
               {logWeight.isPending ? "…" : "Log"}
             </button>
@@ -681,8 +681,8 @@ export default function Today() {
       {/* Desktop-only page header (mobile header already names the screen) */}
       <div className="hidden lg:flex items-baseline justify-between mb-5 rise-in">
         <div className="flex items-baseline gap-3.5">
-          <h1 className="type-display text-[26px]">Today</h1>
-          <span className="text-[13px] font-semibold text-muted-2">{format(nowInTz(profile?.timezone), "EEEE, MMMM d")}</span>
+          <h1 className="type-display text-[28px]">Today</h1>
+          <span className="text-[14px] font-semibold text-muted-2">{format(nowInTz(profile?.timezone), "EEEE, MMMM d")}</span>
         </div>
       </div>
 
@@ -717,7 +717,7 @@ export default function Today() {
             toggle, never a ring), not on its own line above the grid. */}
         <Module>
           <div className="flex items-center justify-between gap-2 mb-2">
-            <span className="text-[13px] font-semibold text-muted-2 truncate">Nutrition</span>
+            <span className="text-[14px] font-semibold text-muted-2 truncate">Nutrition</span>
             <div className="flex items-center gap-2 shrink-0">
               <SegmentedControl
                 options={[{ value: "remaining", label: "Remaining" }, { value: "consumed", label: "Consumed" }]}
@@ -726,7 +726,7 @@ export default function Today() {
                 size="sm"
                 className="inline-flex [&_button]:min-h-[44px] [&_button]:px-3"
               />
-              <Link to="/fuel" className="flex items-center gap-0.5 text-[13px] font-semibold text-muted-2 min-h-[44px] -my-3">
+              <Link to="/fuel" className="flex items-center gap-0.5 text-[14px] font-semibold text-muted-2 min-h-[44px] -my-3">
                 Detail<ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -824,7 +824,7 @@ export default function Today() {
                   className="flex items-center justify-between gap-3 py-1"
                 >
                   <div className="min-w-0">
-                    <div className="text-[13px] font-semibold text-ink truncate">{session.name}</div>
+                    <div className="text-[14px] font-semibold text-ink truncate">{session.name}</div>
                     <div className="text-[11px] font-semibold text-muted-2 tabular-nums">
                       Started {format(new Date(session.start_time || session.created_at), "MMM d")}
                     </div>
@@ -878,7 +878,7 @@ export default function Today() {
             <span className="type-display text-2xl font-semibold tabular-nums">
               {latestWeight ? fmt(latestWeight.trendWeight, 1) : "—"}
             </span>
-            <span className="text-[13px] font-semibold text-muted">{weightUnit}</span>
+            <span className="text-[14px] font-semibold text-muted">{weightUnit}</span>
             {isWeightStale && (
               <span className="ml-auto text-[11px] font-semibold text-muted-2">
                 as of {format(parseISO(latestWeight.recorded_date), "MMM d")}
@@ -891,7 +891,7 @@ export default function Today() {
               "log a few weigh-ins" hint instead. */}
           {latestWeight && trend.value !== "—" ? (
             <p
-              className="text-[13px] font-semibold mt-1"
+              className="text-[14px] font-semibold mt-1"
               style={{ color: trendAligned ? "var(--hue-green)" : "var(--text-secondary)" }}
             >
               {`${trend.value} ${weightUnit}/wk`}{" "}
@@ -921,7 +921,7 @@ export default function Today() {
         {!weeklyRingsUnknown && weeklyTarget > 0 && (
           <Module label="Weekly training">
             <div className="flex items-center justify-between gap-3 py-0.5">
-              <span className="text-[13px] font-semibold text-muted-2">This week</span>
+              <span className="text-[14px] font-semibold text-muted-2">This week</span>
               <MiniRing
                 label="Workouts"
                 value={`${weeklyCompleted}/${weeklyTarget}`}
@@ -940,7 +940,7 @@ export default function Today() {
           {(prescriptionLoading || stateLoading) ? (
             <div className="pulse-loop h-5 bg-track rounded-lg w-2/3" />
           ) : (
-            <p className="flex items-baseline gap-2 text-[13px] font-semibold">
+            <p className="flex items-baseline gap-2 text-[14px] font-semibold">
               <span className="type-display text-lg tabular-nums leading-none text-ink">
                 {score == null ? "—" : Math.round(score)}
               </span>
@@ -1081,8 +1081,8 @@ export default function Today() {
             className="glass-inset tile-interactive flex items-center justify-center gap-2.5 min-h-[64px]"
           >
             <Apple className="w-[18px] h-[18px] text-muted-2" />
-            <span className="text-[13px] font-extrabold text-ink leading-none">Log food</span>
-            <span className="text-[10px] font-semibold text-secondary leading-none">Today&apos;s meals</span>
+            <span className="text-[14px] font-extrabold text-ink leading-none">Log food</span>
+            <span className="text-[11px] font-semibold text-secondary leading-none">Today&apos;s meals</span>
           </Link>
         </div>
       </div>

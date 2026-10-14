@@ -513,8 +513,8 @@ export default function WeeklySchedule() {
               <span className="grid place-items-center w-11 h-11 rounded-full glass-inset">
                 <Moon className="w-5 h-5 text-faint" />
               </span>
-              <h2 className="type-display text-[20px]">Rest Day</h2>
-              <p className="text-[13px] font-semibold text-muted-2 max-w-[15rem]">
+              <h2 className="type-display text-[17px]">Rest Day</h2>
+              <p className="text-[14px] font-semibold text-muted-2 max-w-[15rem]">
                 {isToday
                   ? "No session on the plan today. Log how recovery is going so tomorrow's targets stay dialed in."
                   : "No session scheduled. A planned rest day is part of the program."}
@@ -563,9 +563,9 @@ export default function WeeklySchedule() {
                 echo so the cards below don't restate it (date in one band). */}
             <div className="glass px-4 pt-4 pb-4 rise-in-2">
               <p className="section-label !text-muted-2 mb-1">{heroEyebrow}</p>
-              <h2 className="type-display text-[19px] leading-tight mb-3">{heroTitle}</h2>
+              <h2 className="type-display text-[17px] leading-tight mb-3">{heroTitle}</h2>
               <div className="flex items-baseline gap-2">
-                <span className="hero-metric text-ink text-[56px] tabular-nums">{heroCount}</span>
+                <span className="hero-metric text-ink text-[44px] tabular-nums">{heroCount}</span>
                 <span className="font-technical text-sm font-bold text-muted-2 mb-1">
                   {heroCount === 1 ? "exercise" : "exercises"}
                 </span>

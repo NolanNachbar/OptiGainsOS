@@ -162,7 +162,7 @@ export default function TodayActions({ today, briefActions = [], isError = false
   return (
     <div className="glass glass-interactive px-4 pt-3 pb-3">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[13px] font-semibold text-muted-2">
+        <span className="text-[14px] font-semibold text-muted-2">
           {total > 0 ? `To do · ${total - completed} open` : "To do"}
         </span>
         <Button

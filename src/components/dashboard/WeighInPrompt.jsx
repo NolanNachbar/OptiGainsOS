@@ -69,7 +69,7 @@ export default function WeighInPrompt({
   if (isSheet && todayWeight?.weight != null) {
     return (
       <div className="glass px-4 sm:px-5 py-4">
-        <p className="text-[13px] font-semibold text-secondary">
+        <p className="text-[14px] font-semibold text-secondary">
           Already logged today: <span className="tabular-nums text-ink">{todayWeight.weight} {unit}</span>
         </p>
         <Button
@@ -138,10 +138,10 @@ export default function WeighInPrompt({
           <Scale className="h-[18px] w-[18px]" aria-hidden="true" />
         </div>
         <div className="min-w-0 flex-1">
-          <h3 id="weigh-in-prompt-title" className="type-display text-[17px] sm:text-[18px]">
+          <h3 id="weigh-in-prompt-title" className="type-display text-[17px] sm:text-[17px]">
             Step on the scale
           </h3>
-          <p className={`mt-1 text-[12.5px] font-semibold ${isStale ? "text-warn" : "text-muted-2"}`}>
+          <p className={`mt-1 text-[12px] font-semibold ${isStale ? "text-warn" : "text-muted-2"}`}>
             {staleLine}
           </p>
         </div>
@@ -183,7 +183,7 @@ export default function WeighInPrompt({
             onFocus={(e) => e.target.select()}
             aria-label={`Bodyweight in ${unit}`}
             aria-invalid={!!error}
-            className="hero-metric w-full bg-transparent px-4 py-3 text-[34px] text-ink outline-none placeholder:text-ink-faint placeholder:font-semibold"
+            className="hero-metric w-full bg-transparent px-4 py-3 text-[28px] text-ink outline-none placeholder:text-ink-faint placeholder:font-semibold"
           />
           <span className="pointer-events-none pr-4 text-[15px] font-bold text-muted-2" aria-hidden="true">
             {unit}

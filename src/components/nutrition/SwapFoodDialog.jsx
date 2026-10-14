@@ -85,8 +85,8 @@ export default function SwapFoodDialog({ open, onOpenChange, entry, customFoods 
               }`}
             >
               <div className="min-w-0 flex-1">
-                <div className="text-[13px] font-bold tracking-tight truncate text-ink">{o.name}</div>
-                <div className="text-[10px] font-technical font-semibold text-ink-muted">{o.sub}</div>
+                <div className="text-[14px] font-bold tracking-tight truncate text-ink">{o.name}</div>
+                <div className="text-[11px] font-technical font-semibold text-ink-muted">{o.sub}</div>
               </div>
               {o.ready && <Check className="w-3.5 h-3.5 shrink-0 text-ink-faint" />}
             </button>

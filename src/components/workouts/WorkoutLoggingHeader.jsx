@@ -175,7 +175,7 @@ export default function WorkoutLoggingHeader({
       <AlertTriangle className="w-3.5 h-3.5 text-warn flex-shrink-0" />
       <span className="flex flex-col leading-tight min-w-0">
         <span className="text-[11px] font-bold text-warn">Not synced</span>
-        <span className="text-[10px] text-ink-muted truncate">Saved on this device. Tap to retry</span>
+        <span className="text-[11px] text-ink-muted truncate">Saved on this device. Tap to retry</span>
       </span>
     </button>
   ) : null;

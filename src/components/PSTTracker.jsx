@@ -139,7 +139,7 @@ function TimeField({ unit, value, onChange, disabled, max, placeholder = "0" }) 
         </span>
       </div>
       {clamped && cap != null && (
-        <p className="mt-1 text-[10px] font-semibold text-muted-2 tabular-nums">Max {cap}</p>
+        <p className="mt-1 text-[11px] font-semibold text-muted-2 tabular-nums">Max {cap}</p>
       )}
     </div>
   );
@@ -222,7 +222,7 @@ export default function PSTTracker() {
           </Button>
         </div>
         {latest?.test_date && (
-          <p className="font-technical text-[10px] font-semibold text-muted-2 mt-1">Last tested: {format(parseISO(latest.test_date), "MMM d, yyyy")}</p>
+          <p className="font-technical text-[11px] font-semibold text-muted-2 mt-1">Last tested: {format(parseISO(latest.test_date), "MMM d, yyyy")}</p>
         )}
       </CardHeader>
       <CardContent className="px-5 pb-4">
@@ -246,7 +246,7 @@ export default function PSTTracker() {
             {prev && (
               <div className="mt-3 pt-3 border-t hairline">
                 <p className="section-label mb-2">vs previous ({format(parseISO(prev.test_date), "MMM d, yyyy")})</p>
-                <div className="grid grid-cols-5 gap-1 text-center text-[10px]">
+                <div className="grid grid-cols-5 gap-1 text-center text-[11px]">
                   {[
                     { label: "Swim", cur: latest.swim_seconds, prv: prev.swim_seconds, lower: true },
                     { label: "Push", cur: latest.pushups,      prv: prev.pushups,      lower: false },

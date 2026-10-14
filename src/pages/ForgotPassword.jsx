@@ -86,7 +86,7 @@ export default function ForgotPassword() {
                   aria-describedby={errorMsg ? 'email-error' : undefined}
                 />
               </div>
-              {errorMsg && <p id="email-error" role="alert" className="text-ink text-[13px] mt-1.5">{errorMsg}</p>}
+              {errorMsg && <p id="email-error" role="alert" className="text-ink text-[14px] mt-1.5">{errorMsg}</p>}
             </div>
 
             <Button
