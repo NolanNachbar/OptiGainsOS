@@ -1059,7 +1059,7 @@ export default function ExerciseCard({
                 onClick={() => setMarkMenuIndex((cur) => (cur === setIndex ? null : setIndex))}
                 aria-expanded={markMenuIndex === setIndex}
                 aria-label={`Set ${set.set_number}${currentMark(set) ? `, ${SET_MARK_LABEL[currentMark(set)]}` : ''}. Change set type`}
-                className={`font-technical text-[13px] font-extrabold pl-0.5 text-left touch-manipulation min-h-[44px] -my-3.5 ${
+                className={`relative font-technical text-[13px] font-extrabold pl-0.5 text-left touch-manipulation min-h-[44px] -my-3.5 after:content-[''] after:absolute after:inset-y-0 after:-left-2 after:right-0 ${
                   baseType(set) === 'daily_min' ? 'text-info' : currentMark(set) ? 'text-brand' : (set.completed || isActive) ? 'text-ink' : 'text-ink-faint'
                 }`}
               >
@@ -1074,9 +1074,9 @@ export default function ExerciseCard({
                   onUpdateSet(exerciseIndex, setIndex, 'reps', prevSet.reps);
                 }}
                 aria-label={prevSet ? `Previous set ${prevSet.weight} by ${prevSet.reps}, tap to use` : 'No previous set'}
-                className="font-technical text-[11px] font-semibold text-ink-faint whitespace-nowrap pr-1 text-left tabular-nums disabled:cursor-default enabled:active:text-brand min-h-[44px] -my-3.5 inline-flex items-center"
+                className="font-technical text-[11px] font-semibold text-ink-faint pr-1 text-left tabular-nums disabled:cursor-default enabled:active:text-brand min-h-[44px] min-w-0 max-w-full overflow-hidden -my-3.5 flex items-center"
               >
-                {prevSet ? `${prevSet.weight}×${prevSet.reps}` : '—'}
+                <span className="min-w-0 truncate whitespace-nowrap">{prevSet ? `${prevSet.weight}×${prevSet.reps}` : '—'}</span>
               </button>
               <div className="relative min-w-0">
                 <input
