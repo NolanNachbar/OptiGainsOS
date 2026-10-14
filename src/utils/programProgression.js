@@ -1,3 +1,4 @@
+import { baseType } from '@/utils/setTypes';
 import { lookupExercise } from '@/ml/exerciseDB';
 import { format, parseISO, startOfWeek } from 'date-fns';
 
@@ -138,7 +139,13 @@ export function updateProgressionState(currentState, exercise, completedSets) {
   const { name, rir_target = 2, rep_target } = exercise;
 
   const workingSets = completedSets.filter(
-    (s) => s.set_type === 'working' || s.set_type === 'daily_max' || s.set_type === 'failure'
+    // Eligibility follows the set's structural (base) type, so a top_set /
+    // backoff / daily_min marked "failure" does not newly feed progression,
+    // and a warm-up or drop mark removes a working set from it. Unmarked
+    // sets behave exactly as before.
+    (s) => (s.set_type === 'warmup' || s.set_type === 'drop')
+      ? false
+      : (baseType(s) === 'working' || baseType(s) === 'daily_max')
   );
 
   if (workingSets.length === 0) return state;
