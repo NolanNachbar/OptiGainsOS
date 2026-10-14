@@ -72,7 +72,10 @@ Deno.serve(async (req) => {
         }],
       }),
     });
-    if (!resp.ok) return json({ error: `Groq error ${resp.status}: ${(await resp.text()).slice(0, 300)}` }, 502);
+    if (!resp.ok) {
+      console.error(`Groq error ${resp.status}: ${(await resp.text()).slice(0, 300)}`);
+      return json({ error: "Label reading is unavailable right now. Enter the macros manually." }, 502);
+    }
     const d = await resp.json() as { choices?: Array<{ message?: { content?: string } }> };
     raw = d.choices?.[0]?.message?.content?.trim() ?? "";
     if (!raw) return json({ error: "empty response from model" }, 502);

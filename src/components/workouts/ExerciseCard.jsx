@@ -760,7 +760,7 @@ export default function ExerciseCard({
               <div
                 ref={menuContentRef}
                 style={menuStyle}
-                className="fixed glass-elevated rounded-xl overflow-y-auto max-h-[min(60vh,320px)] overscroll-contain py-1 z-[10200] min-w-[160px] text-ink"
+                className="fixed glass-elevated rounded-xl overflow-y-auto max-h-[min(75vh,520px)] overscroll-contain py-1 z-[10200] min-w-[160px] text-ink"
               >
                 {/* Like/Unlike moved here from the header row (Ledger rebuild) —
                     it steers future programming, same behavior as before. */}

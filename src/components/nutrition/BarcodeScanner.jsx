@@ -132,10 +132,15 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound,
     // The set-state-in-effect heuristic can't see that this is camera lifecycle,
     // not derived state, so it's suppressed for this call.
     // The Add Food keyboard would otherwise stay open behind the scanner.
-    document.activeElement?.blur?.();
+    // Runs again on the next frames: the Add Food search input autofocuses
+    // after the dialog mounts, which re-opens the keyboard behind us.
+    const blur = () => document.activeElement?.blur?.();
+    blur();
+    const r1 = requestAnimationFrame(blur);
+    const t1 = setTimeout(blur, 350);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     startScanning();
-    return stopCamera;
+    return () => { cancelAnimationFrame(r1); clearTimeout(t1); stopCamera(); };
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!open) return null;

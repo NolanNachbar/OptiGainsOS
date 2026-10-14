@@ -414,12 +414,17 @@ export default function FoodTracker() {
         const hasEnergy = (f) => (Number(f.calories) || 0) > 0;
         // Exact / prefix / whole-word matches first, then the rest in USDA order.
         const q = searchQuery.toLowerCase().trim();
+        // Processed/derived variants ("banana powder", "breaded tenders") match
+        // the query text but are rarely what's meant; raw/plain items lead.
+        const PROCESSED = /\b(dehydrated|powder|breaded|battered|canned|tenders|nuggets|dried|freeze|mix|flavored|imitation|substitute|babyfood|baby food|infant|frozen|fried|pickled)\b/;
         const rank = (f) => {
           const d = (f.description || "").toLowerCase();
-          if (d === q) return 0;
-          if (d.startsWith(q + ",") || d.startsWith(q + " ")) return 1;
-          if (d.startsWith(q)) return 2;
-          return 3;
+          const penalty = PROCESSED.test(d) ? 10 : 0;
+          const rawBonus = /\braw\b/.test(d) ? -0.5 : 0;
+          if (d === q) return 0 + penalty;
+          if (d.startsWith(q + ",") || d.startsWith(q + " ")) return 1 + penalty + rawBonus;
+          if (d.startsWith(q)) return 2 + penalty + rawBonus;
+          return 3 + penalty + rawBonus;
         };
         const tidy = (list) => list.filter(hasEnergy)
           .map((f, i) => ({ f, i }))
@@ -2641,7 +2646,7 @@ const handleSaveMealTemplate = () => {
             resetForm();
           }
         }}>
-          <DialogContent sheetMinHeight="min-h-[85dvh]" className="max-w-lg flex flex-col p-0 overflow-hidden">
+          <DialogContent sheetMinHeight="min-h-[85dvh]" className="max-w-lg flex flex-col p-0 !overflow-hidden">
             <DialogHeader className="px-6 pt-6 pb-4 border-b border-charcoal-border shrink-0">
               <DialogTitle>{editingEntry ? "Edit Food Entry" : "Add Food Entry"}</DialogTitle>
               <DialogDescription>
@@ -2649,7 +2654,7 @@ const handleSaveMealTemplate = () => {
               </DialogDescription>
             </DialogHeader>
 
-              <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-4 space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-4 space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
                 {/* Quick-meal: describe or photograph a whole meal and split it
                     into items. Sits above search as the fast path for travel /
                     restaurants where weighing each item isn't possible. */}
@@ -3174,11 +3179,9 @@ const handleSaveMealTemplate = () => {
                         })()}
 
                         <p className="text-xs text-ink-muted">
-                          Edit base values,{' '}
                           {isUsdaFood
-                            ? `per ${newFood.serving_unit}`
-                            : (({ g: 'per 100g', ml: 'per 100ml', oz: 'per 1 oz', cup: 'per 1 cup', tbsp: 'per 1 tbsp', tsp: 'per 1 tsp', piece: 'per piece', serving: 'per serving' })[baseUnit] || 'per serving')}
-                          {isUsdaFood ? ' (total above scales with amount)' : ''}
+                            ? `The values below are the total for ${newFood.serving_amount} ${newFood.serving_unit} and rescale when you change the amount.`
+                            : `Edit base values, ${(({ g: 'per 100g', ml: 'per 100ml', oz: 'per 1 oz', cup: 'per 1 cup', tbsp: 'per 1 tbsp', tsp: 'per 1 tsp', piece: 'per piece', serving: 'per serving' })[baseUnit] || 'per serving')}`}
                         </p>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
