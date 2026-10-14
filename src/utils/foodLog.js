@@ -170,3 +170,22 @@ export async function fetchAllPages(fetchPage, pageSize = 1000) {
   }
   return all;
 }
+
+// ── CSV ────────────────────────────────────────────────────────────────────
+
+/**
+ * One CSV cell. Strings that a spreadsheet would run as a formula ("=", "+",
+ * "-", "@", tab, CR lead) get a leading apostrophe; real numbers (and numeric
+ * strings like "-5") are left alone. Quotes on comma, quote, CR or LF.
+ */
+export function csvCell(value) {
+  if (typeof value === "number") return Number.isFinite(value) ? String(value) : "";
+  let s = String(value ?? "");
+  if (/^[=+\-@\t\r]/.test(s) && !/^[+-]?\d+(\.\d+)?$/.test(s)) s = `'${s}`;
+  return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+/** Rows -> CSV text with a UTF-8 BOM so Excel reads non-ASCII food names right. */
+export function toCsv(rows) {
+  return "﻿" + rows.map((r) => r.map(csvCell).join(",")).join("\n");
+}

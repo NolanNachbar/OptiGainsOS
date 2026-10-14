@@ -4,19 +4,10 @@ import { Download, ChevronDown, ChevronUp } from "lucide-react";
 import { db, supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { buildFoodExportRows, fetchAllPages } from "@/utils/foodLog";
+import { buildFoodExportRows, fetchAllPages, toCsv } from "@/utils/foodLog";
 
 function downloadCSV(filename, rows) {
-  const csv = rows
-    .map((r) =>
-      r.map((cell) => {
-        const s = String(cell ?? "");
-        return s.includes(",") || s.includes('"') || s.includes("\n")
-          ? `"${s.replace(/"/g, '""')}"`
-          : s;
-      }).join(",")
-    )
-    .join("\n");
+  const csv = toCsv(rows);
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
