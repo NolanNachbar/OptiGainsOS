@@ -345,8 +345,8 @@ function StrengthSection({ data }) {
               <div className="h-1.5 bg-track rounded-full overflow-hidden mt-1.5">
                 {/* Teal data-hue fill encodes progress-to-target so the bar reads
                     as a measure, not decoration. Here teal is used as the
-                    data/positive hue; the single action color is teal
-                    (var(--color-brand) #19C8A6), reserved for actual controls and
+                    data/positive hue; the single action color is off-white
+                    (var(--color-brand) #ECEEF1), reserved for actual controls and
                     never spent on this readout. The fill width itself
                     differentiates each lift's ratio. Stall state stays on the
                     StallBadge, so no threshold tinting here. */}

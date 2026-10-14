@@ -8,7 +8,7 @@ const MAX_RUNTIME_ENTRIES = 60;
 const BASE = new URL(self.registration.scope).pathname;
 
 // App shell — cached on first install for offline support
-const APP_SHELL = [BASE, BASE + "index.html", BASE + "manifest.json", BASE + "optigains-icon.svg", BASE + "icon-192.png"];
+const APP_SHELL = [BASE, BASE + "index.html", BASE + "manifest.json", BASE + "optigains-icon.svg", BASE + "icon-192.png", BASE + "badge-mono.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -98,7 +98,7 @@ self.addEventListener("push", (event) => {
     self.registration.showNotification(title, {
       body,
       icon,
-      badge: BASE + "icon-192.png",
+      badge: BASE + "badge-mono.png",
       data: { url: target },
       vibrate: [200, 100, 200],
     })
@@ -156,7 +156,7 @@ self.addEventListener("message", (event) => {
           return self.registration.showNotification("Rest over", {
             body: "Time to get back to work.",
             icon: BASE + "icon-192.png",
-            badge: BASE + "icon-192.png",
+            badge: BASE + "badge-mono.png",
             data: { url: BASE + "dashboard" },
             vibrate: [200, 100, 200],
             tag: "optigains-rest",

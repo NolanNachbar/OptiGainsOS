@@ -112,11 +112,11 @@ function isNavActive(item, pathname) {
 }
 
 function Wordmark({ size = 17 }) {
-  // Ledger: no brand hue. The wordmark reads as one neutral ink voice instead
-  // of a teal-accented second half (that accent no longer exists).
+  // Ledger: no brand hue. The name is typed "OptiGains" (never shouted); the
+  // wordmark is one neutral ink voice at display weight.
   return (
-    <span className="type-display select-none whitespace-nowrap" style={{ fontSize: size }}>
-      OPTIGAINS
+    <span className="type-display select-none whitespace-nowrap" style={{ fontSize: size, letterSpacing: '-0.03em' }}>
+      OptiGains
     </span>
   );
 }

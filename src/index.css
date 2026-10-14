@@ -746,7 +746,7 @@ svg.rbh path:hover, svg.rbh polygon:hover,
    easing, 8px rise entrance. richColors is OFF — Sonner's saturated success
    green / info blue / warning yellow would poach the biometric-only spectrum,
    so success/info read as restrained neutral glass and only error/destructive
-   borrows teal (--color-brand #19C8A6), the single action color. Tokens are theme-
+   borrows the action color (--color-brand #ECEEF1, off-white). Tokens are theme-
    aware (re-tune on html.light) so one rule covers both themes. */
 [data-sonner-toaster],
 [data-sonner-toast] {

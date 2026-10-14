@@ -1,12 +1,12 @@
 {
-  "name": "OptiGainsOS",
+  "name": "OptiGains",
   "short_name": "OptiGains",
-  "description": "Your personal human performance operating system.",
+  "description": "A training and nutrition engine that shows its working.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#0A0D12",
-  "theme_color": "#0A0D12",
+  "background_color": "#0B0C0E",
+  "theme_color": "#0B0C0E",
   "orientation": "portrait",
   "icons": [
     {

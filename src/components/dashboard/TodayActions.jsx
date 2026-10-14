@@ -8,7 +8,7 @@ import { Plus, CheckCircle2, Circle, Bot, X } from "lucide-react";
 import { getTodayString } from "@/utils/dateUtils";
 import { toast } from "sonner";
 
-// Passive AI-source glyph hues. Teal (#19C8A6) is THE action color and is
+// Passive AI-source glyph hues. Off-white (#ECEEF1) is THE action color and is
 // barred here (a passive datum glyph must never wear it). Each domain maps to a
 // non-action data hue; text-faint is the fallback for unknown domains.
 const DOMAIN_COLORS = {

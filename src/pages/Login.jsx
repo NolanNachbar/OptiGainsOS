@@ -36,7 +36,7 @@ export function AuthHeader({ subtitle }) {
       >
         O
       </div>
-      <h1 className="type-display text-[24px] sm:text-[28px] whitespace-nowrap text-ink mt-4">OPTIGAINS</h1>
+      <h1 className="type-display text-[24px] sm:text-[28px] whitespace-nowrap text-ink mt-4">OptiGains</h1>
       {subtitle && (
         <p className="text-[12px] font-semibold mt-1.5 tracking-[0.04em] text-muted-2">
           {subtitle}
