@@ -56,6 +56,9 @@ import SwapFoodDialog from "@/components/nutrition/SwapFoodDialog";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
 import { Module, SegmentedControl } from "@/components/ui/system";
 
+// Label for an entry logged with calories only and no food name.
+const QUICK_ADD_NAME = "Quick add";
+
 const getDefaultMealType = () => {
   const hour = new Date().getHours();
   if (hour < 10) return "breakfast";
@@ -2993,12 +2996,12 @@ const handleSaveMealTemplate = () => {
                       {manualExpanded && (
                       <div className={editingEntry ? "flex flex-col gap-4 pt-1" : "space-y-4 pt-1"}>
                         <div>
-                          <Label htmlFor="food_name">Food Name *</Label>
+                          <Label htmlFor="food_name">Food Name{editingEntry ? " *" : ""}</Label>
                           <Input
                             id="food_name"
                             value={newFood.food_name}
                             onChange={(e) => setNewFood({ ...newFood, food_name: e.target.value })}
-                            placeholder="e.g., Chicken Breast"
+                            placeholder={editingEntry ? "e.g., Chicken Breast" : `e.g., Chicken Breast (blank logs as "${QUICK_ADD_NAME}")`}
                             className="mt-1"
                           />
                         </div>
@@ -3367,7 +3370,7 @@ const handleSaveMealTemplate = () => {
               {/* Fixed footer — only mounts once a food is selected/typed, so
                   the search-first sheet isn't capped by a dead submit bar while
                   browsing results. */}
-              {(editingEntry || newFood.food_name) && (
+              {(editingEntry || newFood.food_name || (manualExpanded && baseMacros.calories > 0)) && (
               <div className="px-6 pt-4 border-t bg-charcoal-surface shrink-0" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
                 <Button
                   onClick={() => {
@@ -3390,15 +3393,18 @@ const handleSaveMealTemplate = () => {
                       updateFoodMutation.mutate({ id: editingEntry.id, data: newFood });
                       return;
                     }
-                    addFoodMutation.mutate(newFood);
+                    // Calorie-only quick add: no name typed means "Quick add",
+                    // and a nameless entry is never worth a My Foods row.
+                    const isQuickAdd = !newFood.food_name.trim();
+                    addFoodMutation.mutate(isQuickAdd ? { ...newFood, food_name: QUICK_ADD_NAME } : newFood);
                     // Save manually-entered foods to custom_foods (fire-and-forget, per-serving values)
-                    if (newFood.food_name && baseMacros.calories > 0) {
+                    if (!isQuickAdd && baseMacros.calories > 0) {
                       saveCustomFoodMutation.mutate({ food: buildCustomFoodPayload(), activeFoodId });
                     }
                   }}
                   // Block a blank/zero amount: it would log a real entry with 0
                   // calories and serving_size coerced to 1 (a silent empty log).
-                  disabled={!newFood.food_name || (parseFloat(newFood.serving_amount) || 0) <= 0 || addFoodMutation.isPending || updateFoodMutation.isPending}
+                  disabled={(!newFood.food_name.trim() && (editingEntry || !(baseMacros.calories > 0))) || (parseFloat(newFood.serving_amount) || 0) <= 0 || addFoodMutation.isPending || updateFoodMutation.isPending}
                   variant="volt"
                   size="lg"
                   className="w-full"
