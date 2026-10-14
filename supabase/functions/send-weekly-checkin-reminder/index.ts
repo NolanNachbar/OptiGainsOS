@@ -19,8 +19,8 @@ Deno.serve(async () => {
     .select("endpoint, p256dh, auth");
 
   const payload = JSON.stringify({
-    title: "Weekly Check-In",
-    body: "Log your weigh-in and review your progress for this week!",
+    title: "Weekly check-in",
+    body: "Weigh-in and weekly review are due.",
     url: "/dashboard",
   });
 

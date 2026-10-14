@@ -42,11 +42,11 @@ Deno.serve(async () => {
   const preview = open.slice(0, 3).map((t) => t.title).join(", ");
 
   const body = count > 0
-    ? `${count} thing${count === 1 ? "" : "s"} today` + (preview ? `: ${preview}` : "") +
+    ? `${count} open task${count === 1 ? "" : "s"} today` + (preview ? `: ${preview}` : "") +
       (count > 3 ? "…" : "")
-    : "Your coaching brief is ready. Tap to review today.";
+    : "Brief for today is ready.";
 
-  const payload = JSON.stringify({ title: "Today's Brief ☀️", body, url: "/" });
+  const payload = JSON.stringify({ title: "Daily brief", body, url: "/" });
 
   const results = await Promise.allSettled(
     subs.map((sub) =>
