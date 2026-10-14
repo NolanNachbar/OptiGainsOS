@@ -1308,7 +1308,7 @@ const handleSaveMealTemplate = () => {
         action: {
           label: "Undo",
           onClick: () => {
-            const { id, created_at, ...rest } = entry;
+            const { id: _id, created_at: _createdAt, ...rest } = entry;
             db.entities.FoodEntry.create(rest)
               .then(() => invalidateFood(queryClient))
               .catch(() => toast.error("Couldn't restore the entry. Check your connection and add it again."));
@@ -2019,7 +2019,6 @@ const handleSaveMealTemplate = () => {
               const isToday = selectedDate === getTodayString();
               const calsConsumed = totals.calories;
               const calsGoal = targets.calories;
-              const calsRemaining = calsGoal - calsConsumed;
               const macroCols = [
                 { label: 'Kcal', consumed: calsConsumed, goal: calsGoal, hue: null, unit: '' },
                 { label: 'Protein', consumed: totals.protein, goal: targets.protein, hue: 'var(--hue-coral)', unit: 'g' },

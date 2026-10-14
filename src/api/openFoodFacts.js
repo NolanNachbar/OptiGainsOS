@@ -59,12 +59,12 @@ export async function lookupBarcode(barcode) {
         if (food) return food;
       }
     }
-  } catch {}
+  } catch { /* fall through to the next source */ }
 
   // Fall back to USDA branded foods database (better coverage for US products)
   try {
     return await lookupByGtin(barcode);
-  } catch {}
+  } catch { /* fall through to the next source */ }
 
   return null;
 }
