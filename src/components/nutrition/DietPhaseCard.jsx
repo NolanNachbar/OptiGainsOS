@@ -129,7 +129,7 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
       invalidateDietPhases(queryClient);
       invalidateProfile(queryClient);
       setShowNewPhase(false);
-      toast.success("New diet phase started!");
+      toast.success("New diet phase started.");
     },
     onError: (error) => {
       toast.error(error.message || "Failed to start phase");

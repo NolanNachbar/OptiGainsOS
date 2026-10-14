@@ -465,7 +465,7 @@ export default function ProgramBuilder() {
         { program: programData, workouts: enrichedWorkouts },
         {
           onSuccess: async (created) => {
-            toast.success("Program created!");
+            toast.success("Program created.");
             setCreatedProgram({ ...created, ...programData });
             setShowScheduleModal(true);
           },

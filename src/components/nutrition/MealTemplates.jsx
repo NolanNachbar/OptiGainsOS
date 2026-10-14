@@ -80,7 +80,7 @@ export default function MealTemplates({ compact = false }) {
     mutationFn: ({ id, ...data }) => db.entities.MealTemplate.update(id, data),
     onSuccess: () => {
       invalidateMealTemplates(queryClient);
-      toast.success("Template updated!");
+      toast.success("Template updated.");
       setShowEditDialog(false);
       setEditingTemplate(null);
     },
@@ -371,7 +371,7 @@ function ApplyTemplateDialog({ open, onOpenChange, template, userId }) {
     },
     onSuccess: () => {
       invalidateFood(queryClient);
-      toast.success(`Template "${template.name}" applied!`);
+      toast.success(`Template "${template.name}" applied.`);
       onOpenChange(false);
     },
     onError: () => toast.error("Failed to apply template"),
@@ -808,7 +808,7 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
     mutationFn: (data) => db.entities.MealTemplate.create(data),
     onSuccess: () => {
       invalidateMealTemplates(queryClient);
-      toast.success("Template saved!");
+      toast.success("Template saved.");
       onOpenChange(false);
       setName("");
     },

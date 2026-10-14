@@ -118,7 +118,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
     },
     onSuccess: (clonedWorkout) => {
       invalidateWorkouts(queryClient);
-      toast.success('Workout cloned successfully');
+      toast.success('Workout cloned.');
       navigate(`/create-workout?edit=${clonedWorkout.id}`);
     },
     onError: (error) => {
@@ -149,7 +149,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
       invalidateReactions(queryClient);
       invalidateSchedule(queryClient);
       invalidateWorkoutLogs(queryClient);
-      toast.success('Workout deleted successfully');
+      toast.success('Workout deleted.');
     },
     onError: (error) => {
       toast.error('Failed to delete workout');
@@ -217,7 +217,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
           created_by: user.id,
         });
         invalidateWorkouts(queryClient);
-        toast.success(`"${data.title}" imported to your library!`);
+        toast.success(`"${data.title}" imported to your library.`);
       } catch {
         toast.error("Could not read workout file.");
       }

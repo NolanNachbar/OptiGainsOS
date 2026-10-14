@@ -473,7 +473,7 @@ export default function QuickWorkout() {
         navigate("/dashboard");
         return;
       }
-      toast.success("Workout logged successfully!");
+      toast.success("Workout logged.");
       navigate("/dashboard");
     },
     onError: (error) => {

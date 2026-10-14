@@ -120,7 +120,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
     onSuccess: () => {
       invalidateProfile(queryClient);
       if (weight) invalidateBodyWeight(queryClient);
-      toast.success("Stats saved and goals calculated!");
+      toast.success("Stats saved. Nutrition targets recalculated.");
       onOpenChange(false);
     },
     onError: () => {

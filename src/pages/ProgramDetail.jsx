@@ -208,7 +208,7 @@ export default function ProgramDetail() {
     deleteEnrollmentMutation.mutate(enrollment.id, {
       onSuccess: () => {
         setShowRestartDialog(false);
-        toast.success("Enrollment canceled. You can re-enroll anytime!");
+        toast.success("Enrollment canceled. You can re-enroll at any time.");
       },
       onError: () => {
         setShowRestartDialog(false);

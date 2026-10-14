@@ -236,11 +236,11 @@ export default function CreateWorkout() {
       if (editId) {
         await db.entities.Workout.update(editId, workoutData);
         invalidateWorkouts(queryClient);
-        toast.success("Workout updated successfully");
+        toast.success("Workout updated.");
       } else {
         await db.entities.Workout.create({ ...workoutData, created_by: user.id });
         invalidateWorkouts(queryClient);
-        toast.success("Workout created successfully");
+        toast.success("Workout created.");
       }
       if (overrideProgramWorkoutId) {
         const rows = await db.entities.ProgramWorkout.filter({ id: overrideProgramWorkoutId });

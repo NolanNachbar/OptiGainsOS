@@ -569,7 +569,7 @@ export default function FoodTracker() {
     },
     onSuccess: () => {
       invalidateProfile(queryClient);
-      toast.success("Nutrition goals updated!");
+      toast.success("Nutrition targets updated.");
     },
     onError: () => {
       toast.error("Failed to update goals");
@@ -1256,7 +1256,7 @@ const handleSaveMealTemplate = () => {
         setShowAddDialog(false);
         resetForm();
       }
-      toastLogged("Food logged successfully!", created?.id ? [created.id] : []);
+      toastLogged("Food logged.", created?.id ? [created.id] : []);
     },
     onError: () => {
       toast.error("Failed to log food");
@@ -1330,7 +1330,7 @@ const handleSaveMealTemplate = () => {
     },
     onSuccess: () => {
       invalidateFood(queryClient);
-      toast.success("Logged ✓");
+      toast.success("Logged.");
     },
     onError: () => toast.error("Failed to log"),
   });
@@ -1355,7 +1355,7 @@ const handleSaveMealTemplate = () => {
       invalidateFood(queryClient);
       setShowAddDialog(false);
       resetForm();
-      toast.success("Food entry updated!");
+      toast.success("Food entry updated.");
     },
     onError: () => {
       toast.error("Failed to update food entry");

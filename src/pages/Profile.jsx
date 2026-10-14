@@ -280,7 +280,7 @@ export default function Profile({ hideHeader }) {
       invalidateProfile(queryClient);
       queryClient.invalidateQueries({ queryKey: ['athlete-state-nutrition'] });
       if (weightToLog) invalidateBodyWeight(queryClient);
-      toast.success("Profile saved!");
+      toast.success("Profile saved.");
     },
     onError: (error) => {
       toast.error(error.message || "Failed to update profile");
@@ -406,7 +406,7 @@ export default function Profile({ hideHeader }) {
               <button
                 type="button"
                 onClick={async () => {
-                  try { await signOut(); toast.success('Signed out successfully'); }
+                  try { await signOut(); toast.success('Signed out.'); }
                   catch { toast.error('Failed to sign out'); }
                 }}
                 className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-left text-ink-muted hover:text-ink hover:bg-charcoal-elevated transition-colors"
@@ -470,7 +470,7 @@ export default function Profile({ hideHeader }) {
               <button
                 type="button"
                 onClick={async () => {
-                  try { await signOut(); toast.success('Signed out successfully'); }
+                  try { await signOut(); toast.success('Signed out.'); }
                   catch { toast.error('Failed to sign out'); }
                 }}
                 className="mt-3 w-full flex items-center justify-center gap-2 min-h-[48px] rounded-xl glass-inset text-ink-muted font-semibold text-sm active:bg-charcoal-elevated hover:text-ink hover:bg-charcoal-elevated transition-colors"
@@ -1005,7 +1005,7 @@ export default function Profile({ hideHeader }) {
                         setDeleteLoading(true);
                         try {
                           await deleteAccount();
-                          toast.success('Account deleted successfully');
+                          toast.success('Account deleted.');
                           navigate('/login');
                         } catch (error) {
                           toast.error(error.message || 'Failed to delete account');

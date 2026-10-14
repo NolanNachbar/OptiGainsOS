@@ -875,7 +875,7 @@ export default function WorkoutDetail() {
     },
     onSuccess: (clonedWorkout) => {
       invalidateWorkouts(queryClient);
-      toast.success("Workout cloned successfully");
+      toast.success("Workout cloned.");
       navigate(`/create-workout?edit=${clonedWorkout.id}`);
     },
     onError: (error) => {
@@ -1013,7 +1013,7 @@ export default function WorkoutDetail() {
               invalidateSchedule(queryClient);
 
               if (result.status === 'completed') {
-                toast.success("Program completed! Congratulations!", { duration: 5000 });
+                toast.success("Program complete.", { duration: 5000 });
               } else {
                 toast.success("Workout logged! Progression updated.");
               }
@@ -1026,7 +1026,7 @@ export default function WorkoutDetail() {
           }
         );
       } else {
-        toast.success("Workout logged successfully!");
+        toast.success("Workout logged.");
         navigate(isProgramSource && enrollment ? `/program/${enrollment.program_id}` : "/dashboard");
       }
     },

@@ -974,7 +974,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
     mutationFn: (data) => db.entities.Recipe.create(data),
     onSuccess: () => {
       invalidateRecipes(queryClient);
-      toast.success("Recipe created!");
+      toast.success("Recipe created.");
       onOpenChange(false);
     },
     onError: () => toast.error("Failed to save recipe"),
@@ -984,7 +984,7 @@ function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
     mutationFn: ({ id, ...data }) => db.entities.Recipe.update(id, data),
     onSuccess: () => {
       invalidateRecipes(queryClient);
-      toast.success("Recipe updated!");
+      toast.success("Recipe updated.");
       onOpenChange(false);
     },
     onError: () => toast.error("Failed to update recipe"),
@@ -1383,7 +1383,7 @@ function LogRecipeDialog({ open, onOpenChange, recipe, userId }) {
     mutationFn: (entry) => db.entities.FoodEntry.create(entry),
     onSuccess: () => {
       invalidateFood(queryClient);
-      toast.success(`${recipe.name} logged!`);
+      toast.success(`${recipe.name} logged.`);
       onOpenChange(false);
     },
     onError: () => toast.error("Failed to log recipe"),

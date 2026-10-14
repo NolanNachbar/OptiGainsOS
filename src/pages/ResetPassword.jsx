@@ -61,7 +61,7 @@ export default function ResetPassword() {
 
       if (error) throw error;
 
-      toast.success('Password updated successfully!');
+      toast.success('Password updated.');
       navigate('/today', { replace: true });
     } catch (error) {
       if (error.message?.includes('Auth session missing')) {
