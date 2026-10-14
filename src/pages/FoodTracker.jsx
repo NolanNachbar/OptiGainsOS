@@ -35,6 +35,7 @@ import { Apple, Plus, Trash2, Pencil, Search, Loader2, BookOpen, UtensilsCrossed
 import { queryKeys, invalidateCustomFoods, invalidateFoodPortions, invalidateFood, invalidateProfile } from "@/lib/queryKeys";
 import { format, subDays, parseISO, isValid } from "date-fns";
 import { getTodayString, nowInTz } from "@/utils/dateUtils";
+import { createTapGuard } from "@/utils/foodLog";
 import { toast } from "sonner";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import {
@@ -1008,10 +1009,13 @@ export default function FoodTracker() {
         created_by: user.id,
         eaten_at: eatenAt,
       }));
-      const { error } = await supabase.from("food_entries").insert(rows);
+      const { data: inserted, error } = await supabase.from("food_entries").insert(rows).select("id");
       if (error) throw error;
       invalidateFood(queryClient);
-      toast.success(`Logged ${estMealItems.length} item${estMealItems.length > 1 ? "s" : ""}`);
+      toastLogged(
+        `Logged ${estMealItems.length} item${estMealItems.length > 1 ? "s" : ""}`,
+        (inserted || []).map((r) => r.id)
+      );
       resetMealEstimator();
       setShowMealEstimator(false);
       setShowAddDialog(false);
@@ -1151,9 +1155,31 @@ const handleSaveMealTemplate = () => {
       activePortions
     );
 
+  // Undo for a log action: removes exactly the row(s) that action created, by
+  // id, so a later identical entry is never touched.
+  const undoLoggedEntries = (ids) => {
+    Promise.all(ids.map((id) => db.entities.FoodEntry.delete(id)))
+      .then(() => invalidateFood(queryClient))
+      .catch(() => {
+        invalidateFood(queryClient);
+        toast.error("Couldn't undo that log. Delete the entry from the list instead.");
+      });
+  };
+  const toastLogged = (message, ids) => {
+    toast.success(message, {
+      // Same reasoning as the delete toast: no second tap target beside Undo.
+      closeButton: false,
+      action: ids.length ? { label: "Undo", onClick: () => undoLoggedEntries(ids) } : undefined,
+    });
+  };
+
+  // One-tap re-log double-tap guard (see createTapGuard).
+  const relogGuardRef = useRef(null);
+  if (!relogGuardRef.current) relogGuardRef.current = createTapGuard(800);
+
   const addFoodMutation = useMutation({
     mutationFn: async (data) => {
-      await db.entities.FoodEntry.create({
+      return db.entities.FoodEntry.create({
         food_name: data.food_name,
         meal_type: data.meal_type,
         serving_size: parseFloat(data.serving_amount) || 1,
@@ -1172,7 +1198,7 @@ const handleSaveMealTemplate = () => {
         eaten_at: getEatenAt(loggingMode, data.meal_type, selectedDate),
       });
     },
-    onSuccess: (_result, variables) => {
+    onSuccess: (created, variables) => {
       invalidateFood(queryClient);
       // A quick re-log never opened/populated the Add Food form, so there's
       // nothing to close or reset for it — closing here would dismiss the
@@ -1181,11 +1207,14 @@ const handleSaveMealTemplate = () => {
         setShowAddDialog(false);
         resetForm();
       }
-      toast.success("Food logged successfully!");
+      toastLogged("Food logged successfully!", created?.id ? [created.id] : []);
     },
     onError: () => {
       toast.error("Failed to log food");
-    }
+    },
+    onSettled: (_d, _e, variables) => {
+      if (variables?.__quickRelog) relogGuardRef.current.release();
+    },
   });
 
   // Re-log a Recent entry with one tap: same food, same last-used portion,
@@ -1194,6 +1223,9 @@ const handleSaveMealTemplate = () => {
   // portion before logging; this path is for repeating it verbatim).
   const quickRelogFood = (entry) => {
     if (addFoodMutation.isPending) return; // guard a double-tap duplicate
+    // The ref guard also catches two taps inside one frame (isPending hasn't
+    // flipped yet) and a repeat of the same food right after it settled.
+    if (!relogGuardRef.current.tryAcquire(`${entry.food_name}|${entry.serving_size}|${entry.serving_unit}`)) return;
     const servingStr = String(entry.serving_size || "");
     const parts = servingStr.split(' ');
     const originalAmount = parseFloat(parts[0]) || (typeof entry.serving_size === 'number' ? entry.serving_size : 1);
