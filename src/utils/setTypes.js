@@ -27,6 +27,14 @@ export const SET_MARK_LABEL = {
 /** Short tag shown beside the set number. */
 export const SET_MARK_TAG = { warmup: "W", drop: "D", failure: "F" };
 
+/**
+ * The structural type of a set ('working', 'top_set', 'daily_min', ...) with
+ * any user mark looked through. Use this, not `set_type`, for prescription
+ * logic (RIR gating, daily-min weight/styling, progression eligibility) so
+ * marking a set never changes which rule it falls under.
+ */
+export const baseType = (s) => s?.set_type_base || s?.set_type;
+
 export const isWarmupSet = (s) => /warm/i.test(s?.set_type || "");
 
 /** True for any set that counts as real work (everything but warm-ups). */

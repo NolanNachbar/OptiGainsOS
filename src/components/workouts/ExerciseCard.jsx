@@ -13,7 +13,7 @@ import { EXERCISE_DB } from "@/ml/exerciseDB";
 import { getLibraryNames, getExerciseInfo, inferSetKind } from "@/utils/exerciseLibrary";
 import { FAILURE_REASONS, reasonsForExercise, stickingPointReasons, isMissedSet } from "@/config/failureReasons";
 import { estimateOneRepMax, isE1rmEligibleSet, previousSetForRow } from "@/utils/exerciseStats";
-import { SET_MARKS, SET_MARK_LABEL, SET_MARK_TAG, currentMark, markPatch, isWarmupSet } from "@/utils/setTypes";
+import { SET_MARKS, SET_MARK_LABEL, SET_MARK_TAG, currentMark, markPatch, isWarmupSet, baseType } from "@/utils/setTypes";
 
 const DB_NAMES = EXERCISE_DB.map(e => e.name).sort((a, b) =>
   a.toLowerCase().localeCompare(b.toLowerCase())
@@ -359,7 +359,7 @@ export default function ExerciseCard({
   const handleSetCompleted = (setIndex, completed) => {
     const target = exercise.sets[setIndex];
     if (
-      completed && showRIR && target?.set_type === 'top_set'
+      completed && showRIR && baseType(target) === 'top_set'
       && target.rir == null && target.rpe == null
     ) {
       setRirRequiredIndex(setIndex);
@@ -412,7 +412,7 @@ export default function ExerciseCard({
       if (rir != null && programExercise && progressionTargets) {
         const nudge = evaluateSetPerformance(
           programExercise,
-          { rir, weight: set.weight, set_type: set.set_type || 'working', set_number: set.set_number },
+          { rir, weight: set.weight, set_type: baseType(set) || 'working', set_number: set.set_number },
           progressionTargets.workingWeight,
           exercise.sets.length
         );
@@ -450,7 +450,7 @@ export default function ExerciseCard({
     if (set.completed && programExercise && progressionTargets) {
       const nudge = evaluateSetPerformance(
         programExercise,
-        { rir, weight: set.weight, set_type: set.set_type || 'working', set_number: set.set_number },
+        { rir, weight: set.weight, set_type: baseType(set) || 'working', set_number: set.set_number },
         progressionTargets.workingWeight,
         exercise.sets.length
       );
@@ -1018,7 +1018,7 @@ export default function ExerciseCard({
           // Compare against what was PRESCRIBED for this set (working/daily-min
           // weight × the exercise's rep target), not a heavier all-time best — so
           // programmed-lighter sets that hit their target aren't flagged as misses.
-          const prescribedWeight = set.set_type === 'daily_min'
+          const prescribedWeight = baseType(set) === 'daily_min'
             ? progressionTargets?.dailyMin
             : progressionTargets?.workingWeight;
           // A back-off set's target is its own reps, not the exercise's headline
@@ -1060,7 +1060,7 @@ export default function ExerciseCard({
                 aria-expanded={markMenuIndex === setIndex}
                 aria-label={`Set ${set.set_number}${currentMark(set) ? `, ${SET_MARK_LABEL[currentMark(set)]}` : ''}. Change set type`}
                 className={`font-technical text-[13px] font-extrabold pl-0.5 text-left touch-manipulation min-h-[44px] -my-3.5 ${
-                  set.set_type === 'daily_min' ? 'text-info' : currentMark(set) ? 'text-brand' : (set.completed || isActive) ? 'text-ink' : 'text-ink-faint'
+                  baseType(set) === 'daily_min' ? 'text-info' : currentMark(set) ? 'text-brand' : (set.completed || isActive) ? 'text-ink' : 'text-ink-faint'
                 }`}
               >
                 {currentMark(set) ? SET_MARK_TAG[currentMark(set)] : set.set_number}
@@ -1105,7 +1105,7 @@ export default function ExerciseCard({
                     if (useKeypad) setActiveField({ setIndex, field: 'weight' });
                   }}
                   placeholder={
-                    isProgramMode && set.set_type === 'daily_min' && progressionTargets?.dailyMin
+                    isProgramMode && baseType(set) === 'daily_min' && progressionTargets?.dailyMin
                       ? String(progressionTargets.dailyMin)
                       : isProgramMode && progressionTargets?.workingWeight
                       ? String(progressionTargets.workingWeight)

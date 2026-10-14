@@ -32,7 +32,7 @@ import FinishSummary from "@/components/workouts/FinishSummary";
 import AddExerciseForm from "@/components/workouts/AddExerciseForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { getLastExercisePerformance, getExerciseE1rmHistory } from "@/utils/exerciseStats";
-import { isWarmupSet } from "@/utils/setTypes";
+import { isWarmupSet, baseType } from "@/utils/setTypes";
 import { buildLoadWhy } from "@/utils/loadRationale";
 import { currentE1rm, loadForTarget } from "@/utils/e1rm";
 import { applyEquipmentProfile, applyEquipmentProfileToWorkout, substituteFor } from "@/utils/equipmentProfile";
@@ -1380,7 +1380,7 @@ export default function WorkoutDetail() {
   // logged before this rule). Flagged once on Finish, never a hard block, so
   // older data can't trap a workout.
   const topSetsMissingRir = () => exerciseLogs.flatMap(ex => (ex.sets || [])
-    .filter(s => s.completed && s.set_type === 'top_set' && s.rir == null && s.rpe == null)
+    .filter(s => s.completed && baseType(s) === 'top_set' && s.rir == null && s.rpe == null)
     .map(s => `${ex.name} set ${s.set_number}`));
   const rirFlaggedRef = useRef(false);
 
