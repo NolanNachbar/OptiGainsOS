@@ -31,7 +31,14 @@ const Dialog = ({ open, onOpenChange, children }) => {
         {/* Positioner: bottom sheet on mobile (flush to the bottom edge), centered
             dialog on desktop. items-end keeps the sheet pinned to the bottom so it
             reads as an attached sheet, never a floating card with a dark gap below. */}
-        <div className="fixed inset-0 flex items-end justify-center md:items-center md:p-4 pointer-events-none">
+        {/* bottom: --keyboard-inset lifts the sheet above the iOS keyboard (which
+            overlays the layout viewport instead of resizing it), so the lower
+            half of a tall sheet, e.g. food search results, isn't hidden. 0px
+            with no keyboard and on desktop. */}
+        <div
+          className="fixed inset-0 flex items-end justify-center md:items-center md:p-4 pointer-events-none"
+          style={{ bottom: 'var(--keyboard-inset, 0px)' }}
+        >
           <div className="pointer-events-auto w-full md:w-auto">
             {React.Children.map(children, child =>
               child?.type === DialogContent ? child : null
@@ -92,7 +99,7 @@ const DialogContent = React.forwardRef(({ className = "", hideClose = false, she
         max-md:!rounded-t-2xl max-md:!rounded-b-none max-md:!border-b-0
         md:rounded-xl md:border-b`}
       style={{
-        maxHeight: 'calc(100dvh - var(--layout-header-height, 0px) - 1rem)',
+        maxHeight: 'calc(100dvh - var(--layout-header-height, 0px) - 1rem - var(--keyboard-inset, 0px))',
         // The bottom safe-area gap is non-negotiable on a flush bottom sheet: without
         // it the action row (Start Fresh / Resume) clips against the home-indicator
         // edge. Default callers get full 1.5rem + inset. Custom-padding callers own
