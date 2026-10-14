@@ -1,6 +1,6 @@
 # OptiGains
 
-Train by the numbers.
+**The training instrument that shows its working.**
 
 OptiGains is a private, single-user training app. A deterministic Python engine
 computes athlete state and prescribes sessions, with no LLM in the loop. The
