@@ -52,8 +52,8 @@ Deno.serve(async () => {
     .in("user_id", [...usersWithWorkoutToday]);
 
   const payload = JSON.stringify({
-    title: "Workout Day 💪",
-    body: "You have a workout scheduled today. Let's get it done!",
+    title: "Workout today",
+    body: "A session is scheduled for today.",
     url: "/schedule",
   });
 

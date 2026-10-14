@@ -319,7 +319,7 @@ function buildPrompt(data: {
   const openJobs = data.jobs.filter(j => !["rejected", "offer_accepted"].includes(j.status as string));
 
   const lines: string[] = [
-    `You are the AI coaching team for Nolan Nachbar's personal performance OS.`,
+    `You write the daily brief inside OptiGains, Nolan Nachbar's personal training app.`,
     `Generate today's daily brief as a strict JSON object. No markdown fences, no text outside the JSON.`,
     ``,
     `=== ABOUT NOLAN ===`,
@@ -356,6 +356,7 @@ function buildPrompt(data: {
     `  "insight":     "1 sentence: one non-obvious pattern across the data that Nolan may have missed.",`,
     `  "today_actions": ["action 1", "action 2", "action 3"]`,
     `}`,
+    `Voice: flat and exact. State what the data shows, with units. Past tense for what happened, present tense for what is prescribed. No cheerleading, no praise, no scolding, no exclamation marks, no emoji, no rhetorical questions. Do not address the athlete as "you" in a motivational way; write facts and prescriptions.`,
     `Rules: Be direct, specific, and quantitative. EVERY line must cite a real number from the data AND the goal gap it moves (e.g. "Bench e1RM 269 vs 315 target = 46 lbs to go" or "pull-ups X vs 20 standard"). GENERIC ADVICE IS BANNED — never say "research BUD/S requirements", "study the fundamentals", "monitor your weight", or any sentence that would be true for any athlete on any day. Anchor "performance" and "endurance" to TODAY'S ENGINE PRESCRIPTION below — do not invent a different session. If the prescription is LIGHT/DELOAD/REST, say why (cite ACWR/TSB) instead of pretending it's a hard day. today_actions: fold in EVERY pending [ ] item from "TODAY'S PLANNED TO-DO" verbatim, PLUS the prescribed gym + cardio action. 3-8 items total. Do not invent to-dos.`,
     ``,
     `=== TODAY ===`,

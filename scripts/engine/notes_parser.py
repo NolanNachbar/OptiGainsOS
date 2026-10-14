@@ -209,7 +209,7 @@ def _scan_weakness(t: str, exercise: str | None, out: dict) -> None:
         w["mentions"] += 1
         w["confidence"] = "moderate" if w["mentions"] >= 2 else "low"
         w["reason"] = f"note: {lift} {region}"
-        out["flags"].append(f"🎯 {lift} weak point: {region} → targeting assistance")
+        out["flags"].append(f"{lift} weak point: {region}. Assistance targeted.")
 
 
 def _scan_one(text: str, exercise: str | None, out: dict) -> None:
@@ -263,7 +263,7 @@ def _scan_one(text: str, exercise: str | None, out: dict) -> None:
             c["reason"] = f"note: '{pain[0]}'" + (f" ({exercise})" if exercise else "")
             c["confidence"] = "moderate" if c["mentions"] >= 2 else "low"
         out["flags"].append(
-            f"⚠ {'/'.join(sorted(targets))}: {pain[0]}"
+            f"Pain flag, {'/'.join(sorted(targets))}: {pain[0]}"
             + (f" on {exercise}" if exercise else "")
         )
 

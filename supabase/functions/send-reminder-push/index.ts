@@ -44,8 +44,8 @@ Deno.serve(async () => {
   webpush.setVapidDetails("mailto:nolan@dewittdroneservices.com", VAPID_PUBLIC, VAPID_PRIVATE);
 
   const preview = open.slice(0, 3).map((t) => t.title).join(", ");
-  const body = `Still open: ${preview}${open.length > 3 ? `, +${open.length - 3} more` : ""}`;
-  const payload = JSON.stringify({ title: "Don't break the streak 🔥", body, url: "/" });
+  const body = `${open.length} open: ${preview}${open.length > 3 ? `, +${open.length - 3} more` : ""}`;
+  const payload = JSON.stringify({ title: "Open tasks", body, url: "/" });
 
   const results = await Promise.allSettled(
     subs.map((sub) =>

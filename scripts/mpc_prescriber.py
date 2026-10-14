@@ -937,7 +937,7 @@ def main():
         } for e in prescription["strength_block"]]
         _lib_payload = {
             "title":            _lib_title,
-            "description":      "Engine-generated session, auto-saved from today's prescription.",
+            "description":      "Auto-saved from today's prescription.",
             # The library's Type filter only offers strength/cardio/hiit. Anything
             # else (session_type reads "mixed") is invisible under every pill but
             # All, which reads as "not in the library".

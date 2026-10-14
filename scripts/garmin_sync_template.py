@@ -92,9 +92,9 @@ def sync_garmin():
         )
         
         if res.status_code in [200, 201]:
-            print("✅ Successfully synced Garmin data to OptiGainsOS.")
+            print("Garmin data synced to OptiGains.")
         else:
-            print(f"❌ Failed to sync: {res.text}")
+            print(f"Garmin sync failed: {res.text}")
 
     except Exception as e:
         print(f"ERROR: {str(e)}")
