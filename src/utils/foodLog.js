@@ -62,8 +62,7 @@ const near = (a, b, floor) =>
   Math.abs(a - b) <= Math.max(floor, 0.02 * Math.max(Math.abs(a), Math.abs(b)));
 
 /**
- * Per-100 g/ml (or per-1 unit) macros of `row`, or null when `a` and `b` aren't
- * described in comparable units (so the caller can't tell and must not guess).
+ * Per-100 g/ml (or per-1 unit) macros of a food row.
  */
 function perBase(row) {
   const k = storedScale(row) || 1;

@@ -665,8 +665,10 @@ export default function FoodTracker() {
   // Save custom food mutation (fire-and-forget)
   // A same-name food is never silently overwritten: see planCustomFoodSave.
   // `source` needs the custom_foods.source column; until that migration is
-  // applied the write retries without it so logging never breaks on it.
-  const sourceColumnMissingRef = useRef(false);
+  // applied the write retries without it so logging never breaks on it. The
+  // "missing" verdict expires, so applying the migration needs no reload.
+  const SOURCE_RECHECK_MS = 5 * 60 * 1000;
+  const sourceMissingAtRef = useRef(0);
   const saveCustomFoodMutation = useMutation({
     mutationFn: async ({ food, activeFoodId: editingFoodId = null }) => {
       const existing = await db.entities.CustomFood.filter({ created_by: user.id });
@@ -681,12 +683,13 @@ export default function FoodTracker() {
           ? db.entities.CustomFood.update(plan.id, payload)
           : db.entities.CustomFood.create({ ...payload, created_by: user.id });
       const { source, ...withoutSource } = row;
-      if (sourceColumnMissingRef.current || !source) return write(withoutSource);
+      const sourceKnownMissing = Date.now() - sourceMissingAtRef.current < SOURCE_RECHECK_MS;
+      if (sourceKnownMissing || !source) return write(withoutSource);
       try {
         return await write(row);
       } catch (err) {
         if (!isMissingColumnError(err, "source")) throw err;
-        sourceColumnMissingRef.current = true;
+        sourceMissingAtRef.current = Date.now();
         return write(withoutSource);
       }
     },
