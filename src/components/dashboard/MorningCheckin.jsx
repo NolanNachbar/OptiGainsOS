@@ -191,7 +191,7 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
       setEditing(false);
       onComplete?.();
     },
-    onError: () => toast.error("Failed to save check-in"),
+    onError: () => toast.error("Check-in not saved. Check your connection and try again."),
   });
 
   if (existingCheckin?.energy && !editing) {

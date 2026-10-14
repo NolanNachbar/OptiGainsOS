@@ -71,7 +71,7 @@ export default function SorenessCheckin({ today }) {
       queryClient.invalidateQueries({ queryKey: ["soreness-checkin", todayStr, user?.id] });
       toast.success("Soreness logged");
     },
-    onError: () => toast.error("Failed to log soreness"),
+    onError: () => toast.error("Soreness not saved. Check your connection and try again."),
   });
 
   if (isLoading) return null;

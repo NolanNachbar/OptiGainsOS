@@ -194,7 +194,7 @@ export default function PSTTracker() {
       setShowForm(false);
       toast.success("PST test logged");
     },
-    onError: () => toast.error("Failed to save PST test"),
+    onError: () => toast.error("PST test not saved. Check your connection and try again."),
   });
 
   const latest = tests[0];
@@ -231,8 +231,8 @@ export default function PSTTracker() {
         ) : !latest ? (
           <div className="text-center py-4">
             <Trophy className="w-8 h-8 mx-auto text-faint mb-2" />
-            <p className="text-sm font-semibold text-muted-2">No PST data yet.</p>
-            <p className="text-xs font-semibold text-faint mt-1">Log your first test to track progress.</p>
+            <p className="text-sm font-semibold text-muted-2">No PST tests logged.</p>
+            <p className="text-xs font-semibold text-faint mt-1">Log a test and your results appear here.</p>
           </div>
         ) : (
           <>

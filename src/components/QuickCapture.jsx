@@ -50,7 +50,7 @@ export default function QuickCapture({
       queryClient.invalidateQueries({ queryKey: ["capture-inbox", domain] });
       onCapture?.();
     },
-    onError: () => toast.error("Failed to capture note"),
+    onError: () => toast.error("Note not saved. Check your connection and try again."),
   });
 
   const handleKeyDown = (e) => {
