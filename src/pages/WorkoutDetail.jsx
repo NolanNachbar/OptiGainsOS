@@ -31,6 +31,7 @@ import WorkoutLoggingHeader from "@/components/workouts/WorkoutLoggingHeader";
 import AddExerciseForm from "@/components/workouts/AddExerciseForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { getLastExercisePerformance, getExerciseE1rmHistory } from "@/utils/exerciseStats";
+import { isWarmupSet } from "@/utils/setTypes";
 import { currentE1rm, loadForTarget } from "@/utils/e1rm";
 import { applyEquipmentProfile, applyEquipmentProfileToWorkout, substituteFor } from "@/utils/equipmentProfile";
 import EquipmentProfileToggle from "@/components/workouts/EquipmentProfileToggle";
@@ -1069,6 +1070,8 @@ export default function WorkoutDetail() {
       const top = prev[exIdx];
       if (!top || !/\(top set\)/i.test(top.name)) return prev;
       const set = top.sets?.[setIdx];
+      // A warm-up is not the top set; never derive back-off loads from it.
+      if (isWarmupSet(set)) return prev;
       const weight = Number(set?.weight);
       const reps = Number(set?.reps);
       if (!weight || !reps) return prev;

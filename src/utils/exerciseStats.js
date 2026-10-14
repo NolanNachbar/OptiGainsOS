@@ -1,6 +1,7 @@
 /**
  * Utility functions for analyzing workout log data
  */
+import { workSets, isWarmupSet } from "./setTypes";
 
 /**
  * Compare exercise names the way the rest of the app already does.
@@ -17,6 +18,10 @@
  */
 const sameExercise = (a, b) =>
   (a || "").toLowerCase().trim() === (b || "").toLowerCase().trim();
+
+// Warm-up sets are not work: they never count toward volume, e1RM, PRs or
+// "last time". See utils/setTypes.js for the full mark semantics.
+const work = (sets) => workSets(sets);
 
 /**
  * Get max weight ever lifted for an exercise
@@ -35,12 +40,14 @@ export const getExercisePR = (logs, exerciseName) => {
 
     log.exercises.forEach(ex => {
       if (sameExercise(ex.name, exerciseName) && ex.sets) {
-        const weights = ex.sets.map(s => s.weight || 0);
+        const sets = work(ex.sets);
+        if (sets.length === 0) return;
+        const weights = sets.map(s => s.weight || 0);
         const weight = Math.max(...weights);
 
         if (weight > maxWeight) {
           maxWeight = weight;
-          const prSet = ex.sets.find(s => s.weight === weight);
+          const prSet = sets.find(s => s.weight === weight);
           prLog = {
             date: log.log_date,
             reps: prSet?.reps || 0
@@ -63,7 +70,7 @@ export const calculateVolume = (log) => {
 
   return log.exercises.reduce((total, ex) => {
     if (!ex.sets) return total;
-    return total + ex.sets.reduce((sum, set) => {
+    return total + work(ex.sets).reduce((sum, set) => {
       return sum + ((set.weight || 0) * (set.reps || 0));
     }, 0);
   }, 0);
@@ -132,20 +139,21 @@ export const getExerciseHistory = (logs, exerciseName) => {
     .filter(log => log.exercises?.some(ex => sameExercise(ex.name, exerciseName)))
     .map(log => {
       const exercise = log.exercises.find(ex => sameExercise(ex.name, exerciseName));
-      if (!exercise || !exercise.sets || exercise.sets.length === 0) {
+      const sets = exercise ? work(exercise.sets) : [];
+      if (sets.length === 0) {
         return null;
       }
 
-      const weights = exercise.sets.map(s => s.weight || 0);
+      const weights = sets.map(s => s.weight || 0);
       const maxWeight = Math.max(...weights);
 
-      const totalVolume = exercise.sets.reduce((sum, s) =>
+      const totalVolume = sets.reduce((sum, s) =>
         sum + ((s.weight || 0) * (s.reps || 0)), 0
       );
 
-      const avgReps = exercise.sets.reduce((sum, s) =>
+      const avgReps = sets.reduce((sum, s) =>
         sum + (s.reps || 0), 0
-      ) / exercise.sets.length;
+      ) / sets.length;
 
       return {
         date: log.log_date,
@@ -172,13 +180,14 @@ export const getAllPersonalRecords = (logs) => {
     if (!log.exercises) return;
 
     log.exercises.forEach(ex => {
-      if (!ex.sets || ex.sets.length === 0) return;
+      const sets = work(ex.sets);
+      if (sets.length === 0) return;
 
-      const weights = ex.sets.map(s => s.weight || 0);
+      const weights = sets.map(s => s.weight || 0);
       const maxWeight = Math.max(...weights);
 
       if (!prsByExercise[ex.name] || maxWeight > prsByExercise[ex.name].weight) {
-        const prSet = ex.sets.find(s => s.weight === maxWeight);
+        const prSet = sets.find(s => s.weight === maxWeight);
         prsByExercise[ex.name] = {
           weight: maxWeight,
           date: log.log_date,
@@ -234,7 +243,7 @@ const MAX_E1RM_REPS = 12;
 // Exported so per-row UI (the logger's e1RM column) can reuse the exact same
 // eligibility rule instead of re-deriving a second copy of it.
 export const isE1rmEligibleSet = (s) =>
-  !!s?.completed && Number(s?.weight) > 0 && Number(s?.reps) > 0 && Number(s?.reps) <= MAX_E1RM_REPS;
+  !!s?.completed && !isWarmupSet(s) && Number(s?.weight) > 0 && Number(s?.reps) > 0 && Number(s?.reps) <= MAX_E1RM_REPS;
 
 /**
  * Normalize an exercise name for grouping. sameExercise() above already
@@ -354,7 +363,7 @@ export const getLoggedExerciseSummaries = (logs) => {
         let bestReps = 0;
         let bestBodyweightReps = 0;
         sorted.forEach(s => s.sets.forEach(set => {
-          if (!set?.completed) return;
+          if (!set?.completed || isWarmupSet(set)) return;
           const w = Number(set.weight) || 0;
           const r = Number(set.reps) || 0;
           // A set logged with weight but 0 reps (a data-entry artifact —
@@ -437,12 +446,15 @@ export const getLastExercisePerformance = (logs, exerciseName) => {
 
     const exercise = log.exercises.find(ex => sameExercise(ex.name, exerciseName));
     if (exercise && exercise.sets && exercise.sets.length > 0) {
-      // Get all weights and reps from the sets
-      const weights = exercise.sets.map(s => s.weight || 0);
+      // Headline load/reps come from work sets only; a warm-up is never
+      // "last time". If every set was a warm-up, fall back to all of them.
+      const headline = work(exercise.sets);
+      const basis = headline.length > 0 ? headline : exercise.sets;
+      const weights = basis.map(s => s.weight || 0);
 
       // Find the max weight used
       const lastWeight = Math.max(...weights);
-      const maxWeightSet = exercise.sets.find(s => s.weight === lastWeight);
+      const maxWeightSet = basis.find(s => s.weight === lastWeight);
       const lastReps = maxWeightSet?.reps || 0;
 
       return {

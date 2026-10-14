@@ -126,6 +126,9 @@ def parse_set_failures(workout_logs: list, lookback_days: int = 14,
         for ex in (log.get("exercises") or []):
             lift = infer_lift(ex.get("name"))
             for s in (ex.get("sets") or []):
+                # A warm-up is lighter than the work by design, never a miss.
+                if "warm" in str(s.get("set_type") or "").lower():
+                    continue
                 reason = s.get("failure_reason")
                 if reason and reason in FAILURE_REASONS:
                     if reason == SYSTEMIC:

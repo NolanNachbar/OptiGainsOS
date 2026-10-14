@@ -34,7 +34,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from engine.banister_kalman import BanisterKalman
-from engine.log_ingest import proximity_fatigue_factor, EFFORT_COST_PRIOR
+from engine.log_ingest import proximity_fatigue_factor, EFFORT_COST_PRIOR, work_sets
 
 SUPABASE_URL = (os.environ.get("SUPABASE_URL") or os.environ.get("VITE_SUPABASE_URL", "")).rstrip("/")
 SUPABASE_KEY = (os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_SERVICE_ROLE_KEY", ""))
@@ -63,7 +63,7 @@ def sb_get(table, params):
 
 def session_tss(log, effort_coeff=EFFORT_COST_PRIOR):
     """Identical to compute_athlete_state.compute_training_stress's fallback branch."""
-    sets = [s for ex in (log.get("exercises") or []) for s in (ex.get("sets") or [])]
+    sets = [s for ex in (log.get("exercises") or []) for s in work_sets(ex.get("sets"))]
     vol = sum(float(s.get("weight") or 0) * int(s.get("reps") or 0) for s in sets)
     return min(vol / 100.0, 150.0) * proximity_fatigue_factor(sets, effort_coeff)
 

@@ -69,6 +69,8 @@ const e1rm = (w, r) => (Number(w) || 0) * (1 + (Number(r) || 0) / 30);
 // (working weight or daily-min weight × the exercise's rep target). With no
 // prescription (free workout) a miss isn't defined, so we don't flag one.
 export function isMissedSet(set, target) {
+  // A warm-up or drop set is lighter than the prescription on purpose.
+  if (set?.set_type === 'warmup' || set?.set_type === 'drop') return false;
   if (!set?.completed || !(Number(set.weight) > 0) || !(Number(set.reps) > 0)) return false;
   const tW = Number(target?.weight) || 0;
   const tR = Number(target?.reps) || 0;

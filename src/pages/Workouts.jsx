@@ -20,6 +20,7 @@ import { parseISO } from "date-fns";
 import { parseProgramJson } from "@/utils/programIO";
 import { toast } from "sonner";
 import WorkoutCard from "@/components/workouts/WorkoutCard";
+import { workSets } from "@/utils/setTypes";
 
 // One filter-pill recipe shared across Library (Type, Folder) and Activity so the
 // three selectors read as one family: same shape, same neutral selected fill
@@ -986,7 +987,7 @@ function CardioEntryCard({ entry }) {
 
 // ─── Activity Log Tab ────────────────────────────────────────────────────────
 
-function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoading, error, onRetry }) {
+function ActivityLogTab({ workoutLogs, cardioSessions, workouts, isLoading, error, onRetry }) {
   const [filter, setFilter] = useState('all');
   const [visibleCount, setVisibleCount] = useState(8);
 
@@ -1019,12 +1020,12 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
     const workout = workouts.find(w => w.id === log.workout_id);
     const logExercises = log.exercises || [];
     const totalSets = logExercises.reduce((sum, ex) => {
-      if (Array.isArray(ex.sets)) return sum + ex.sets.length;
+      if (Array.isArray(ex.sets)) return sum + workSets(ex.sets).length;
       return sum + (Number(ex.sets) || 0);
     }, 0);
     const totalVolume = logExercises.reduce((sum, ex) => {
       if (!Array.isArray(ex.sets)) return sum;
-      return sum + ex.sets.reduce((s, set) => s + (Number(set.weight) || 0) * (Number(set.reps) || 0), 0);
+      return sum + workSets(ex.sets).reduce((s, set) => s + (Number(set.weight) || 0) * (Number(set.reps) || 0), 0);
     }, 0);
     // Distinct titles: when the source workout is gone (or never had a name),
     // derive a title from the logged content (lead exercise + count) so stacked

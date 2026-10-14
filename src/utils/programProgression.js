@@ -94,7 +94,7 @@ export function calculateDailyTargets(exercise, progressionState = {}) {
  * @param {number} [totalSets] - Total number of sets for this exercise (used to detect final set)
  * @returns {{ type: 'success'|'warning'|'info', message: string }|null}
  */
-export function evaluateSetPerformance(exercise, setData, workingWeight, totalSets) {
+export function evaluateSetPerformance(exercise, setData, workingWeight) {
   // Support both `rir` (new) and `rpe` (legacy field name) for backwards compatibility
   const rir = setData.rir ?? setData.rpe;
   if (rir == null || !setData.set_type) return null;
@@ -135,10 +135,10 @@ export function evaluateSetPerformance(exercise, setData, workingWeight, totalSe
  */
 export function updateProgressionState(currentState, exercise, completedSets) {
   const state = { ...currentState };
-  const { name, rir_target = 2, rep_target, progression = {} } = exercise;
+  const { name, rir_target = 2, rep_target } = exercise;
 
   const workingSets = completedSets.filter(
-    (s) => s.set_type === 'working' || s.set_type === 'daily_max'
+    (s) => s.set_type === 'working' || s.set_type === 'daily_max' || s.set_type === 'failure'
   );
 
   if (workingSets.length === 0) return state;
