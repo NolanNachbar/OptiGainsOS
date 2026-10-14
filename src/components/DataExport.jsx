@@ -142,6 +142,7 @@ export default function DataExport({ weightEntries = [], foodEntries = [] }) {
         count++;
       } catch (err) {
         console.error(err);
+        toast.error(`${exp.label} export failed`);
       }
     }
     toast.success(`${count} files downloaded`);

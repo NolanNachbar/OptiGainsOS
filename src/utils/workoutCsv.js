@@ -8,13 +8,24 @@ export const LIFTING_CSV_HEADER = [
   "rir", "rpe", "set_type", "completed", "exercise_notes", "workout_notes",
 ];
 
+/** UTF-8 byte-order mark so Excel opens the file as UTF-8. */
+export const CSV_BOM = "﻿";
+
+/**
+ * One CSV field. A string that a spreadsheet would evaluate as a formula
+ * (leading = + - @ tab CR) is prefixed with ' so it is read as text; genuine
+ * numbers ("-5", "+1") are left alone.
+ */
 export function csvCell(value) {
-  const s = String(value ?? "");
+  let s = String(value ?? "");
+  if (typeof value === "string" && /^[=+\-@\t\r]/.test(s) && !Number.isFinite(Number(s))) {
+    s = `'${s}`;
+  }
   return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
 export function toCsv(rows) {
-  return rows.map((r) => r.map(csvCell).join(",")).join("\n");
+  return CSV_BOM + rows.map((r) => r.map(csvCell).join(",")).join("\n");
 }
 
 /**
