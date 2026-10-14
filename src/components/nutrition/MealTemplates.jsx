@@ -30,6 +30,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { searchGenericFoods, searchBrandedFoods } from "@/api/usda";
 import { toast } from "sonner";
+import { parseTemplateServing, templateItemFromEntry } from "@/utils/foodLog";
 
 // Sum macros across a template/entry item list. Module-scoped so the apply +
 // save dialogs (separate components) share one source of truth.
@@ -347,10 +348,9 @@ function ApplyTemplateDialog({ open, onOpenChange, template, userId }) {
   const applyMutation = useMutation({
     mutationFn: async () => {
       const entries = (template.items || []).map((item) => {
-        // Parse "300 g" into amount=300, unit="g"
-        const parts = String(item.serving_size || "").split(" ");
-        const amount = parseFloat(parts[0]) || 1;
-        const unit = parts.slice(1).join(" ") || "serving";
+        // "300 g" -> 300 / g; falls back to the item's own serving_unit for
+        // templates saved with a bare number.
+        const { amount, unit } = parseTemplateServing(item);
 
         return {
           food_name: item.food_name,
@@ -358,6 +358,7 @@ function ApplyTemplateDialog({ open, onOpenChange, template, userId }) {
           serving_size: amount,
           serving_unit: unit,
           serving_grams: item.serving_grams ?? null,
+          fiber_grams: item.fiber_grams ?? null,
           calories: item.calories,
           protein_grams: item.protein_grams,
           carbs_grams: item.carbs_grams,
@@ -542,7 +543,13 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
   };
 
   const updateItem = (index, field, value) => {
-    setItems(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item));
+    setItems(prev => prev.map((item, i) => {
+      if (i !== index) return item;
+      // Retyping the serving invalidates the recorded total weight and the
+      // structured unit; the typed "150 g" is the truth now.
+      if (field === 'serving_size') return { ...item, serving_size: value, serving_grams: null, serving_unit: null };
+      return { ...item, [field]: value };
+    }));
   };
 
   const handleSave = () => {
@@ -818,15 +825,7 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
       return;
     }
 
-    const items = selectedEntries.map((e) => ({
-      food_name: e.food_name,
-      serving_size: e.serving_size,
-      calories: e.calories,
-      protein_grams: e.protein_grams,
-      carbs_grams: e.carbs_grams,
-      fats_grams: e.fats_grams,
-      meal_type: e.meal_type,
-    }));
+    const items = selectedEntries.map(templateItemFromEntry);
 
     createMutation.mutate({
       name: name.trim(),

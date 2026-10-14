@@ -81,3 +81,40 @@ export function isMissingColumnError(err, column) {
     (err?.code === "PGRST204" || err?.code === "42703" || /column/i.test(msg))
   );
 }
+
+// ── Meal templates ─────────────────────────────────────────────────────────
+
+/**
+ * Template items keep the serving as "300 g" (what the edit dialog shows) plus
+ * the structured unit/grams. A logged entry's serving_size is a bare number with
+ * its unit in a separate column, so saving serving_size alone turned a 300 g
+ * item into "300" and re-applied it as "300 serving".
+ */
+export function templateItemFromEntry(e) {
+  const unit = e.serving_unit || null;
+  const size = e.serving_size;
+  const hasNumber = size != null && size !== "" && Number.isFinite(Number(size));
+  return {
+    food_name: e.food_name,
+    serving_size: hasNumber && unit ? `${Number(size)} ${unit}` : size,
+    serving_unit: unit,
+    serving_grams: e.serving_grams ?? null,
+    calories: e.calories,
+    protein_grams: e.protein_grams,
+    carbs_grams: e.carbs_grams,
+    fats_grams: e.fats_grams,
+    fiber_grams: e.fiber_grams ?? null,
+    meal_type: e.meal_type,
+  };
+}
+
+/** Amount + unit of a template item, whichever shape it was saved in. */
+export function parseTemplateServing(item) {
+  const raw = item?.serving_size;
+  const text = String(raw ?? "").trim();
+  const parts = text.split(/\s+/);
+  const amount = parseFloat(parts[0]) || 1;
+  const inline = parts.slice(1).join(" ");
+  const unit = inline || item?.serving_unit || "serving";
+  return { amount, unit };
+}
