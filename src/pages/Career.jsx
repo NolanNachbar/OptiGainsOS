@@ -182,7 +182,7 @@ function PipelineTab() {
       setEditing(null);
       toast.success(editing ? "Updated" : "Application added");
     },
-    onError: () => toast.error("Failed to save"),
+    onError: () => toast.error("Entry not saved. Try again."),
   });
 
   const advance = useMutation({
@@ -191,7 +191,7 @@ function PipelineTab() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["job-applications"] }),
-    onError: () => toast.error("Failed to update"),
+    onError: () => toast.error("Entry not updated. Try again."),
   });
 
   const del = useMutation({
@@ -200,7 +200,7 @@ function PipelineTab() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["job-applications"] }),
-    onError: () => toast.error("Failed to delete"),
+    onError: () => toast.error("Entry not deleted. Try again."),
   });
 
   const active = apps.filter(a => ACTIVE_STATUSES.includes(a.status));
@@ -442,7 +442,7 @@ function NetworkingTab() {
       setEditing(null);
       toast.success(editing ? "Updated" : "Contact added");
     },
-    onError: () => toast.error("Failed to save"),
+    onError: () => toast.error("Entry not saved. Try again."),
   });
 
   const del = useMutation({
@@ -451,7 +451,7 @@ function NetworkingTab() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["networking-log"] }),
-    onError: () => toast.error("Failed to delete"),
+    onError: () => toast.error("Entry not deleted. Try again."),
   });
 
   const today = format(new Date(), "yyyy-MM-dd");

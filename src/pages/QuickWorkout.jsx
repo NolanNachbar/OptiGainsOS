@@ -460,7 +460,7 @@ export default function QuickWorkout() {
         navigate("/dashboard");
         return;
       }
-      toast.success("Workout logged successfully!");
+      toast.success("Workout logged.");
       navigate("/dashboard");
     },
     onError: (error) => {
@@ -473,7 +473,7 @@ export default function QuickWorkout() {
         navigate("/dashboard");
         return;
       }
-      toast.error(error.message || "Failed to save workout log");
+      toast.error(error.message || "Workout not saved. Check your connection and try again.");
     },
   });
 

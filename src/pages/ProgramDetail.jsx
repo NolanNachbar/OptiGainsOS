@@ -179,9 +179,9 @@ export default function ProgramDetail() {
       {
         onSuccess: () => {
           setShowEnrollDialog(false);
-          toast.success("Enrolled! Start your first workout.");
+          toast.success("Enrolled. Start the first workout from this page.");
         },
-        onError: () => toast.error("Failed to enroll"),
+        onError: () => toast.error("Not enrolled. Check your connection and try again."),
       }
     );
   };
@@ -208,11 +208,11 @@ export default function ProgramDetail() {
     deleteEnrollmentMutation.mutate(enrollment.id, {
       onSuccess: () => {
         setShowRestartDialog(false);
-        toast.success("Enrollment canceled. You can re-enroll anytime!");
+        toast.success("Enrollment canceled. You can re-enroll at any time.");
       },
       onError: () => {
         setShowRestartDialog(false);
-        toast.error("Failed to cancel enrollment");
+        toast.error("Enrollment not canceled. Try again.");
       },
     });
   };
@@ -230,7 +230,7 @@ export default function ProgramDetail() {
       },
       onError: () => {
         setShowDeleteDialog(false);
-        toast.error("Failed to delete program");
+        toast.error("Program not deleted. Try again.");
       },
     });
   };
@@ -807,7 +807,7 @@ export default function ProgramDetail() {
                 {enrollMutation.isPaused
                   // React Query's default networkMode pauses (not fails) a
                   // mutation while offline — it resumes on its own on
-                  // reconnect, so onError (handleEnroll's "Failed to enroll")
+                  // reconnect, so onError (handleEnroll's "Not enrolled. Check your connection and try again.")
                   // never fires. Same pattern as fuel f2590dcd.
                   ? "Offline - starts when you're back online"
                   : enrollMutation.isPending ? "Starting..." : "Start Program"}

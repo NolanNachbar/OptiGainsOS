@@ -450,7 +450,7 @@ export default function FoodTracker() {
         }
       } catch (error) {
         console.error("Search failed:", error);
-        toast.error("Failed to search foods");
+        toast.error("Food search failed. Check your connection and try again.");
         setSearchError(true);
       } finally {
         setIsSearching(false);
@@ -558,10 +558,10 @@ export default function FoodTracker() {
     },
     onSuccess: () => {
       invalidateProfile(queryClient);
-      toast.success("Nutrition goals updated!");
+      toast.success("Nutrition goals updated.");
     },
     onError: () => {
-      toast.error("Failed to update goals");
+      toast.error("Goals not updated. Try again.");
     },
   });
 
@@ -937,7 +937,7 @@ export default function FoodTracker() {
       setEstimateInput("");
       toast.success(`Estimated ${est.food_name} · ${est.confidence} confidence — review & adjust`);
     } catch (err) {
-      toast.error(err.message || "Estimate failed");
+      toast.error(err.message || "Could not estimate. Add detail and try again.");
     } finally {
       setIsEstimating(false);
     }
@@ -978,7 +978,7 @@ export default function FoodTracker() {
       if (!data?.items?.length) throw new Error(data?.error || "No foods identified");
       setEstMealItems(data.items);
     } catch (err) {
-      toast.error(err.message || "Estimate failed");
+      toast.error(err.message || "Could not estimate. Add detail and try again.");
     } finally {
       setIsEstimatingMeal(false);
     }
@@ -1181,10 +1181,10 @@ const handleSaveMealTemplate = () => {
         setShowAddDialog(false);
         resetForm();
       }
-      toast.success("Food logged successfully!");
+      toast.success("Food logged.");
     },
     onError: () => {
-      toast.error("Failed to log food");
+      toast.error("Food not logged. Try again.");
     }
   });
 
@@ -1246,9 +1246,9 @@ const handleSaveMealTemplate = () => {
     },
     onSuccess: () => {
       invalidateFood(queryClient);
-      toast.success("Logged ✓");
+      toast.success("Food logged.");
     },
-    onError: () => toast.error("Failed to log"),
+    onError: () => toast.error("Food not logged. Try again."),
   });
 
   const updateFoodMutation = useMutation({
@@ -1271,10 +1271,10 @@ const handleSaveMealTemplate = () => {
       invalidateFood(queryClient);
       setShowAddDialog(false);
       resetForm();
-      toast.success("Food entry updated!");
+      toast.success("Food entry updated.");
     },
     onError: () => {
-      toast.error("Failed to update food entry");
+      toast.error("Food entry not updated. Try again.");
     },
   });
 
@@ -1555,7 +1555,7 @@ const handleSaveMealTemplate = () => {
   const revertSwap = (displaced) => {
     foodSwap.mutate({ original: displaced, replacement: null }, {
       onSuccess: () => { setSwapEntry(null); toast.success(`${displaced} is back on today's plan`); },
-      onError: (e) => toast.error(e.message || "Revert failed"),
+      onError: (e) => toast.error(e.message || "Could not revert the swap. Try again."),
     });
   };
 
@@ -1573,7 +1573,7 @@ const handleSaveMealTemplate = () => {
           ? `Swapped in ${replacement}, day re-fit around it`
           : `${original} removed; ${replacement} didn't fit today's budget`);
       },
-      onError: (e) => toast.error(e.message || "Swap failed"),
+      onError: (e) => toast.error(e.message || "Could not swap the food. Try again."),
     });
   };
 

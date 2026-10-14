@@ -362,7 +362,7 @@ function StrengthSection({ data }) {
                   {d.progression_rate_lbs_per_week > 0 ? "+" : ""}{d.progression_rate_lbs_per_week} lbs/wk
                 </span>
               )}
-              {d.eta_days === 0 && <span className="text-teal">Target reached!</span>}
+              {d.eta_days === 0 && <span className="text-teal">Target reached.</span>}
               <span>{d.sessions} sessions</span>
               {d.progression_command && d.progression_command !== "HOLD" && (
                 // Non-imperative status chip (glass-inset pill, muted ink) so the

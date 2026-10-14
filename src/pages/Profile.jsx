@@ -279,10 +279,10 @@ export default function Profile({ hideHeader }) {
       invalidateProfile(queryClient);
       queryClient.invalidateQueries({ queryKey: ['athlete-state-nutrition'] });
       if (weightToLog) invalidateBodyWeight(queryClient);
-      toast.success("Profile saved!");
+      toast.success("Profile saved.");
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to update profile");
+      toast.error(error.message || "Profile not saved. Check your connection and try again.");
     },
   });
 
@@ -405,8 +405,8 @@ export default function Profile({ hideHeader }) {
               <button
                 type="button"
                 onClick={async () => {
-                  try { await signOut(); toast.success('Signed out successfully'); }
-                  catch { toast.error('Failed to sign out'); }
+                  try { await signOut(); toast.success('Signed out.'); }
+                  catch { toast.error('Could not sign out. Try again.'); }
                 }}
                 className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-left text-ink-muted hover:text-ink hover:bg-charcoal-elevated transition-colors"
               >
@@ -469,8 +469,8 @@ export default function Profile({ hideHeader }) {
               <button
                 type="button"
                 onClick={async () => {
-                  try { await signOut(); toast.success('Signed out successfully'); }
-                  catch { toast.error('Failed to sign out'); }
+                  try { await signOut(); toast.success('Signed out.'); }
+                  catch { toast.error('Could not sign out. Try again.'); }
                 }}
                 className="mt-3 w-full flex items-center justify-center gap-2 min-h-[48px] rounded-xl glass-inset text-ink-muted font-semibold text-sm active:bg-charcoal-elevated hover:text-ink hover:bg-charcoal-elevated transition-colors"
               >
@@ -1004,10 +1004,10 @@ export default function Profile({ hideHeader }) {
                         setDeleteLoading(true);
                         try {
                           await deleteAccount();
-                          toast.success('Account deleted successfully');
+                          toast.success('Account deleted.');
                           navigate('/login');
                         } catch (error) {
-                          toast.error(error.message || 'Failed to delete account');
+                          toast.error(error.message || 'Account not deleted. Try again.');
                           setDeleteLoading(false);
                         }
                       }}

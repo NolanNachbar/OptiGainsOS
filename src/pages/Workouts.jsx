@@ -117,11 +117,11 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
     },
     onSuccess: (clonedWorkout) => {
       invalidateWorkouts(queryClient);
-      toast.success('Workout cloned successfully');
+      toast.success('Workout cloned.');
       navigate(`/create-workout?edit=${clonedWorkout.id}`);
     },
     onError: (error) => {
-      toast.error('Failed to clone workout');
+      toast.error('Workout not cloned. Try again.');
       console.error('Error cloning workout:', error);
     }
   });
@@ -148,10 +148,10 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
       invalidateReactions(queryClient);
       invalidateSchedule(queryClient);
       invalidateWorkoutLogs(queryClient);
-      toast.success('Workout deleted successfully');
+      toast.success('Workout deleted.');
     },
     onError: (error) => {
-      toast.error('Failed to delete workout');
+      toast.error('Workout not deleted. Try again.');
       console.error('Error deleting workout:', error);
     }
   });
@@ -170,7 +170,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
       if (folderFilter === renamingFolder) setFolderFilter(newName.trim() || "all");
       toast.success("Folder renamed");
     },
-    onError: () => toast.error("Failed to rename folder"),
+    onError: () => toast.error("Folder not renamed. Try again."),
   });
 
   const handleEdit = (workoutId) => {
@@ -216,7 +216,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
           created_by: user.id,
         });
         invalidateWorkouts(queryClient);
-        toast.success(`"${data.title}" imported to your library!`);
+        toast.success(`"${data.title}" imported to your library.`);
       } catch {
         toast.error("Could not read workout file.");
       }
@@ -248,7 +248,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
         const parsed = parseProgramJson(ev.target.result);
         navigate('/program-builder', { state: { importedProgram: parsed } });
       } catch (err) {
-        toast.error(err.message || 'Failed to load JSON');
+        toast.error(err.message || 'Could not read the JSON file. Check the file and try again.');
       }
     };
     reader.readAsText(file);

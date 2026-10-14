@@ -396,7 +396,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
               )}
               {sessionDone && (
                 <p className="mt-3 flex items-center gap-1.5 text-xs font-bold text-ok rise-in">
-                  <Check className="w-3.5 h-3.5" /> All {POSES.length} poses captured. Nice work.
+                  <Check className="w-3.5 h-3.5" /> All {POSES.length} poses captured.
                 </p>
               )}
             </>
