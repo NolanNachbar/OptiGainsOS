@@ -47,7 +47,7 @@ const TabsTrigger = React.forwardRef(({ className = "", value, variant = "underl
     <button
       ref={ref}
       onClick={() => onValueChange(value)}
-      className={`inline-flex items-center justify-center whitespace-nowrap px-3 py-3 min-h-[44px] text-[13px] font-medium transition-[color,border-color,background-color] duration-200 ease-[var(--ease)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 ${
+      className={`inline-flex items-center justify-center whitespace-nowrap px-3 py-3 min-h-[44px] text-[14px] font-medium transition-[color,border-color,background-color] duration-200 ease-[var(--ease)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 ${
         isActive
           ? activeClass
           : 'text-ink-muted hover:text-ink'

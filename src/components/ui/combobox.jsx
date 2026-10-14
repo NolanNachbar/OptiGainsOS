@@ -120,7 +120,7 @@ function Combobox({ value = "", onValueChange, items, excludeValue = "", placeho
                     role="option"
                     aria-selected={selected}
                     onMouseDown={(e) => { e.preventDefault(); handleSelect(name); }}
-                    className={`flex cursor-pointer select-none items-center rounded-md px-2 py-2 text-[13px] hover:bg-charcoal-elevated hover:text-ink ${selected ? "bg-brand/[8%] text-brand" : "text-ink-muted"}`}
+                    className={`flex cursor-pointer select-none items-center rounded-md px-2 py-2 text-[14px] hover:bg-charcoal-elevated hover:text-ink ${selected ? "bg-brand/[8%] text-brand" : "text-ink-muted"}`}
                   >
                     {selected ? <Check className="mr-2 h-4 w-4 shrink-0" /> : <span className="mr-6" />}
                     {name}
@@ -128,7 +128,7 @@ function Combobox({ value = "", onValueChange, items, excludeValue = "", placeho
                 );
               })
             ) : (
-              <div className="px-2 py-1.5 text-[13px] text-ink-muted">
+              <div className="px-2 py-1.5 text-[14px] text-ink-muted">
                 {query ? `No results for "${value}". Press Enter to use it.` : "No options available."}
               </div>
             )}
@@ -164,7 +164,7 @@ const ComboboxContent = ({ className = "", children }) => {
   return (
     <div role="listbox" className={`${listClass} ${className}`} style={{ maxHeight }}>
       {filtered.length > 0 ? filtered : (
-        <div className="px-2 py-1.5 text-[13px] text-ink-muted">
+        <div className="px-2 py-1.5 text-[14px] text-ink-muted">
           {query ? `No results for "${inputValue}".` : "No options available."}
         </div>
       )}
@@ -180,7 +180,7 @@ const ComboboxItem = ({ value, children }) => {
       role="option"
       aria-selected={selected}
       onMouseDown={(e) => { e.preventDefault(); handleSelect(value); }}
-      className={`flex cursor-pointer select-none items-center rounded-md px-2 py-2 text-[13px] hover:bg-charcoal-elevated hover:text-ink ${selected ? "bg-brand/[8%] text-brand" : "text-ink-muted"}`}
+      className={`flex cursor-pointer select-none items-center rounded-md px-2 py-2 text-[14px] hover:bg-charcoal-elevated hover:text-ink ${selected ? "bg-brand/[8%] text-brand" : "text-ink-muted"}`}
     >
       {selected ? <Check className="mr-2 h-4 w-4 shrink-0" /> : <span className="mr-6" />}
       {children}

@@ -26,16 +26,16 @@ export default function MetricTile({
       <div className="flex items-center gap-1.5">
         <span className="w-[5px] h-[5px] rounded-full shrink-0" style={{ background: hue }} />
         {Icon && <Icon className="w-3 h-3 text-muted-2" />}
-        <span className="section-label !text-[9.5px]">{label}</span>
+        <span className="section-label !text-[11px]">{label}</span>
       </div>
       <div className="flex items-baseline gap-1 mt-1.5">
         <span className="hero-metric text-ink text-[20px]">{value ?? "—"}</span>
-        {unit && <span className="text-[10px] font-semibold text-muted-2">{unit}</span>}
+        {unit && <span className="text-[11px] font-semibold text-muted-2">{unit}</span>}
         {delta != null && (
           <span className="font-technical text-[11px] font-bold ml-auto" style={{ color: dc }}>{delta}</span>
         )}
       </div>
-      {sub && <div className="text-[10.5px] font-semibold text-muted-2 mt-0.5 truncate">{sub}</div>}
+      {sub && <div className="text-[11px] font-semibold text-muted-2 mt-0.5 truncate">{sub}</div>}
     </Comp>
   );
 }
