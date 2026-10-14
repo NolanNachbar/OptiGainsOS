@@ -14,9 +14,25 @@ async function callProxy(body) {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'USDA request failed');
+    const e = new Error(err.error || 'USDA request failed');
+    e.status = res.status;
+    throw e;
   }
   return res.json();
+}
+
+// The proxy allows 200 requests/user/hour and one typed query costs 2-4 of
+// them, so repeating a query (backspace, retype, back to a past search) must
+// not spend quota again. Short TTL keeps results fresh enough.
+const SEARCH_TTL_MS = 10 * 60 * 1000;
+const searchCache = new Map();
+async function cachedSearch(body) {
+  const key = JSON.stringify(body);
+  const hit = searchCache.get(key);
+  if (hit && Date.now() - hit.at < SEARCH_TTL_MS) return hit.data;
+  const data = await callProxy(body);
+  searchCache.set(key, { at: Date.now(), data });
+  return data;
 }
 
 function mapFood(food) {
@@ -76,13 +92,13 @@ function mapFood(food) {
 
 export async function searchGenericFoods(query, pageSize = 10) {
   if (!query || query.length < 2) return [];
-  const data = await callProxy({ action: 'search', query, pageSize, dataType: 'Foundation,SR Legacy' });
+  const data = await cachedSearch({ action: 'search', query, pageSize, dataType: 'Foundation,SR Legacy' });
   return (data.foods || []).map(mapFood);
 }
 
 export async function searchBrandedFoods(query, pageSize = 10) {
   if (!query || query.length < 2) return [];
-  const data = await callProxy({ action: 'search', query, pageSize, dataType: 'Branded' });
+  const data = await cachedSearch({ action: 'search', query, pageSize, dataType: 'Branded' });
   return (data.foods || []).map(mapFood);
 }
 

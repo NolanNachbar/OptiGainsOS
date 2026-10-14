@@ -244,6 +244,7 @@ export default function FoodTracker() {
   const [showBranded, setShowBranded] = useState(false);
   const [fuzzyFallback, setFuzzyFallback] = useState(false);
   const [searchError, setSearchError] = useState(false);
+  const [searchRateLimited, setSearchRateLimited] = useState(false);
   const [searchRetry, setSearchRetry] = useState(0);
   const [myFoodsExpanded, setMyFoodsExpanded] = useState(true);
   const [recentExpanded, setRecentExpanded] = useState(true);
@@ -402,10 +403,29 @@ export default function FoodTracker() {
       setIsSearching(true);
       setSearchError(false);
       try {
-        const [generic, branded] = await Promise.all([
+        setSearchRateLimited(false);
+        const [genericRaw, brandedRaw] = await Promise.all([
           searchGenericFoods(searchQuery),
           searchBrandedFoods(searchQuery),
         ]);
+        // USDA has rows with no energy value at all (e.g. a 0 kcal "Lunchmeat,
+        // chicken breast"); they are never a useful pick and were ranking first.
+        const hasEnergy = (f) => (Number(f.calories) || 0) > 0;
+        // Exact / prefix / whole-word matches first, then the rest in USDA order.
+        const q = searchQuery.toLowerCase().trim();
+        const rank = (f) => {
+          const d = (f.description || "").toLowerCase();
+          if (d === q) return 0;
+          if (d.startsWith(q + ",") || d.startsWith(q + " ")) return 1;
+          if (d.startsWith(q)) return 2;
+          return 3;
+        };
+        const tidy = (list) => list.filter(hasEnergy)
+          .map((f, i) => ({ f, i }))
+          .sort((a, b) => rank(a.f) - rank(b.f) || a.i - b.i)
+          .map(({ f }) => f);
+        const generic = tidy(genericRaw);
+        const branded = tidy(brandedRaw);
 
         const words = searchQuery.toLowerCase().split(/\s+/).filter(w => w.length >= 3);
 
@@ -450,12 +470,13 @@ export default function FoodTracker() {
         }
       } catch (error) {
         console.error("Search failed:", error);
-        toast.error("Failed to search foods");
+        setSearchRateLimited(error?.status === 429);
+        if (error?.status !== 429) toast.error("Failed to search foods");
         setSearchError(true);
       } finally {
         setIsSearching(false);
       }
-    }, 300);
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [searchQuery, searchRetry]);
@@ -2751,9 +2772,11 @@ const handleSaveMealTemplate = () => {
                         searchError ? (
                           <div className="mt-2 glass-inset px-4 py-3 text-center space-y-2">
                             <p className="text-xs text-ink-secondary">
-                              Could not reach the food database.
+                              {searchRateLimited
+                                ? "Food search limit reached for this hour. Your own foods and Recent still work, or describe the food below."
+                                : "Could not reach the food database."}
                             </p>
-                            <Button
+                            {!searchRateLimited && <Button
                               type="button"
                               variant="outline"
                               size="lg"
@@ -2764,7 +2787,7 @@ const handleSaveMealTemplate = () => {
                               }}
                             >
                               Retry
-                            </Button>
+                            </Button>}
                           </div>
                         ) : (
                           <div className="mt-2 glass-inset px-4 py-3 text-center space-y-2">
