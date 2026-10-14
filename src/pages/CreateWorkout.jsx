@@ -235,7 +235,7 @@ export default function CreateWorkout() {
     }
     try {
       const workoutData = {
-        title: workout.title,
+        title: workout.title.trim(),
         description: workout.description,
         focus: workout.focus,
         duration_minutes: workout.duration_minutes,

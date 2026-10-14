@@ -245,6 +245,7 @@ export default function FoodTracker() {
   const [fuzzyFallback, setFuzzyFallback] = useState(false);
   const [searchError, setSearchError] = useState(false);
   const [searchRateLimited, setSearchRateLimited] = useState(false);
+  const [estimateError, setEstimateError] = useState(null);
   const [searchRetry, setSearchRetry] = useState(0);
   const [myFoodsExpanded, setMyFoodsExpanded] = useState(true);
   const [recentExpanded, setRecentExpanded] = useState(true);
@@ -930,7 +931,8 @@ export default function FoodTracker() {
   // form like a custom food so the athlete reviews + adjusts before logging.
   const estimateFood = async () => {
     const description = estimateInput.trim();
-    if (!description) { toast.error("Describe a food first"); return; }
+    if (!description) { setEstimateError("Describe a food first, e.g. \"8 oz grilled chicken breast\"."); return; }
+    setEstimateError(null);
     setIsEstimating(true);
     try {
       const { data, error } = await supabase.functions.invoke("estimate-food-macros", { body: { description } });
@@ -958,6 +960,9 @@ export default function FoodTracker() {
       setEstimateInput("");
       toast.success(`Estimated ${est.food_name} · ${est.confidence} confidence — review & adjust`);
     } catch (err) {
+      // Inline, not only a toast: toasts render behind this sheet and the
+      // keyboard, which made a failed estimate look like nothing happened.
+      setEstimateError(err.message || "Estimate failed. Try again, or enter the macros manually.");
       toast.error(err.message || "Estimate failed");
     } finally {
       setIsEstimating(false);
@@ -2392,10 +2397,10 @@ const handleSaveMealTemplate = () => {
                             </button>
                           </div>
                         </div>
-                        <span data-field="kcal" className={`font-technical text-[13px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{entry.calories ?? 0}</span>
-                        <span data-field="protein" className={`font-technical text-[13px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{entry.protein_grams ?? 0}</span>
-                        <span data-field="carbs" className={`font-technical text-[13px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{entry.carbs_grams ?? 0}</span>
-                        <span data-field="fats" className={`font-technical text-[13px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{entry.fats_grams ?? 0}</span>
+                        <span data-field="kcal" className={`font-technical text-[13px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{Math.round(entry.calories || 0)}</span>
+                        <span data-field="protein" className={`font-technical text-[13px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{Math.round(entry.protein_grams || 0)}</span>
+                        <span data-field="carbs" className={`font-technical text-[13px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{Math.round(entry.carbs_grams || 0)}</span>
+                        <span data-field="fats" className={`font-technical text-[13px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{Math.round(entry.fats_grams || 0)}</span>
                       </div>
                     ))}
 
@@ -2912,7 +2917,7 @@ const handleSaveMealTemplate = () => {
                         <Input
                           id="ai-estimate"
                           value={estimateInput}
-                          onChange={(e) => setEstimateInput(e.target.value)}
+                          onChange={(e) => { setEstimateInput(e.target.value); if (estimateError) setEstimateError(null); }}
                           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); estimateFood(); } }}
                           placeholder="e.g., 8 oz grilled chicken breast"
                           className="flex-1"
@@ -2928,6 +2933,9 @@ const handleSaveMealTemplate = () => {
                           {isEstimating ? <Loader2 className="w-4 h-4 spin-loop" /> : <><Sparkles className="w-4 h-4" /> Estimate</>}
                         </Button>
                       </div>
+                      {estimateError && (
+                        <p role="alert" className="mt-1.5 text-[11px] font-semibold text-bad">{estimateError}</p>
+                      )}
                       {isEstimatedFood ? (
                         <p className="mt-1.5 text-[11px] text-brand flex items-center gap-1">
                           <Sparkles className="w-3 h-3" /> AI estimate filled in below — review the macros and adjust before logging.
@@ -2999,6 +3007,7 @@ const handleSaveMealTemplate = () => {
                               <Input
                                 type="number" inputMode="decimal"
                                 value={newFood.serving_amount}
+                                onFocus={(e) => e.target.select()}
                                 onChange={(e) => setNewFood({ ...newFood, serving_amount: e.target.value })}
                                 min="0"
                                 step="0.5"
@@ -3778,6 +3787,7 @@ const handleSaveMealTemplate = () => {
                 <Input
                   type="number" inputMode="decimal"
                   value={newFood.serving_amount}
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) =>
                     setNewFood({
                       ...newFood,
