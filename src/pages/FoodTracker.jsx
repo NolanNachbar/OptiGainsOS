@@ -3145,7 +3145,12 @@ const handleSaveMealTemplate = () => {
                           </div>
                         )}
 
-                        {(isUsdaFood ? newFood.calories > 0 : baseMacros.calories > 0 || baseMacros.protein_grams > 0) && (
+                        {/* Always rendered (values show a dash until macros exist):
+                            mounting this block on the first calorie keystroke
+                            pushed the macro fields down ~330pt mid-typing. */}
+                        {(() => {
+                          const hasTotals = isUsdaFood ? newFood.calories > 0 : baseMacros.calories > 0 || baseMacros.protein_grams > 0;
+                          return (
                           <>
                           <p className="section-label">Total for {newFood.serving_amount} {newFood.serving_unit}</p>
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -3160,12 +3165,13 @@ const handleSaveMealTemplate = () => {
                             ].map(({ label, value, unit, hue }) => (
                               <div key={label} className="glass-inset px-2 py-2 text-center">
                                 <div className="text-xs text-ink-muted font-medium">{label}</div>
-                                <div className={`font-technical font-semibold text-sm ${hue}`}>{value}{unit}</div>
+                                <div className={`font-technical font-semibold text-sm ${hasTotals ? hue : 'text-ink-faint'}`}>{hasTotals ? `${value}${unit}` : '—'}</div>
                               </div>
                             ))}
                           </div>
                           </>
-                        )}
+                          );
+                        })()}
 
                         <p className="text-xs text-ink-muted">
                           Edit base values,{' '}
