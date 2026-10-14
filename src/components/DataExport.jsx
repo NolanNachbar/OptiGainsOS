@@ -4,6 +4,7 @@ import { Download, ChevronDown, ChevronUp } from "lucide-react";
 import { db, supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { buildFoodExportRows, fetchAllPages } from "@/utils/foodLog";
 
 function downloadCSV(filename, rows) {
   const csv = rows
@@ -50,12 +51,17 @@ const EXPORTS = [
   {
     id: "food",
     label: "Food Log",
-    description: "All food entries with macros",
-    fn: async (user, { foodEntries }) => {
-      const rows = [["date", "meal", "food_name", "calories", "protein_g", "carbs_g", "fats_g"]];
-      [...foodEntries].sort((a, b) => new Date(a.date) - new Date(b.date)).forEach((e) => {
-        rows.push([e.date, e.meal_type, e.food_name, e.calories, e.protein_grams, e.carbs_grams, e.fats_grams]);
-      });
+    description: "Full food history: serving, meal, time, fiber, source (planned rows excluded)",
+    fn: async (user) => {
+      // Whole history, not the 90-day window the page holds; paged because the
+      // API caps a response at 1000 rows. Stable order so pages don't overlap.
+      const entries = await fetchAllPages((from, to) =>
+        supabase.from("food_entries").select("*").eq("created_by", user.id)
+          .order("date", { ascending: true }).order("created_at", { ascending: true }).order("id")
+          .range(from, to)
+      );
+      const { data: customFoods } = await supabase.from("custom_foods").select("*").eq("created_by", user.id);
+      const rows = buildFoodExportRows(entries, customFoods || []);
       downloadCSV("food_log.csv", rows);
     },
   },
@@ -153,7 +159,7 @@ export default function DataExport({ weightEntries = [], foodEntries = [] }) {
       try {
         await exp.fn(user, { weightEntries, foodEntries });
         count++;
-      } catch {}
+      } catch { /* one failing export must not stop the rest */ }
     }
     toast.success(`${count} files downloaded`);
     setLoading(null);

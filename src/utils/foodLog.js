@@ -118,3 +118,55 @@ export function parseTemplateServing(item) {
   const unit = inline || item?.serving_unit || "serving";
   return { amount, unit };
 }
+
+// ── Food export ────────────────────────────────────────────────────────────
+
+export const FOOD_EXPORT_HEADER = [
+  "date", "meal", "eaten_at", "logged_at", "food_name",
+  "serving_qty", "serving_unit", "serving_grams",
+  "calories", "protein_g", "carbs_g", "fats_g", "fiber_g", "source",
+];
+
+/**
+ * CSV rows for the full food export. Planned (not-yet-eaten) rows are left out.
+ * `source` is the origin tag of the My Foods item with the same name, blank when
+ * the entry has no saved food or the food predates the tag; food_entries itself
+ * carries no source column.
+ */
+export function buildFoodExportRows(entries, customFoods = []) {
+  const sourceByName = new Map();
+  for (const f of customFoods) {
+    if (f.source) sourceByName.set(String(f.food_name || "").trim().toLowerCase(), f.source);
+  }
+  const eaten = (entries || []).filter((e) => e.planned !== true);
+  const sorted = [...eaten].sort((a, b) =>
+    String(a.date).localeCompare(String(b.date)) ||
+    String(a.eaten_at || a.created_at || "").localeCompare(String(b.eaten_at || b.created_at || ""))
+  );
+  const rows = [FOOD_EXPORT_HEADER];
+  for (const e of sorted) {
+    rows.push([
+      e.date, e.meal_type, e.eaten_at ?? "", e.created_at ?? "", e.food_name,
+      e.serving_size ?? "", e.serving_unit ?? "", e.serving_grams ?? "",
+      e.calories ?? "", e.protein_grams ?? "", e.carbs_grams ?? "", e.fats_grams ?? "",
+      e.fiber_grams ?? "",
+      sourceByName.get(String(e.food_name || "").trim().toLowerCase()) ?? "",
+    ]);
+  }
+  return rows;
+}
+
+/**
+ * Read every row of a query past the 1000-row API cap. `fetchPage(from, to)`
+ * must return { data, error } for that inclusive range.
+ */
+export async function fetchAllPages(fetchPage, pageSize = 1000) {
+  const all = [];
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await fetchPage(from, from + pageSize - 1);
+    if (error) throw error;
+    all.push(...(data || []));
+    if (!data || data.length < pageSize) break;
+  }
+  return all;
+}
