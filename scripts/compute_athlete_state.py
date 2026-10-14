@@ -408,7 +408,7 @@ def compute_joint_action_volume(workout_logs: list) -> dict:
             pattern = get_joint_action(ex.get("name", ""))
             if not pattern:
                 continue
-            sets = ex.get("sets", []) or []
+            sets = work_sets(ex.get("sets", []))
             hard_sets = len([s for s in sets if s.get("weight") or s.get("reps")])
             if not hard_sets:
                 continue
