@@ -147,7 +147,7 @@ export default function CreateWorkout() {
         }
       } catch (error) {
         console.error("Error fetching workout:", error);
-        if (isMounted.current) toast.error("Failed to load workout");
+        if (isMounted.current) toast.error("Could not load the workout. Check your connection and try again.");
       } finally {
         if (isMounted.current) setIsLoading(false);
       }
@@ -258,7 +258,7 @@ export default function CreateWorkout() {
       navigate("/workouts");
     } catch (error) {
       console.error(`Error ${editId ? 'updating' : 'creating'} workout:`, error);
-      toast.error(`Failed to ${editId ? 'update' : 'create'} workout`);
+      toast.error(`Workout not ${editId ? 'updated' : 'created'}. Try again.`);
     }
   };
 

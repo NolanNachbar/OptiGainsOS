@@ -65,9 +65,9 @@ export default function ResetPassword() {
       navigate('/today', { replace: true });
     } catch (error) {
       if (error.message?.includes('Auth session missing')) {
-        toast.error('This reset link is invalid or expired. Please request a new one.');
+        toast.error('This reset link is invalid or expired. Request a new one.');
       } else {
-        toast.error(error.message || 'Failed to reset password');
+        toast.error(error.message || 'Could not reset the password. Request a new reset link and try again.');
       }
     } finally {
       setLoading(false);

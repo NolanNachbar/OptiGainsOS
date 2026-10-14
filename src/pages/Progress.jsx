@@ -210,7 +210,7 @@ function WeightModule() {
       toast.success("Weight logged");
     },
     onError: (err) => {
-      const msg = err instanceof Error ? err.message : "Failed to log weight";
+      const msg = err instanceof Error ? err.message : "Weight not saved. Try again; nothing was changed.";
       setWeightError(msg);
       toast.error(msg);
     },
@@ -221,7 +221,7 @@ function WeightModule() {
       await db.entities.BodyWeightEntry.delete(id);
     },
     onSuccess: () => invalidateBodyWeight(qc),
-    onError: () => toast.error("Failed to delete"),
+    onError: () => toast.error("Entry not deleted. Try again."),
   });
 
   const sorted = [...weightEntries].sort((a, b) => new Date(a.recorded_date) - new Date(b.recorded_date));
@@ -437,7 +437,7 @@ function MeasurementsTab() {
       setForm({}); setNotes("");
       toast.success("Measurements saved");
     },
-    onError: () => toast.error("Failed to save"),
+    onError: () => toast.error("Measurements not saved. Try again."),
   });
 
   const del = useMutation({

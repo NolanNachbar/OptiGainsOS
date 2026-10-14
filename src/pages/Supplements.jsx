@@ -66,7 +66,7 @@ function WaterCard({ today }) {
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["water-logs", today] }),
-    onError: () => toast.error("Failed to log water"),
+    onError: () => toast.error("Water not logged. Try again."),
   });
 
   const deleteEntry = useMutation({
@@ -240,7 +240,7 @@ export default function Supplements({ embedded = false }) {
       setShowAddType(false);
       toast.success("Supplement added");
     },
-    onError: () => toast.error("Failed to save"),
+    onError: () => toast.error("Supplement not saved. Try again."),
   });
 
   const updateType = useMutation({
@@ -253,7 +253,7 @@ export default function Supplements({ embedded = false }) {
       setEditingType(null);
       toast.success("Updated");
     },
-    onError: () => toast.error("Failed to update"),
+    onError: () => toast.error("Supplement not updated. Try again."),
   });
 
   const deleteType = useMutation({
@@ -262,7 +262,7 @@ export default function Supplements({ embedded = false }) {
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["supplement-types"] }),
-    onError: () => toast.error("Failed to delete"),
+    onError: () => toast.error("Supplement not deleted. Try again."),
   });
 
   const logSupp = useMutation({
@@ -281,7 +281,7 @@ export default function Supplements({ embedded = false }) {
       setLogDoses(prev => ({ ...prev, [type.id]: "" }));
       toast.success(`${type.name} logged`);
     },
-    onError: () => toast.error("Failed to log"),
+    onError: () => toast.error("Supplement not logged. Try again."),
   });
 
   const deleteLog = useMutation({

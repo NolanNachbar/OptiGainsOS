@@ -47,7 +47,7 @@ test('tapping + on a Recent food re-logs it with its last portion', async ({ pag
     await relogBtn.scrollIntoViewIfNeeded();
     await relogBtn.click();
 
-    await expect(page.getByText('Food logged.')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Food logged.', { exact: true })).toBeVisible({ timeout: 5000 });
 
     // Two rows now: the seed and the one the "+" created, both intact.
     await expect.poll(async () => {

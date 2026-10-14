@@ -486,7 +486,7 @@ export default function QuickWorkout() {
         navigate("/dashboard");
         return;
       }
-      toast.error(error.message || "Failed to save workout log");
+      toast.error(error.message || "Workout not saved. Check your connection and try again.");
     },
   });
 

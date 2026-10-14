@@ -879,7 +879,7 @@ export default function WorkoutDetail() {
       navigate(`/create-workout?edit=${clonedWorkout.id}`);
     },
     onError: (error) => {
-      toast.error("Failed to clone workout");
+      toast.error("Workout not cloned. Try again.");
       console.error("Error cloning workout:", error);
     },
   });
@@ -1015,12 +1015,12 @@ export default function WorkoutDetail() {
               if (result.status === 'completed') {
                 toast.success("Program complete.", { duration: 5000 });
               } else {
-                toast.success("Workout logged! Progression updated.");
+                toast.success("Workout logged. Progression updated.");
               }
               navigate(isProgramSource && enrollment ? `/program/${enrollment.program_id}` : "/dashboard");
             },
             onError: () => {
-              toast.success("Workout logged! (Progression update failed)");
+              toast.success("Workout logged. Progression not updated.");
               navigate(isProgramSource && enrollment ? `/program/${enrollment.program_id}` : "/dashboard");
             },
           }
@@ -1043,7 +1043,7 @@ export default function WorkoutDetail() {
         navigate(isProgramSource && enrollment ? `/program/${enrollment.program_id}` : "/dashboard");
         return;
       }
-      toast.error(error.message || "Failed to save workout log");
+      toast.error(error.message || "Workout not saved. Check your connection and try again.");
     },
   });
 

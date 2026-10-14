@@ -141,7 +141,7 @@ function ReadingTab() {
       resetForm();
       toast.success(editing ? "Updated" : "Book added");
     },
-    onError: () => toast.error("Failed to save"),
+    onError: () => toast.error("Entry not saved. Try again."),
   });
 
   const updateStatus = useMutation({
@@ -153,7 +153,7 @@ function ReadingTab() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["reading-log"] }),
-    onError: () => toast.error("Failed to update"),
+    onError: () => toast.error("Entry not updated. Try again."),
   });
 
   const del = useMutation({
@@ -162,7 +162,7 @@ function ReadingTab() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["reading-log"] }),
-    onError: () => toast.error("Failed to delete"),
+    onError: () => toast.error("Entry not deleted. Try again."),
   });
 
   const openEdit = (book) => {
@@ -226,7 +226,7 @@ function ReadingTab() {
       {!isLoading && !isError && books.length === 0 && (
         <div className="surface p-8 text-center flex flex-col items-center">
           <BookOpen className="w-8 h-8 text-faint mb-2" />
-          <p className="text-sm font-semibold text-muted-2 mb-3">Start your reading list, track books, takeaways, and ratings.</p>
+          <p className="text-sm font-semibold text-muted-2 mb-3">No books logged yet. Add one to record takeaways and a rating.</p>
           <Button variant="volt" size="lg" onClick={() => { resetForm(); setEditing(null); setShowAdd(true); }}>Add your first book</Button>
         </div>
       )}
@@ -389,7 +389,7 @@ function StudyTab() {
       setForm(p => ({ ...p, topic: "", duration_min: "", notes: "" }));
       toast.success("Study session logged");
     },
-    onError: () => toast.error("Failed to save"),
+    onError: () => toast.error("Entry not saved. Try again."),
   });
 
   const del = useMutation({
@@ -398,7 +398,7 @@ function StudyTab() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["study-log"] }),
-    onError: () => toast.error("Failed to delete"),
+    onError: () => toast.error("Entry not deleted. Try again."),
   });
 
   return (
@@ -524,7 +524,7 @@ function SkillsTab() {
       setForm({ name: "", category: "", level: 3 });
       toast.success("Skill added");
     },
-    onError: () => toast.error("Failed to save"),
+    onError: () => toast.error("Entry not saved. Try again."),
   });
 
   const practiced = useMutation({
@@ -533,7 +533,7 @@ function SkillsTab() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["skills"] }),
-    onError: () => toast.error("Failed to update"),
+    onError: () => toast.error("Entry not updated. Try again."),
   });
 
   const updateLevel = useMutation({
@@ -550,7 +550,7 @@ function SkillsTab() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["skills"] }),
-    onError: () => toast.error("Failed to delete"),
+    onError: () => toast.error("Entry not deleted. Try again."),
   });
 
   const stale = skills.filter(s => {
