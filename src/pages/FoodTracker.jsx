@@ -1571,6 +1571,9 @@ const handleSaveMealTemplate = () => {
     });
     setGenericResults([]); setBrandedResults([]);
     setSearchQuery("");
+    // Amount and Meal live under the manual-entry fold; bring them into view
+    // once the form has rendered so picking a result lands on the next step.
+    setTimeout(() => document.getElementById("serving_amount")?.scrollIntoView({ block: "center", behavior: "smooth" }), 150);
   };
 
   // Consumed macros count only EATEN entries — planned (not-yet-checked-off) plan
@@ -3014,6 +3017,7 @@ const handleSaveMealTemplate = () => {
                             <div className="flex gap-2 mt-1">
                               <Input
                                 type="number" inputMode="decimal"
+                                id="serving_amount"
                                 value={newFood.serving_amount}
                                 onFocus={(e) => e.target.select()}
                                 onChange={(e) => setNewFood({ ...newFood, serving_amount: e.target.value })}
