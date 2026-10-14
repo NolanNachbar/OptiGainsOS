@@ -1533,6 +1533,9 @@ function KeypadSheet({
   const set = exercise.sets[setIndex];
   const [buffer, setBuffer] = useState("");
   const [fresh, setFresh] = useState(true);
+  // The weight-cap toast renders behind this sheet, so the cap is also shown
+  // inline where the digits are.
+  const [capped, setCapped] = useState(false);
   const sheetRef = useRef(null);
   const touchStartY = useRef(null);
 
@@ -1600,7 +1603,9 @@ function KeypadSheet({
     // Mirror commitWeight's 2000 clamp in the display too, so a fat-fingered
     // extra digit doesn't show 9999 on the sheet while 2000 is what actually
     // gets saved underneath it.
-    const shown = field === "weight" && parseFloat(next) > 2000 ? "2000" : next;
+    const overCap = field === "weight" && parseFloat(next) > 2000;
+    const shown = overCap ? "2000" : next;
+    setCapped(overCap);
     setBuffer(shown);
     setFresh(false);
     commit(next);
@@ -1699,7 +1704,9 @@ function KeypadSheet({
             {buffer === "" ? "—" : buffer}
           </div>
         </div>
-        {prevText && <div className="text-xs font-semibold text-ink-faint pb-1">{prevText}</div>}
+        {capped
+          ? <div role="status" className="text-xs font-bold text-warn pb-1">Max 2000, capped</div>
+          : prevText && <div className="text-xs font-semibold text-ink-faint pb-1">{prevText}</div>}
       </div>
 
       {field === "rir" ? (

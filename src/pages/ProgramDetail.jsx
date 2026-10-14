@@ -253,8 +253,14 @@ export default function ProgramDetail() {
   const completedCount = enrollment?.completed_workouts?.length || 0;
   // Rest days are cycle slots but not workouts; counting them made the
   // denominator (e.g. "10/91 workouts") larger than anything completable.
+  // `workouts` spans every cycle's rows, so count the distinct training
+  // slots of ONE cycle (a day_index can repeat across cycles).
   const trainingDaysPerCycle =
-    workouts.filter((w) => w.exercises?.length > 0 || w.cardio_sessions?.length > 0).length || cycleLength;
+    new Set(
+      workouts
+        .filter((w) => w.exercises?.length > 0 || w.cardio_sessions?.length > 0)
+        .map((w) => ((Number(w.day_index || w.day_number) - 1) % cycleLength + cycleLength) % cycleLength)
+    ).size || cycleLength;
   const totalWorkouts = trainingDaysPerCycle * numCycles;
   const progressPercent =
     totalWorkouts > 0 ? Math.round((completedCount / totalWorkouts) * 100) : 0;
