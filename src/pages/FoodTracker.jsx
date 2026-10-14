@@ -1278,7 +1278,10 @@ const handleSaveMealTemplate = () => {
     addFoodMutation.mutate({
       __quickRelog: true,
       food_name: entry.food_name,
-      meal_type: entry.meal_type,
+      // The Recent entry's meal is whenever it was last eaten, not now: a
+      // dinner item re-logged at breakfast went into Dinner. Today follows the
+      // clock (same default as a fresh form); a back-dated day keeps the entry's.
+      meal_type: selectedDate === getTodayString() ? getDefaultMealType() : entry.meal_type,
       serving_amount: originalAmount,
       serving_unit: originalUnit,
       serving_grams: entry.serving_grams ?? null,
