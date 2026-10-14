@@ -673,8 +673,9 @@ export default function FoodTracker() {
       const plan = planCustomFoodSave(existing, food, { activeFoodId: editingFoodId });
       // Nothing written, so nothing for onSuccess to hang portions off.
       if (plan.action === "keep") return null;
-      // Changing a saved food's numbers by hand makes it a manual food.
-      const row = plan.action === "update" ? { ...food, source: "manual" } : food;
+      // Only a real macro edit reaches "update", and it writes just the macros
+      // (in the row's own unit) plus the manual tag; serving fields stay as saved.
+      const row = plan.action === "update" ? { ...plan.patch, source: "manual" } : food;
       const write = (payload) =>
         plan.action === "update"
           ? db.entities.CustomFood.update(plan.id, payload)

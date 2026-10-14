@@ -45,11 +45,44 @@ const sameName = (a, b) =>
 
 const r1 = (n) => Math.round((Number(n) || 0) * 10) / 10;
 
-const macrosDiffer = (a, b) =>
-  r1(a.calories) !== r1(b.calories) ||
-  r1(a.protein_grams) !== r1(b.protein_grams) ||
-  r1(a.carbs_grams) !== r1(b.carbs_grams) ||
-  r1(a.fats_grams) !== r1(b.fats_grams);
+const isMass = (u) => u === "g" || u === "ml";
+
+// A food's stored macros are for `serving_size` of `serving_unit`; this is the
+// multiplier from per-100 (g/ml) or per-1 (anything else) to that stored amount.
+const storedScale = (f) => {
+  const unit = String(f.serving_unit || "serving").toLowerCase();
+  const size = Number(f.serving_size) > 0 ? Number(f.serving_size) : 1;
+  return isMass(unit) ? size / 100 : size;
+};
+
+const MACRO_KEYS = ["calories", "protein_grams", "carbs_grams", "fats_grams"];
+
+// Close enough that rounding in the form's base/scale round trip isn't an edit.
+const near = (a, b, floor) =>
+  Math.abs(a - b) <= Math.max(floor, 0.02 * Math.max(Math.abs(a), Math.abs(b)));
+
+/**
+ * Per-100 g/ml (or per-1 unit) macros of `row`, or null when `a` and `b` aren't
+ * described in comparable units (so the caller can't tell and must not guess).
+ */
+function perBase(row) {
+  const k = storedScale(row) || 1;
+  const out = {};
+  for (const key of MACRO_KEYS) out[key] = (Number(row[key]) || 0) / k;
+  return out;
+}
+
+const unitsComparable = (a, b) => {
+  const ua = String(a.serving_unit || "serving").toLowerCase();
+  const ub = String(b.serving_unit || "serving").toLowerCase();
+  return ua === ub || (isMass(ua) && isMass(ub));
+};
+
+const macrosDiffer = (a, b) => {
+  const pa = perBase(a);
+  const pb = perBase(b);
+  return MACRO_KEYS.some((key) => !near(pa[key], pb[key], key === "calories" ? 1 : 0.6));
+};
 
 /**
  * Decide what an implicit "save this food to My Foods" should do.
@@ -57,18 +90,38 @@ const macrosDiffer = (a, b) =>
  *  - no same-name food            -> create
  *  - same name, form is editing
  *    that very saved food and its
- *    macros were changed          -> update (an explicit edit)
+ *    per-100 / per-unit macros
+ *    really changed               -> update, macros only
  *  - same name otherwise          -> keep (never overwrite silently)
  *
- * Without the "keep" branch, logging a USDA "Egg" or an AI estimate called
- * "Chicken breast" replaced the macros of whatever was already saved under
- * that name.
+ * Macros are compared per 100 g/ml (or per 1 unit), so a food saved as "1
+ * serving" and logged as 150 g isn't mistaken for an edit, and units that can't
+ * be compared are never treated as one. An update carries only the macro fields,
+ * expressed in the saved row's own serving_size/unit: a legacy row's serving
+ * definition is never rewritten by logging it. `patch` is that payload.
  */
 export function planCustomFoodSave(existing, food, { activeFoodId = null } = {}) {
   const match = (existing || []).find((f) => sameName(f.food_name, food.food_name));
   if (!match) return { action: "create" };
-  if (activeFoodId && match.id === activeFoodId && macrosDiffer(match, food)) {
-    return { action: "update", id: match.id, match };
+  if (
+    activeFoodId && match.id === activeFoodId &&
+    unitsComparable(match, food) && macrosDiffer(match, food)
+  ) {
+    const base = perBase(food);
+    const k = storedScale(match);
+    const fiberBase = food.fiber_grams == null ? null : (Number(food.fiber_grams) || 0) / (storedScale(food) || 1);
+    return {
+      action: "update",
+      id: match.id,
+      match,
+      patch: {
+        calories: Math.round(base.calories * k),
+        protein_grams: r1(base.protein_grams * k),
+        carbs_grams: r1(base.carbs_grams * k),
+        fats_grams: r1(base.fats_grams * k),
+        ...(fiberBase == null ? {} : { fiber_grams: r1(fiberBase * k) }),
+      },
+    };
   }
   return { action: "keep", id: match.id, match };
 }
