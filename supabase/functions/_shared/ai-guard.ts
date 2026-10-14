@@ -1,8 +1,9 @@
-// Shared auth + rate-limit guard for the Groq-backed estimate functions.
-// Mirrors usda-proxy: require a real signed-in user (the public anon key is a
-// valid JWT, so the gateway's default check alone does not prove a user), then
-// cap requests per user per hour so a leaked session cannot run up the Groq bill.
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+// Shared auth + rate-limit guard for user-invoked edge functions that spend
+// money or trigger work (Groq/Gemini estimates, physique/form analysis,
+// replan dispatch). Mirrors usda-proxy: require a real signed-in user (the
+// public anon key is a valid JWT, so the gateway's default check alone does not
+// prove a user), then cap requests per user per hour.
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
 const HOURLY_LIMIT = 60;
 
@@ -23,8 +24,18 @@ export async function guardAiRequest(req: Request, fn: string): Promise<GuardRes
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) return { ok: false, status: 401, error: "Unauthorized" };
 
-  // Fail open if the log table is unavailable (migration not yet applied): the
-  // auth check above is the primary protection; the limit is defence in depth.
+  // Insert first, then count, so concurrent requests cannot all slip under the
+  // cap. Fail open if the log table is unavailable (migration not yet applied):
+  // the auth check above is the primary protection; the limit is defence in
+  // depth. The failure is logged loudly so it does not go unnoticed.
+  const { error: insertError } = await supabase
+    .from("ai_request_log")
+    .insert({ user_id: user.id, fn });
+  if (insertError) {
+    console.error(`[${fn}] ai_request_log insert failed (rate limit disabled):`, insertError.message);
+    return { ok: true, userId: user.id };
+  }
+
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   const { count, error: countError } = await supabase
     .from("ai_request_log")
@@ -33,12 +44,9 @@ export async function guardAiRequest(req: Request, fn: string): Promise<GuardRes
     .gte("created_at", oneHourAgo);
 
   if (countError) {
-    console.error(`[${fn}] rate limit check failed:`, countError.message);
-  } else {
-    if ((count ?? 0) >= HOURLY_LIMIT) {
-      return { ok: false, status: 429, error: "Rate limit exceeded. Try again in an hour." };
-    }
-    await supabase.from("ai_request_log").insert({ user_id: user.id, fn });
+    console.error(`[${fn}] ai_request_log count failed (rate limit disabled):`, countError.message);
+  } else if ((count ?? 0) > HOURLY_LIMIT) {
+    return { ok: false, status: 429, error: "Rate limit exceeded. Try again in an hour." };
   }
 
   return { ok: true, userId: user.id };

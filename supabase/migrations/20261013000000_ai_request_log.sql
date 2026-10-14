@@ -16,3 +16,5 @@ CREATE POLICY "Users can insert own ai logs" ON public.ai_request_log
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can view own ai logs" ON public.ai_request_log
   FOR SELECT USING (auth.uid() = user_id);
+
+GRANT SELECT, INSERT ON public.ai_request_log TO authenticated;
