@@ -125,7 +125,6 @@ function Wordmark({ size = 17 }) {
 // (30-34px) + a one-line muted subtitle + the avatar on the same row.
 // Everything else keeps the smaller default title treatment unless it's a
 // drill-down page (below).
-const TAB_ROOT_PAGES = new Set(["Today", "Train", "Workouts", "Fuel", "FoodTracker", "AthleteState"]);
 
 // Drill-down pages that already have their own in-page back navigation get a
 // compact, centered title + a back chevron in the Layout header instead —
