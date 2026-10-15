@@ -67,3 +67,6 @@ ui-audit/polish/**/*.png
 __pycache__/
 *.pyc
 test-results/
+
+# Brand icons are source assets (manifest, notifications, apple-touch-icon).
+!public/*.png
