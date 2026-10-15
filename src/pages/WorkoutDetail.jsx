@@ -35,6 +35,7 @@ import { getLastExercisePerformance, getExerciseE1rmHistory } from "@/utils/exer
 import { isWarmupSet, baseType } from "@/utils/setTypes";
 import { buildLoadWhy } from "@/utils/loadRationale";
 import { currentE1rm, loadForTarget } from "@/utils/e1rm";
+import { blockProgressionWeight, exerciseProgressionWeight } from "@/utils/progressionRules";
 import { applyEquipmentProfile, applyEquipmentProfileToWorkout, substituteFor } from "@/utils/equipmentProfile";
 import EquipmentProfileToggle from "@/components/workouts/EquipmentProfileToggle";
 import OverrideProgramWorkout from "@/components/workouts/OverrideProgramWorkout";
@@ -719,6 +720,7 @@ export default function WorkoutDetail() {
                   || engineBlocksByLabel.get(block.set_type);
                 const blockWeight = engineBlock?.load_lbs
                   || block.load_lbs
+                  || blockProgressionWeight(allWorkoutLogs, ex, block)
                   || e1Load(blockReps, block.rir_target ?? ex.rir_target)
                   || (lastPerf?.lastWeight && lastPerf?.lastReps
                       ? scaleWeightToReps(lastPerf.lastWeight, lastPerf.lastReps, blockReps)
@@ -738,7 +740,8 @@ export default function WorkoutDetail() {
             : Array.from({ length: numSets }, (_, setIndex) => ({
                 set_number: setIndex + 1,
                 reps: targetReps,
-                weight: e1Load(targetReps, ex.rir_target) || targets?.workingWeight || scaledWeight,
+                weight: exerciseProgressionWeight(allWorkoutLogs, ex)
+                  || e1Load(targetReps, ex.rir_target) || targets?.workingWeight || scaledWeight,
                 completed: false,
                 rpe: null,
                 rir: null, // never prefill the target as a logged value
@@ -1116,7 +1119,7 @@ export default function WorkoutDetail() {
       // rep target), mirroring the initial-load seeding. Was hardcoded to 0, so
       // swapping blanked the weight even when the new movement had past logs.
       const lastPerf = getLastExercisePerformance(allWorkoutLogs, newExercise.name);
-      const seedWeight = loadForTarget(
+      const seedWeight = exerciseProgressionWeight(allWorkoutLogs, newExercise) || loadForTarget(
           currentE1rm(allWorkoutLogs, newExercise.name, { components: newExercise.components || [], anchor: newExercise.e1rm_anchor }),
           newReps, parseRirTarget(newExercise.rir_target ?? newExercise.rir), weightUnit === 'kg' ? 2.5 : 5)
         || (lastPerf?.lastWeight && lastPerf?.lastReps

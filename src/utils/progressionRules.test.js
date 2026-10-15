@@ -1,0 +1,69 @@
+import { describe, it, expect } from 'vitest';
+import { singleStepWeight, doubleWeight, blockProgressionWeight, exerciseProgressionWeight } from './progressionRules';
+
+const log = (date, name, sets, extra = {}) => ({ log_date: date, exercises: [{ name, sets }], ...extra });
+const top = (weight, reps, completed = true) => ({ set_type: 'top_set', weight, reps, completed });
+const ss = { type: 'single_step', step: 5 };
+const ex = { name: 'Squat' };
+
+describe('singleStepWeight', () => {
+  it('made single -> +step', () => {
+    expect(singleStepWeight([log('2026-01-02', 'Squat', [top(300, 1)])], ex, ss)).toBe(305);
+  });
+  it('uses the most recent log', () => {
+    const logs = [log('2026-01-01', 'Squat', [top(290, 1)]), log('2026-01-08', 'Squat', [top(300, 1)])];
+    expect(singleStepWeight(logs, ex, ss)).toBe(305);
+  });
+  it('missed -> last made top single', () => {
+    const logs = [log('2026-01-01', 'Squat', [top(295, 1)]), log('2026-01-08', 'Squat', [top(305, 0, false)])];
+    expect(singleStepWeight(logs, ex, ss)).toBe(295);
+  });
+  it('missed with no prior made -> null (e1RM fallback)', () => {
+    expect(singleStepWeight([log('2026-01-08', 'Squat', [top(305, 0, false)])], ex, ss)).toBeNull();
+  });
+  it('no qualifying log -> null', () => {
+    expect(singleStepWeight([], ex, ss)).toBeNull();
+    expect(singleStepWeight([log('2026-01-08', 'Squat', [{ set_type: 'backoff', weight: 250, reps: 5, completed: true }])], ex, ss)).toBeNull();
+  });
+  it('anchor ignores older logs', () => {
+    const logs = [log('2026-01-01', 'Squat', [top(300, 1)])];
+    expect(singleStepWeight(logs, { ...ex, e1rm_anchor: { value: 330, date: '2026-02-01' } }, ss)).toBeNull();
+  });
+  it('matches name case-insensitively and components; created_at breaks date ties', () => {
+    const logs = [
+      log('2026-01-08', 'squat', [top(300, 1)], { created_at: '2026-01-08T10:00:00Z' }),
+      log('2026-01-08', 'Box Squat', [top(310, 1)], { created_at: '2026-01-08T12:00:00Z' }),
+    ];
+    expect(singleStepWeight(logs, { name: 'SQUAT', components: ['Box Squat'] }, ss)).toBe(315);
+  });
+  it('block progression wins over exercise; absent -> null', () => {
+    const logs = [log('2026-01-08', 'Squat', [top(300, 1)])];
+    expect(blockProgressionWeight(logs, ex, { progression: { type: 'single_step', step: 10 } })).toBe(310);
+    expect(blockProgressionWeight(logs, ex, {})).toBeNull();
+  });
+});
+
+describe('doubleWeight', () => {
+  const dex = { name: 'Dip', sets: 3, rep_target: '8-12', progression: { type: 'double', step: 5 } };
+  const w = (weight, reps) => ({ set_type: 'working', weight, reps, completed: true });
+  it('all sets at top -> +step', () => {
+    expect(doubleWeight([log('2026-01-01', 'Dip', [w(25, 12), w(25, 12), w(25, 12)])], dex)).toBe(30);
+  });
+  it('one short -> hold', () => {
+    expect(doubleWeight([log('2026-01-01', 'Dip', [w(25, 12), w(25, 11), w(25, 12)])], dex)).toBe(25);
+  });
+  it('fewer sets than prescribed -> hold', () => {
+    expect(doubleWeight([log('2026-01-01', 'Dip', [w(25, 12), w(25, 12)])], dex)).toBe(25);
+  });
+  it('ignores warmups', () => {
+    const sets = [{ set_type: 'warmup', weight: 10, reps: 5, completed: true }, w(25, 12), w(25, 12), w(25, 12)];
+    expect(doubleWeight([log('2026-01-01', 'Dip', sets)], dex)).toBe(30);
+  });
+  it('no history -> null', () => {
+    expect(doubleWeight([], dex)).toBeNull();
+    expect(exerciseProgressionWeight([], dex)).toBeNull();
+  });
+  it('no progression -> null', () => {
+    expect(exerciseProgressionWeight([log('2026-01-01', 'Dip', [w(25, 12)])], { name: 'Dip', sets: 3, rep_target: '8-12' })).toBeNull();
+  });
+});

@@ -75,10 +75,10 @@ test('a full set logged entirely through the keypad sheet saves weight, reps and
     await sheet.getByRole('button', { name: 'Next field' }).click();
     await expect(sheet.getByRole('button', { name: 'RIR 2' })).toBeVisible();
 
-    // A pill both sets the RIR value and finishes the set -- RIR is always
-    // the last field, so this is the same one-tap completion the sheet's
-    // "Done ✓" key would otherwise trigger explicitly.
+    // A pill fills the RIR value like a digit; Done finishes the set, the
+    // same explicit confirm as weight/reps.
     await sheet.getByRole('button', { name: 'RIR 2' }).click();
+    await sheet.getByRole('button', { name: 'Done, mark set complete' }).click();
 
     // Sheet closes...
     await expect(sheet).not.toBeVisible();

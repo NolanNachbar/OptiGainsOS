@@ -74,6 +74,7 @@ test('reopening RIR on an already-completed set via the keypad does not restart 
     await sheet.getByRole('button', { name: 'Next field' }).click();
     await expect(sheet.getByRole('button', { name: 'RIR 2' })).toBeVisible();
     await sheet.getByRole('button', { name: 'RIR 2' }).click();
+    await sheet.getByRole('button', { name: 'Done, mark set complete' }).click();
     await expect(sheet).not.toBeVisible();
 
     const restLabel = page.getByLabel(/Rest, .* remaining/);
@@ -90,6 +91,7 @@ test('reopening RIR on an already-completed set via the keypad does not restart 
     await expect(sheet).toBeVisible();
     await expect(sheet.getByRole('button', { name: 'RIR 4' })).toBeVisible();
     await sheet.getByRole('button', { name: 'RIR 4' }).click();
+    await sheet.getByRole('button', { name: 'Done, mark set complete' }).click();
     await expect(sheet).not.toBeVisible();
 
     // The correction committed...
