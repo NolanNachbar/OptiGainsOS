@@ -90,8 +90,11 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
   });
 
   const handleEdit = (recipe) => {
+    // Not setShowCreateDialog(true): that opener clears editingRecipe (it is
+    // the "new recipe" path), which opened Edit as an empty Create form.
     setEditingRecipe(recipe);
-    setShowCreateDialog(true);
+    setInternalShow(true);
+    onCreateDialogChange?.(true);
   };
 
   const handleLog = (recipe) => {
@@ -128,17 +131,15 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
                 <div className="min-w-0">
                   <span className="text-sm font-semibold text-ink truncate block">{recipe.name}</span>
                   <span className="text-xs text-ink-muted capitalize">
-                    {recipe.ingredients?.length || 0} ingredients · {recipe.servings} serving{recipe.servings !== 1 ? 's' : ''}
+                    {recipe.ingredients?.length || 0} ingredient{(recipe.ingredients?.length || 0) !== 1 ? 's' : ''} · {recipe.servings} serving{recipe.servings !== 1 ? 's' : ''}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    onClick={() => handleEdit(recipe)}
-                    aria-label="Edit recipe"
-                    className="h-11 w-11 flex items-center justify-center rounded-lg text-ink-muted transition-colors duration-200 [transition-timing-function:var(--ease)] hover:text-ink hover:bg-[var(--glass-edge)] active:opacity-90"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
+                  <RecipeCardMenu
+                    onShare={() => setSharingRecipe(recipe)}
+                    onEdit={() => handleEdit(recipe)}
+                    onDelete={() => handleDelete(recipe)}
+                  />
                   <Button variant="volt" size="sm" onClick={() => handleLog(recipe)} className="min-h-[44px]">
                     <UtensilsCrossed className="w-3 h-3" />Log
                   </Button>
@@ -239,7 +240,7 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
                   </div>
                 </div>
                 <p className="text-xs text-ink-muted -mt-1">
-                  {recipe.ingredients?.length || 0} ingredients · per serving
+                  {recipe.ingredients?.length || 0} ingredient{(recipe.ingredients?.length || 0) !== 1 ? 's' : ''} · per serving
                 </p>
                 {/* Actions — Log is the single full-width primary; Share / Edit /
                     Delete are demoted into the overflow menu. */}
