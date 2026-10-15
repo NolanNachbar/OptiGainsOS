@@ -211,6 +211,10 @@ export default function Layout({ children, currentPageName }) {
     const measure = () => {
       const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
       document.documentElement.style.setProperty("--keyboard-inset", `${inset}px`);
+      // The visible height itself: bottom sheets cap to this, not to
+      // innerHeight minus the inset, which ignores how far iOS has scrolled
+      // the layout viewport (offsetTop) and pushed a sheet's header offscreen.
+      document.documentElement.style.setProperty("--vv-height", `${vv.height}px`);
     };
     const updateKeyboardInset = () => {
       measure();

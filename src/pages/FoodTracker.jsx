@@ -416,10 +416,13 @@ export default function FoodTracker() {
         const q = searchQuery.toLowerCase().trim();
         // Processed/derived variants ("banana powder", "breaded tenders") match
         // the query text but are rarely what's meant; raw/plain items lead.
-        const PROCESSED = /\b(dehydrated|powder|breaded|battered|canned|tenders|nuggets|dried|freeze|mix|flavored|imitation|substitute|babyfood|baby food|infant|frozen|fried|pickled)\b/;
+        const PROCESSED = /\b(dehydrated|powder|breaded|battered|canned|tenders|nuggets|dried|freeze|mix|flavored|imitation|substitute|babyfood|baby food|infant|frozen|fried|pickled|deli|luncheon|lunchmeat|lunch meat|sliced|loaf|spread|salad|soup|sandwich|patty|patties|sausage|jerky|restaurant|fast food)\b/;
         const rank = (f) => {
           const d = (f.description || "").toLowerCase();
-          const penalty = PROCESSED.test(d) ? 10 : 0;
+          // A processed word only counts against a result when the query
+          // didn't ask for it ("chicken salad" should not sink salads).
+          const hits = d.match(new RegExp(PROCESSED.source, "g")) || [];
+          const penalty = hits.some((w) => !q.includes(w)) ? 10 : 0;
           const rawBonus = /\braw\b/.test(d) ? -0.5 : 0;
           if (d === q) return 0 + penalty;
           if (d.startsWith(q + ",") || d.startsWith(q + " ")) return 1 + penalty + rawBonus;
@@ -4012,7 +4015,7 @@ const handleSaveMealTemplate = () => {
       <Dialog open={showCopyDayDialog} onOpenChange={setShowCopyDayDialog}>
         <DialogContent className="max-w-lg flex flex-col">
           <DialogHeader>
-            <DialogTitle>Copy a day to {selectedDate}</DialogTitle>
+            <DialogTitle>Copy a day to {format(parseISO(selectedDate), 'EEE, MMM d')}</DialogTitle>
             <DialogDescription>
               Pick a day, then pick what carries over. Nothing is moved — the source day keeps its entries.
             </DialogDescription>
@@ -4031,7 +4034,7 @@ const handleSaveMealTemplate = () => {
           </div>
 
           {copySourceEntries.length === 0 ? (
-            <p className="text-xs text-ink-muted">Nothing was logged on {copyFromDate}.</p>
+            <p className="text-xs text-ink-muted">Nothing was logged on {copyFromDate ? format(parseISO(copyFromDate), 'EEE, MMM d') : 'that day'}.</p>
           ) : (
             <>
               <div className="flex items-center justify-between">

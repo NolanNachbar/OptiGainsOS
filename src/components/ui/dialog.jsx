@@ -99,7 +99,7 @@ const DialogContent = React.forwardRef(({ className = "", hideClose = false, she
         max-md:!rounded-t-2xl max-md:!rounded-b-none max-md:!border-b-0
         md:rounded-xl md:border-b`}
       style={{
-        maxHeight: 'calc(100dvh - var(--layout-header-height, 0px) - 1rem - var(--keyboard-inset, 0px))',
+        maxHeight: 'min(calc(100dvh - var(--layout-header-height, 0px) - 1rem - var(--keyboard-inset, 0px)), calc(var(--vv-height, 100dvh) - 1rem))',
         // The bottom safe-area gap is non-negotiable on a flush bottom sheet: without
         // it the action row (Start Fresh / Resume) clips against the home-indicator
         // edge. Default callers get full 1.5rem + inset. Custom-padding callers own
