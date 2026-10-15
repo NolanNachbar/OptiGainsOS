@@ -503,7 +503,7 @@ export default function Profile({ hideHeader }) {
                   <ChevronLeft className="w-4 h-4" />
                   Profile
                 </button>
-                <h1 className="type-display text-2xl text-ink">
+                <h1 className="type-display text-[17px] text-ink">
                   {NAV.find(n => n.id === activeSection)?.label}
                 </h1>
               </div>

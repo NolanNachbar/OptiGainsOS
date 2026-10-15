@@ -30,7 +30,7 @@ export function AuthHeader({ subtitle }) {
   // intentional instead of a badge floating over a dark void.
   return (
     <div className="flex flex-col items-center text-center rise-in">
-      <Logo className="h-14 w-14" aria-hidden="true" alt="" />
+      <Logo className="h-16 w-16" aria-hidden="true" alt="" />
       <h1 className="type-display text-[28px] sm:text-[28px] whitespace-nowrap text-ink mt-4">OptiGains</h1>
       {subtitle && (
         <p className="text-[12px] font-semibold mt-1.5 tracking-[0.04em] text-muted-2">

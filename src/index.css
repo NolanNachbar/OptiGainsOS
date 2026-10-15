@@ -621,7 +621,7 @@ svg.rbh path:hover, svg.rbh polygon:hover,
      un-swept callers keep working. Weight dropped 800->600 for SF Pro. */
   .cta-action, .cta-coral {
     display: flex; align-items: center; justify-content: center; gap: 8px;
-    height: 48px; border-radius: var(--r-control); white-space: nowrap;
+    height: 48px; padding-inline: 20px; border-radius: var(--r-control); white-space: nowrap;
     font-size: 15px; font-weight: 600; color: var(--color-action-dark);
     background: var(--color-brand);
     box-shadow: none;

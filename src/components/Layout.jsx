@@ -59,7 +59,7 @@ const navigationItems = [
     matches: ["/athlete-state", "/recovery", "/physique", "/coach", "/lifts"],
     mobileStrip: true,
     children: [
-      { label: "State", url: "/athlete-state",
+      { label: "Overview", url: "/athlete-state",
         active: (l) => l.pathname.startsWith("/athlete-state") },
       { label: "Recovery", url: "/recovery",
         active: (l) => l.pathname.startsWith("/recovery") },
