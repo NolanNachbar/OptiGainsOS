@@ -310,7 +310,6 @@ export default function Layout({ children, currentPageName }) {
     ? pageSubtitle[currentPageName]
     : format(nowInTz(), "EEEE, MMMM d");
 
-  const isTabRoot = TAB_ROOT_PAGES.has(currentPageName);
   const isDrillDown = DRILL_DOWN_PAGES.has(currentPageName);
 
   // The active top-level section. Its cross-route children populate the mobile
@@ -516,7 +515,7 @@ export default function Layout({ children, currentPageName }) {
             ) : (
               <>
                 <div className="flex-1 min-w-0">
-                  <h1 className={`type-display truncate ${isTabRoot ? "text-[28px]" : "text-[28px]"}`}>
+                  <h1 className="type-display truncate text-[28px]">
                     {pageDisplayName}
                   </h1>
                   {mobileSubtitle && (

@@ -865,11 +865,11 @@ export default function AthleteState({ hideHeader = false }) {
       <div className="max-w-4xl mx-auto">
         {!hideHeader && (
           <div className="mb-6 rise-in">
-            {/* Title reconciled to the dock label ("Body"). On mobile the shared
-                Layout header already prints "Body", so the in-page H1 is
+            {/* Title reconciled to the dock label ("State"). On mobile the shared
+                Layout header already prints "State", so the in-page H1 is
                 desktop-only to keep the title appearing exactly once; the
                 computed/last-updated caption is surfaced on every viewport. */}
-            <h1 className="type-display text-[28px] hidden lg:block">Body</h1>
+            <h1 className="type-display text-[28px] hidden lg:block">State</h1>
             {/* Desktop: full provenance caption (no shared header date to dup).
                 Mobile: Layout already prints today's date in the header, so the
                 page caption collapses to a single faint "Updated HH:MM" line to

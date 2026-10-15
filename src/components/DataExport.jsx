@@ -9,13 +9,8 @@ import { buildFoodExportRows, fetchAllPages, toCsv } from "@/utils/foodLog";
 
 // Export All fetches every dataset first and only then downloads the files,
 // one at a time with a pause: iOS Safari aborts an in-flight fetch ("Load
-// failed") when a download fires right before it.
-let sink = null;
-function emitCSV(filename, rows) {
-  if (sink) sink.push([filename, rows]);
-  else downloadCSV(filename, rows);
-}
-
+// failed") when a download fires right before it. Each export hands its file
+// to ctx.emit; a single export just downloads immediately.
 function downloadCSV(filename, rows) {
   const blob = new Blob([toCsv(rows)], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
@@ -31,7 +26,7 @@ const EXPORTS = [
     id: "lifting",
     label: "Lifting Log",
     description: "Every set: date, workout, exercise, set #, weight, reps, RIR/RPE, set type, completed, notes",
-    fn: async (user) => {
+    fn: async (user, ctx) => {
       // Paged past the 1000-row API cap, ordered by a unique tiebreaker, and
       // scoped to the signed-in user.
       const [workoutLogs, workouts] = await Promise.all([
@@ -41,14 +36,14 @@ const EXPORTS = [
           .order("id", { ascending: true })),
       ]);
       const nameMap = Object.fromEntries(workouts.map((w) => [w.id, w.title]));
-      emitCSV("lifting_log.csv", buildLiftingCsvRows(workoutLogs, nameMap));
+      ctx.emit("lifting_log.csv", buildLiftingCsvRows(workoutLogs, nameMap));
     },
   },
   {
     id: "food",
     label: "Food Log",
     description: "Full food history: serving, meal, time, fiber, source (planned rows excluded)",
-    fn: async (user) => {
+    fn: async (user, ctx) => {
       // Whole history, not the 90-day window the page holds; paged because the
       // API caps a response at 1000 rows. Stable order so pages don't overlap.
       const entries = await fetchAllPages((from, to) =>
@@ -58,74 +53,74 @@ const EXPORTS = [
       );
       const { data: customFoods } = await supabase.from("custom_foods").select("*").eq("created_by", user.id);
       const rows = buildFoodExportRows(entries, customFoods || []);
-      emitCSV("food_log.csv", rows);
+      ctx.emit("food_log.csv", rows);
     },
   },
   {
     id: "weight",
     label: "Body Weight",
     description: "Daily body weight entries",
-    fn: async (user, { weightEntries }) => {
+    fn: async (user, ctx) => {
       const rows = [["date", "weight", "notes"]];
-      [...weightEntries].sort((a, b) => new Date(a.recorded_date) - new Date(b.recorded_date)).forEach((e) => {
+      [...ctx.weightEntries].sort((a, b) => new Date(a.recorded_date) - new Date(b.recorded_date)).forEach((e) => {
         rows.push([e.recorded_date, e.weight, e.notes || ""]);
       });
-      emitCSV("body_weight.csv", rows);
+      ctx.emit("body_weight.csv", rows);
     },
   },
   {
     id: "recovery",
     label: "Recovery Metrics",
     description: "HRV, sleep, steps, and body battery from Garmin/Apple Health",
-    fn: async (user) => {
+    fn: async (user, ctx) => {
       const { data } = await supabase.from("recovery_metrics").select("*").eq("created_by", user.id).order("date");
       const rows = [["date", "source", "hrv", "sleep_min", "sleep_score", "body_battery", "resting_hr", "steps", "training_load_acute", "training_load_chronic"]];
       (data || []).forEach((r) => rows.push([r.date, r.source, r.hrv ?? "", r.sleep_duration_min ?? "", r.sleep_score ?? "", r.body_battery ?? "", r.resting_hr ?? "", r.steps ?? "", r.training_load_acute ?? "", r.training_load_chronic ?? ""]));
-      emitCSV("recovery_metrics.csv", rows);
+      ctx.emit("recovery_metrics.csv", rows);
     },
   },
   {
     id: "supplements",
     label: "Supplement Log",
     description: "All supplement doses with timestamps",
-    fn: async (user) => {
+    fn: async (user, ctx) => {
       const { data } = await supabase.from("supplement_logs").select("*").eq("created_by", user.id).order("taken_at");
       const rows = [["taken_at", "supplement", "dose", "unit", "notes"]];
       (data || []).forEach((r) => rows.push([r.taken_at, r.supplement_name, r.dose ?? "", r.unit ?? "", r.notes ?? ""]));
-      emitCSV("supplement_log.csv", rows);
+      ctx.emit("supplement_log.csv", rows);
     },
   },
   {
     id: "reading",
     label: "Reading Log",
     description: "Books with status, ratings, and notes",
-    fn: async (user) => {
+    fn: async (user, ctx) => {
       const { data } = await supabase.from("reading_log").select("*").eq("created_by", user.id).order("created_at");
       const rows = [["title", "author", "category", "status", "rating", "started_at", "finished_at", "notes"]];
       (data || []).forEach((r) => rows.push([r.title, r.author ?? "", r.category ?? "", r.status, r.rating ?? "", r.started_at ?? "", r.finished_at ?? "", r.notes ?? ""]));
-      emitCSV("reading_log.csv", rows);
+      ctx.emit("reading_log.csv", rows);
     },
   },
   {
     id: "career",
     label: "Job Applications",
     description: "Application pipeline with status and notes",
-    fn: async (user) => {
+    fn: async (user, ctx) => {
       const { data } = await supabase.from("job_applications").select("*").eq("created_by", user.id).order("date_applied");
       const rows = [["company", "role", "date_applied", "status", "notes", "next_action", "next_action_date"]];
       (data || []).forEach((r) => rows.push([r.company, r.role, r.date_applied ?? "", r.status, r.notes ?? "", r.next_action ?? "", r.next_action_date ?? ""]));
-      emitCSV("job_applications.csv", rows);
+      ctx.emit("job_applications.csv", rows);
     },
   },
   {
     id: "measurements",
     label: "Measurements",
     description: "Body measurements history in cm",
-    fn: async (user) => {
+    fn: async (user, ctx) => {
       const { data } = await supabase.from("measurements").select("*").eq("created_by", user.id).order("date");
       const rows = [["date", "chest_cm", "waist_cm", "hips_cm", "left_arm_cm", "right_arm_cm", "left_quad_cm", "right_quad_cm", "neck_cm", "notes"]];
       (data || []).forEach((r) => rows.push([r.date, r.chest_cm ?? "", r.waist_cm ?? "", r.hips_cm ?? "", r.left_arm_cm ?? "", r.right_arm_cm ?? "", r.left_quad_cm ?? "", r.right_quad_cm ?? "", r.neck_cm ?? "", r.notes ?? ""]));
-      emitCSV("measurements.csv", rows);
+      ctx.emit("measurements.csv", rows);
     },
   },
 ];
@@ -138,7 +133,7 @@ export default function DataExport({ weightEntries = [], foodEntries = [] }) {
   const run = async (exp) => {
     setLoading(exp.id);
     try {
-      await exp.fn(user, { weightEntries, foodEntries });
+      await exp.fn(user, { weightEntries, foodEntries, emit: downloadCSV });
       toast.success(`${exp.label} downloaded`);
     } catch (err) {
       console.error(err);
@@ -151,25 +146,20 @@ export default function DataExport({ weightEntries = [], foodEntries = [] }) {
   const runAll = async () => {
     setLoading("all");
     let count = 0;
-    sink = [];
-    try {
-      for (const exp of EXPORTS) {
-        try {
-          await exp.fn(user, { weightEntries, foodEntries });
-          count++;
-        } catch (err) {
-          console.error(err);
-          toast.error(`${exp.label} export failed`);
-        }
+    const files = [];
+    const emit = (filename, rows) => files.push([filename, rows]);
+    for (const exp of EXPORTS) {
+      try {
+        await exp.fn(user, { weightEntries, foodEntries, emit });
+        count++;
+      } catch (err) {
+        console.error(err);
+        toast.error(`${exp.label} export failed`);
       }
-      const files = sink;
-      sink = null;
-      for (const [filename, rows] of files) {
-        downloadCSV(filename, rows);
-        await new Promise((r) => setTimeout(r, 400));
-      }
-    } finally {
-      sink = null;
+    }
+    for (const [filename, rows] of files) {
+      downloadCSV(filename, rows);
+      await new Promise((r) => setTimeout(r, 400));
     }
     toast.success(`${count} of ${EXPORTS.length} files downloaded`);
     setLoading(null);

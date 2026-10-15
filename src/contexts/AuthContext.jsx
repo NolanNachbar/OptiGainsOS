@@ -76,7 +76,7 @@ export function AuthProvider({ children }) {
         throw new Error('Invalid email or password. If you just signed up, please confirm your email first.');
       }
       if (error.message.includes('Email not confirmed')) {
-        throw new Error('Please confirm your email before signing in. Check your inbox for a confirmation link.');
+        throw new Error('Email not confirmed. Use the confirmation link sent to your inbox, then sign in.');
       }
       throw error;
     }
@@ -107,7 +107,7 @@ export function AuthProvider({ children }) {
     const { error } = await supabase.rpc('delete_user_data');
     if (error) {
       console.error('Error deleting account:', error);
-      throw new Error('Failed to delete account. Please try again or contact support.');
+      throw new Error('Account not deleted. Try again, or contact support.');
     }
 
     // Invalidate all sessions across all devices, not just the current one

@@ -865,7 +865,7 @@ function StrengthEntryCard({ entry }) {
         </div>
         {/* Dominant figure — the row's one hero metric. */}
         <div className="flex items-baseline gap-1 shrink-0">
-          <span className="font-technical font-extrabold text-[28px] leading-none text-ink whitespace-nowrap">{hero.value}</span>
+          <span className="font-technical font-numeral text-[28px] leading-none text-ink whitespace-nowrap">{hero.value}</span>
           {hero.suffix && <span className="text-[11px] text-ink-muted uppercase">{hero.suffix}</span>}
         </div>
       </div>
@@ -960,7 +960,7 @@ function CardioEntryCard({ entry }) {
         </div>
         {/* Dominant figure — the row's one hero metric. */}
         <div className="flex items-baseline gap-1 shrink-0">
-          <span className="font-technical font-extrabold text-[28px] leading-none text-ink whitespace-nowrap">{hero.value}</span>
+          <span className="font-technical font-numeral text-[28px] leading-none text-ink whitespace-nowrap">{hero.value}</span>
           {hero.suffix && <span className="text-[11px] text-ink-muted uppercase">{hero.suffix}</span>}
         </div>
       </div>

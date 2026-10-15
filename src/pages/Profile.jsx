@@ -725,7 +725,7 @@ export default function Profile({ hideHeader }) {
                         <div className="flex items-center justify-between">
                           <div>
                             <div className="text-sm text-ink-muted">Estimated TDEE</div>
-                            <div className="text-2xl font-bold text-gold font-technical">{tdee.tdee} cal/day</div>
+                            <div className="text-2xl font-numeral text-gold font-technical">{tdee.tdee} cal/day</div>
                           </div>
                           {/* Metadata tag, not data: keep BOTH states neutral
                               (glass-inset + muted ink) so no leaf/biometric hue is

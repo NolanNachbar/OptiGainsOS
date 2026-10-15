@@ -210,7 +210,7 @@ function WeightModule() {
       toast.success("Weight logged");
     },
     onError: (err) => {
-      const msg = err instanceof Error ? err.message : "Weight not saved. Try again; nothing was changed.";
+      const msg = err instanceof Error ? err.message : "Weight not saved. Try again.";
       setWeightError(msg);
       toast.error(msg);
     },

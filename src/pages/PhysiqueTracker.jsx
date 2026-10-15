@@ -416,7 +416,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
             <div className="glass px-4 pt-4 pb-4 rise-in">
             <div className="flex items-baseline justify-between">
               <div>
-                <div className="font-technical text-2xl font-extrabold text-ink">
+                <div className="font-technical text-2xl font-numeral text-ink">
                   {sessionBf}% <span className="text-sm font-semibold text-muted-2">est. BF</span>
                 </div>
                 <div className="font-technical text-xs font-semibold text-muted-2">

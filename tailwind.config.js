@@ -123,6 +123,8 @@ export default {
         bold: '600',
         extrabold: '600',
         black: '600',
+        // Numerals at 28px and up: the one place 700 is allowed (brand guide).
+        numeral: '700',
       },
       // ── Radius: exactly three brand tokens ───────────────────────────────
       //   module 0 · control 10px · pill 9999px   (CSS: --r-module/-control/-pill)
