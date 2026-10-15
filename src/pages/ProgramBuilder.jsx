@@ -543,7 +543,13 @@ export default function ProgramBuilder() {
               <Button
                 variant="dim"
                 size="sm"
-                onClick={() => navigate("/workouts")}
+                onClick={() => {
+                  // The draft only lives in this component's state; leaving
+                  // discards it, so confirm once something has been entered.
+                  const hasDraft = !!program.name?.trim() || workouts.some((w) => w.exercises?.length > 0);
+                  if (hasDraft && !window.confirm("Discard this program draft?")) return;
+                  navigate("/workouts");
+                }}
                 aria-label="Cancel"
                 className="min-h-[44px] min-w-[44px] px-0"
               >
@@ -1011,6 +1017,10 @@ function StepCycleDays({
       <AnimatePresence>
         {editingDay != null && editingWorkout && (
           <motion.div
+            key={editingDay}
+            // The editor mounts below the day grid, off-screen on a phone;
+            // bring it into view so tapping a day visibly does something.
+            ref={(el) => { if (el) requestAnimationFrame(() => el.scrollIntoView?.({ behavior: "smooth", block: "start" })); }}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
