@@ -92,3 +92,23 @@ describe('doubleSeed', () => {
     expect(doubleSeed([log('2026-01-01', 'Row', [w(40, 8, 1)])], { ...dex, progression: { type: 'single_step', step: 5 } })).toBeNull();
   });
 });
+
+describe('set marks', () => {
+  it('a top single marked failure still counts as the missed top set', () => {
+    const logs = [
+      log('2026-01-01', 'Squat', [top(300, 1)]),
+      log('2026-01-02', 'Squat', [{ set_type: 'failure', set_type_base: 'top_set', weight: 305, reps: 0, completed: true }]),
+    ];
+    expect(singleStepWeight(logs, ex, ss)).toBe(300);
+  });
+  it('drop and warm-up sets do not feed double progression', () => {
+    const dex = { name: 'Row', sets: 2, rep_target: '8-10', progression: { type: 'double', step: 5 } };
+    const sets = [
+      { set_type: 'warmup', set_type_base: 'working', weight: 60, reps: 10, completed: true, set_number: 1 },
+      { set_type: 'working', weight: 40, reps: 10, completed: true, set_number: 2 },
+      { set_type: 'working', weight: 40, reps: 10, completed: true, set_number: 3 },
+      { set_type: 'drop', set_type_base: 'working', weight: 25, reps: 6, completed: true, set_number: 4 },
+    ];
+    expect(doubleSeed([log('2026-01-01', 'Row', sets)], dex)).toEqual({ weight: 45, reps: [8, 8] });
+  });
+});

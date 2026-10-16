@@ -9,7 +9,12 @@
  * no qualifying history (callers then fall back to the e1RM rule).
  * Name + components matching and e1rm_anchor filtering mirror e1rm.js.
  */
+import { baseType, isWarmupSet } from './setTypes';
+
 const norm = (n) => String(n || '').toLowerCase().trim();
+// Progression inputs: no warm-ups, and no drop sets (a lighter back-down set
+// would read as the working load) -- same rule as setTypes.js.
+const isProgressionSet = (s) => !isWarmupSet(s) && s?.set_type !== 'drop';
 
 const logTime = (log) => {
   const t = new Date(log?.log_date).getTime();
@@ -44,7 +49,7 @@ export const singleStepWeight = (logs, exercise, progression) => {
   const step = Number(progression?.step);
   if (progression?.type !== 'single_step' || !(step > 0)) return null;
   const hist = historyFor(logs, exercise)
-    .map(({ sets }) => sets.filter((s) => s?.set_type === 'top_set' && Number(s?.weight) > 0))
+    .map(({ sets }) => sets.filter((s) => baseType(s) === 'top_set' && Number(s?.weight) > 0))
     .filter((tops) => tops.length);
   if (!hist.length) return null;
   const last = hist[0][hist[0].length - 1];
@@ -73,7 +78,7 @@ export const doubleSeed = (logs, exercise, progression = exercise?.progression) 
   const prescribed = Number(exercise?.sets) || 1;
   const clamp = (n) => Math.min(hi, Math.max(lo, n));
   for (const { sets } of historyFor(logs, exercise)) {
-    const work = sets.filter((s) => s?.completed && Number(s?.weight) > 0 && !/warm/i.test(s?.set_type || ''));
+    const work = sets.filter((s) => s?.completed && Number(s?.weight) > 0 && isProgressionSet(s));
     if (!work.length) continue;
     const top = Math.max(...work.map((s) => Number(s.weight)));
     if (work.length >= prescribed && work.every((s) => Number(s.reps) >= hi)) {
