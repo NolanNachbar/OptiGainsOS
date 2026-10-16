@@ -28,7 +28,7 @@ const COACHES = [
 function CoachTag({ children, active = false }) {
   return (
     <span
-      className={`text-[10px] font-extrabold tracking-wider uppercase rounded-sm px-2 py-1 whitespace-nowrap shrink-0 transition-colors duration-200 [transition-timing-function:var(--ease)] ${
+      className={`text-[11px] font-extrabold tracking-wider uppercase rounded-sm px-2 py-1 whitespace-nowrap shrink-0 transition-colors duration-200 [transition-timing-function:var(--ease)] ${
         active ? "text-teal bg-teal/10" : "text-secondary"
       }`}
     >
@@ -191,7 +191,7 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false, defaultCo
           {json.insight && (
             <div className="mx-4 mt-3 mb-1 flex items-start gap-2.5 p-3 glass-inset">
               <Lightbulb className="w-3.5 h-3.5 text-teal shrink-0 mt-0.5" />
-              <p className="text-[13px] font-semibold text-ink leading-[1.55]">{json.insight}</p>
+              <p className="text-[14px] font-semibold text-ink leading-[1.55]">{json.insight}</p>
             </div>
           )}
 

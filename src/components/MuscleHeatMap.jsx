@@ -55,7 +55,7 @@ export default function MuscleHeatMap({ data = [], className = "", view: control
       </div>
 
       {/* Color legend */}
-      <div className="flex items-center gap-2 text-[10px] font-bold text-ink-muted shrink-0">
+      <div className="flex items-center gap-2 text-[11px] font-bold text-ink-muted shrink-0">
         <span>Low</span>
         <div className="flex h-2 w-16 rounded-full overflow-hidden bg-white/[0.08]">
           <div className="flex-1" style={{ background: colors[0] }} />

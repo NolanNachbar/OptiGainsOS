@@ -72,7 +72,7 @@ export function analyzeWeightTrend(weightEntries, days = 7) {
 
 export function analyzeLoggingConsistency(foodEntries, profile, days = 7) {
   const cutoff = subDays(new Date(), days);
-  const recent = foodEntries.filter((e) => parseISO(e.date) >= cutoff);
+  const recent = foodEntries.filter((e) => e.planned !== true && parseISO(e.date) >= cutoff);
 
   const byDate = {};
   recent.forEach((entry) => {
@@ -191,9 +191,9 @@ export function generateRecommendations(weightAnalysis, loggingAnalysis, profile
     recommendations.push({
       id: "good-progress",
       type: "success",
-      title: "Great Progress!",
+      title: "On pace",
       description: `You're losing ${Math.abs(weightAnalysis.weeklyRate)} lbs/week, right on track for healthy weight loss.`,
-      suggestion: "Keep it up! Stay consistent with your current approach.",
+      suggestion: "Keep the current approach.",
       severity: "low",
     });
   }
@@ -206,7 +206,7 @@ export function generateRecommendations(weightAnalysis, loggingAnalysis, profile
     recommendations.push({
       id: "good-progress",
       type: "success",
-      title: "Solid Gains!",
+      title: "Gaining at target rate",
       description: `You're gaining ${weightAnalysis.weeklyRate} lbs/week, a good rate for lean muscle gain.`,
       suggestion: "Keep hitting your protein targets and progressive overload.",
       severity: "low",
@@ -222,7 +222,7 @@ export function generateRecommendations(weightAnalysis, loggingAnalysis, profile
       type: "success",
       title: "Staying Consistent",
       description:
-        "Your weight is stable and you're logging consistently. Great discipline!",
+        "Your weight is stable and you're logging consistently.",
       suggestion:
         goal === "general_fitness" || goal === "general fitness"
           ? "You're doing great for general fitness maintenance."

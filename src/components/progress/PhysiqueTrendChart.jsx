@@ -13,7 +13,7 @@ function CustomTooltip({ active, payload, label, weightUnit }) {
   const wt = payload.find((p) => p.dataKey === "weight");
   return (
     <div className="glass-elevated p-3 rounded-xl">
-      <p className="font-bold text-[13px] text-ink">{format(parseISO(label), "MMM d, yyyy")}</p>
+      <p className="font-bold text-[14px] text-ink">{format(parseISO(label), "MMM d, yyyy")}</p>
       {bf && <p className="text-[12px] font-technical font-bold text-ink">{bf.value}% est. BF</p>}
       {wt && <p className="text-[12px] font-technical font-semibold text-muted-2">{wt.value} {weightUnit}</p>}
     </div>

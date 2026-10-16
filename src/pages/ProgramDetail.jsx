@@ -179,9 +179,9 @@ export default function ProgramDetail() {
       {
         onSuccess: () => {
           setShowEnrollDialog(false);
-          toast.success("Enrolled! Start your first workout.");
+          toast.success("Enrolled. Start the first workout from this page.");
         },
-        onError: () => toast.error("Failed to enroll"),
+        onError: () => toast.error("Not enrolled. Check your connection and try again."),
       }
     );
   };
@@ -208,11 +208,11 @@ export default function ProgramDetail() {
     deleteEnrollmentMutation.mutate(enrollment.id, {
       onSuccess: () => {
         setShowRestartDialog(false);
-        toast.success("Enrollment canceled. You can re-enroll anytime!");
+        toast.success("Enrollment canceled. You can re-enroll at any time.");
       },
       onError: () => {
         setShowRestartDialog(false);
-        toast.error("Failed to cancel enrollment");
+        toast.error("Enrollment not canceled. Try again.");
       },
     });
   };
@@ -230,7 +230,7 @@ export default function ProgramDetail() {
       },
       onError: () => {
         setShowDeleteDialog(false);
-        toast.error("Failed to delete program");
+        toast.error("Program not deleted. Try again.");
       },
     });
   };
@@ -617,7 +617,7 @@ export default function ProgramDetail() {
                       </div>
                       <div className="text-right">
                         <p className="pill-value inline-block text-ink">
-                          {state.working_weight ?? '—'} <small className="text-[10px] font-semibold text-ink-muted">lbs</small>
+                          {state.working_weight ?? '—'} <small className="text-[11px] font-semibold text-ink-muted">lbs</small>
                         </p>
                         {state.stalled ? (
                           <Badge variant="outline" className="text-xs mt-1 bg-warn/10 text-warn border-warn/25">
@@ -710,7 +710,7 @@ export default function ProgramDetail() {
                         </div>
                         {targets?.workingWeight && (
                           <div className="text-right">
-                            <p className="pill-value inline-block text-ink">{targets.workingWeight} <small className="text-[10px] font-semibold text-ink-muted">lbs</small></p>
+                            <p className="pill-value inline-block text-ink">{targets.workingWeight} <small className="text-[11px] font-semibold text-ink-muted">lbs</small></p>
                             <p className="font-technical text-xs text-ink-muted mt-0.5">
                               Min: {targets.dailyMin} lbs
                             </p>
@@ -733,7 +733,7 @@ export default function ProgramDetail() {
                           </p>
                         </div>
                       </div>
-                      <span className="rounded-full px-2 py-[3px] text-[9.5px] font-extrabold uppercase tracking-wide bg-carb/[0.14] text-carb whitespace-nowrap">
+                      <span className="rounded-full px-2 py-[3px] text-[11px] font-extrabold uppercase tracking-wide bg-carb/[0.14] text-carb whitespace-nowrap">
                         Cardio
                       </span>
                     </div>
@@ -807,7 +807,7 @@ export default function ProgramDetail() {
                 {enrollMutation.isPaused
                   // React Query's default networkMode pauses (not fails) a
                   // mutation while offline — it resumes on its own on
-                  // reconnect, so onError (handleEnroll's "Failed to enroll")
+                  // reconnect, so onError (handleEnroll's "Not enrolled. Check your connection and try again.")
                   // never fires. Same pattern as fuel f2590dcd.
                   ? "Offline - starts when you're back online"
                   : enrollMutation.isPending ? "Starting..." : "Start Program"}

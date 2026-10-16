@@ -183,7 +183,7 @@ export default function BriefHistory() {
             <ChevronLeft className="w-5 h-5" aria-hidden="true" />
           </Link>
           <div>
-            <h1 className="type-display text-[22px] flex items-center gap-2">
+            <h1 className="type-display text-[28px] flex items-center gap-2">
               <Bot className="w-5 h-5 text-muted-2" aria-hidden="true" /> Brief History
             </h1>
             <p className="text-xs font-semibold text-muted-2 mt-0.5">Last <span className="font-technical">{briefs.length}</span> AI-generated daily briefs</p>

@@ -42,7 +42,7 @@ Deno.serve(async () => {
 
   const payload = JSON.stringify({
     title: "Physique photos",
-    body: "Time for this week's progress shots. Tap to run the guided session through all 6 poses.",
+    body: "Weekly physique photos are due. 6 poses.",
     url: "physique",
   });
 

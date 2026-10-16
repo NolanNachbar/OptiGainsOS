@@ -1,3 +1,4 @@
+import Logo from '@/components/Logo';
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -29,14 +30,8 @@ export function AuthHeader({ subtitle }) {
   // intentional instead of a badge floating over a dark void.
   return (
     <div className="flex flex-col items-center text-center rise-in">
-      <div
-        className="h-12 w-12 rounded-2xl flex items-center justify-center type-display text-[22px] text-[var(--color-action-dark)]"
-        style={{ background: 'var(--color-brand)' }}
-        aria-hidden="true"
-      >
-        O
-      </div>
-      <h1 className="type-display text-[24px] sm:text-[28px] whitespace-nowrap text-ink mt-4">OPTIGAINS</h1>
+      <Logo className="h-16 w-16" aria-hidden="true" alt="" />
+      <h1 className="type-display text-[28px] sm:text-[28px] whitespace-nowrap text-ink mt-4">OptiGains</h1>
       {subtitle && (
         <p className="text-[12px] font-semibold mt-1.5 tracking-[0.04em] text-muted-2">
           {subtitle}
@@ -82,7 +77,7 @@ export default function Login() {
 
   return (
     <AuthShell>
-      <AuthHeader subtitle="Performance OS · private build" />
+      <AuthHeader subtitle="Private build" />
 
       <div className="glass w-full max-w-sm mt-6 sm:mt-9 px-4 pt-5 pb-4 rise-in-2">
         <form onSubmit={handleSubmit} noValidate>
@@ -115,7 +110,7 @@ export default function Login() {
             />
           </div>
 
-          {errorMsg && <p id="login-error" role="alert" className="text-ink text-[13px] mb-2">{errorMsg}</p>}
+          {errorMsg && <p id="login-error" role="alert" className="text-ink text-[14px] mb-2">{errorMsg}</p>}
 
           <Button
             type="submit"

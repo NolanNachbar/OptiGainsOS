@@ -210,7 +210,7 @@ function WeightModule() {
       toast.success("Weight logged");
     },
     onError: (err) => {
-      const msg = err instanceof Error ? err.message : "Failed to log weight";
+      const msg = err instanceof Error ? err.message : "Weight not saved. Try again.";
       setWeightError(msg);
       toast.error(msg);
     },
@@ -221,7 +221,7 @@ function WeightModule() {
       await db.entities.BodyWeightEntry.delete(id);
     },
     onSuccess: () => invalidateBodyWeight(qc),
-    onError: () => toast.error("Failed to delete"),
+    onError: () => toast.error("Entry not deleted. Try again."),
   });
 
   const sorted = [...weightEntries].sort((a, b) => new Date(a.recorded_date) - new Date(b.recorded_date));
@@ -233,7 +233,7 @@ function WeightModule() {
     <>
       <Module>
         <div className="flex items-center justify-between gap-2 mb-1">
-          <span className="text-[13px] font-semibold text-muted-2">Weight</span>
+          <span className="text-[14px] font-semibold text-muted-2">Weight</span>
           {weightEntries.length >= 2 && (
             <SegmentedControl options={RANGES} value={range} onChange={setRange} size="sm" />
           )}
@@ -261,7 +261,7 @@ function WeightModule() {
               <span className="type-display text-2xl font-semibold tabular-nums">
                 {fmt(latest.trendWeight, 1)}
               </span>
-              <span className="text-[13px] font-semibold text-muted">{weightUnit}</span>
+              <span className="text-[14px] font-semibold text-muted">{weightUnit}</span>
             </div>
             {isStale && (
               <p className="text-[11px] font-semibold text-muted-2 mt-0.5">
@@ -385,7 +385,7 @@ function TrendBadge({ curr, prev }) {
   const diff = curr - prev;
   if (Math.abs(diff) < 0.1) return null;
   return (
-    <span className={`font-technical text-[10px] font-bold ml-1 ${diff > 0 ? "text-warn" : "text-ok"}`}>
+    <span className={`font-technical text-[11px] font-bold ml-1 ${diff > 0 ? "text-warn" : "text-ok"}`}>
       {diff > 0 ? "▲" : "▼"}{Math.abs(diff).toFixed(1)}
     </span>
   );
@@ -437,7 +437,7 @@ function MeasurementsTab() {
       setForm({}); setNotes("");
       toast.success("Measurements saved");
     },
-    onError: () => toast.error("Failed to save"),
+    onError: () => toast.error("Measurements not saved. Try again."),
   });
 
   const del = useMutation({
@@ -463,7 +463,7 @@ function MeasurementsTab() {
           <div className="grid grid-cols-4 gap-3 mb-3">
             {MEASUREMENT_FIELDS.map((f, i) => (
               <div key={f.key}>
-                <Label className="text-[10px] text-ink-muted mb-1 block uppercase tracking-wider">{f.label}</Label>
+                <Label className="text-[11px] text-ink-muted mb-1 block uppercase tracking-wider">{f.label}</Label>
                 <Input
                   data-testid={i === 0 ? "measurements-chest" : undefined}
                   type="number" inputMode="decimal"
@@ -508,7 +508,7 @@ function MeasurementsTab() {
           <div className="grid grid-cols-4 gap-2">
             {MEASUREMENT_FIELDS.filter(f => latest[f.key]).map(f => (
               <div key={f.key} className="p-3 glass-inset text-center">
-                <p className="text-[9.5px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">{f.label}</p>
+                <p className="text-[11px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">{f.label}</p>
                 <p className="font-technical text-sm font-extrabold text-ink">
                   {latest[f.key]}
                   <TrendBadge curr={latest[f.key]} prev={prev?.[f.key]} />
@@ -582,7 +582,7 @@ function PhotosLink() {
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-bold text-ink">Progress photos</p>
-        <p className="text-[11.5px] font-semibold text-muted-2">
+        <p className="text-[11px] font-semibold text-muted-2">
           Open the Physique tracker, pose tracking, side-by-side compare, and body-fat trend.
         </p>
       </div>
@@ -633,14 +633,14 @@ function MetabolismTab() {
                   Labelling logged intake as "Calculated Burn" made the one
                   number on the Expenditure card mean the opposite of what it
                   says, in the place he checks whether the cut is working. */}
-              <p className="text-[10px] text-muted-2 mt-1.5 font-bold uppercase tracking-[0.08em]">Intake (7d Avg)</p>
+              <p className="text-[11px] text-muted-2 mt-1.5 font-bold uppercase tracking-[0.08em]">Intake (7d Avg)</p>
            </div>
         </CardContent>
       </Card>
       
       <div className="grid grid-cols-2 gap-3">
          <Card className="glass glass-interactive p-4">
-            <p className="text-[9.5px] text-muted-2 uppercase font-bold tracking-[0.08em] mb-1 flex items-center gap-1.5">
+            <p className="text-[11px] text-muted-2 uppercase font-bold tracking-[0.08em] mb-1 flex items-center gap-1.5">
               <i className="w-[5px] h-[5px] rounded-full shrink-0 bg-violet" /> Weight Trend
             </p>
             <p className="font-technical text-lg font-extrabold text-ink">{weightTrend != null ? `${weightTrend > 0 ? "+" : ""}${weightTrend} ${weightUnit}/wk` : "—"}</p>
@@ -660,7 +660,7 @@ function MetabolismTab() {
               : { label: "Balanced" };
             return (
               <Card className="glass glass-interactive p-4">
-                <p className="text-[9.5px] text-muted-2 uppercase font-bold tracking-[0.08em] mb-1 flex items-center gap-1.5">
+                <p className="text-[11px] text-muted-2 uppercase font-bold tracking-[0.08em] mb-1 flex items-center gap-1.5">
                   <i className="w-[5px] h-[5px] rounded-full shrink-0 bg-gold" /> Net Energy
                 </p>
                 <p className={`font-technical text-lg font-extrabold ${known ? "text-ink" : "text-muted-2"}`}>{net.label}</p>

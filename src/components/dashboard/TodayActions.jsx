@@ -8,7 +8,7 @@ import { Plus, CheckCircle2, Circle, Bot, X } from "lucide-react";
 import { getTodayString } from "@/utils/dateUtils";
 import { toast } from "sonner";
 
-// Passive AI-source glyph hues. Teal (#19C8A6) is THE action color and is
+// Passive AI-source glyph hues. Off-white (#ECEEF1) is THE action color and is
 // barred here (a passive datum glyph must never wear it). Each domain maps to a
 // non-action data hue; text-faint is the fallback for unknown domains.
 const DOMAIN_COLORS = {
@@ -94,7 +94,7 @@ export default function TodayActions({ today, briefActions = [], isError = false
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["todos", todayStr, user.id] }),
-    onError: () => toast.error("Failed to update"),
+    onError: () => toast.error("Action not updated. Check your connection and try again."),
   });
 
   const deleteMutation = useMutation({
@@ -129,7 +129,7 @@ export default function TodayActions({ today, briefActions = [], isError = false
         },
       });
     },
-    onError: () => toast.error("Failed to delete"),
+    onError: () => toast.error("Action not deleted. Check your connection and try again."),
   });
 
   const addMutation = useMutation({
@@ -149,7 +149,7 @@ export default function TodayActions({ today, briefActions = [], isError = false
       setAdding(false);
       queryClient.invalidateQueries({ queryKey: ["todos", todayStr, user.id] });
     },
-    onError: () => toast.error("Failed to add task"),
+    onError: () => toast.error("Task not added. Check your connection and try again."),
   });
 
   const completed = todos.filter(t => t.completed).length;
@@ -162,7 +162,7 @@ export default function TodayActions({ today, briefActions = [], isError = false
   return (
     <div className="glass glass-interactive px-4 pt-3 pb-3">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[13px] font-semibold text-muted-2">
+        <span className="text-[14px] font-semibold text-muted-2">
           {total > 0 ? `To do · ${total - completed} open` : "To do"}
         </span>
         <Button
@@ -175,7 +175,7 @@ export default function TodayActions({ today, briefActions = [], isError = false
         </Button>
       </div>
       {total === 0 && !adding && (
-        <p className="text-xs text-faint py-2">No actions yet, tap + to add one</p>
+        <p className="text-xs text-faint py-2">No actions yet. Tap + to add one.</p>
       )}
       {total > 0 && (
         <div className="h-1 bg-track rounded-full mt-2.5">

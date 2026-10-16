@@ -1,6 +1,15 @@
 import { format } from "date-fns";
 
 /**
+ * Entries that were actually eaten. Week-plan rows load as planned=true and only
+ * count once checked off, so "what I ate" totals everywhere (the Fuel ring, the
+ * 7-day strip, Today, intake stats, Recent) go through this one filter.
+ */
+export function eatenOnly(entries) {
+  return (entries || []).filter((e) => e.planned !== true);
+}
+
+/**
  * Calculate total macros from an array of food entries
  * @param {Array} foodEntries - Array of food entry objects
  * @returns {Object} Object with calories, protein, carbs, and fats totals
@@ -30,7 +39,7 @@ export function calculateMacros(foodEntries) {
  * @returns {Array} Deduplicated foods with their latest macro values
  */
 export function getRecentFoods(entries, limit = 10) {
-  const sorted = [...entries].sort(
+  const sorted = eatenOnly(entries).sort(
     (a, b) => new Date(b.created_at) - new Date(a.created_at)
   );
   const foodMap = new Map();
@@ -70,7 +79,7 @@ export function getDailyCalorieTrend(entries, days = 7) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
     const dateStr = format(d, "yyyy-MM-dd");
-    const dayEntries = entries.filter((e) => e.date === dateStr);
+    const dayEntries = eatenOnly(entries).filter((e) => e.date === dateStr);
     const totalCal = dayEntries.reduce((sum, e) => sum + (e.calories || 0), 0);
     result.push({
       date: dateStr,

@@ -82,8 +82,8 @@ export function usePushNotifications(userId) {
     const reg = await navigator.serviceWorker.ready;
     reg.showNotification(title, {
       body,
-      icon: `${import.meta.env.BASE_URL}vektor-logo.png`,
-      badge: `${import.meta.env.BASE_URL}vektor-logo.png`,
+      icon: `${import.meta.env.BASE_URL}icon-192.png`,
+      badge: `${import.meta.env.BASE_URL}badge-mono.png`,
       vibrate: [200, 100, 200],
       ...options,
     });

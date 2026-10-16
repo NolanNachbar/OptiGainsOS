@@ -61,13 +61,13 @@ export default function ResetPassword() {
 
       if (error) throw error;
 
-      toast.success('Password updated successfully!');
+      toast.success('Password updated.');
       navigate('/today', { replace: true });
     } catch (error) {
       if (error.message?.includes('Auth session missing')) {
-        toast.error('This reset link is invalid or expired. Please request a new one.');
+        toast.error('This reset link is invalid or expired. Request a new one.');
       } else {
-        toast.error(error.message || 'Failed to reset password');
+        toast.error(error.message || 'Could not reset the password. Request a new reset link and try again.');
       }
     } finally {
       setLoading(false);
@@ -82,11 +82,11 @@ export default function ResetPassword() {
         {hasSession === null ? (
           <div className="flex items-center justify-center gap-2 py-4">
             <LoadingSpinner size="small" />
-            <p className="text-secondary text-[13px]">Verifying your reset link…</p>
+            <p className="text-secondary text-[14px]">Verifying your reset link…</p>
           </div>
         ) : !hasSession ? (
           <div className="text-center space-y-4 rise-in">
-            <p className="text-secondary text-[13px]">
+            <p className="text-secondary text-[14px]">
               This reset link is invalid or expired.
             </p>
             <Button asChild variant="volt" size="lg" className="w-full">
@@ -151,7 +151,7 @@ export default function ResetPassword() {
         )}
 
         <div className="flex items-center justify-center mt-3 px-0.5">
-          <Button asChild variant="plain" className="text-[13px] gap-2 min-h-[44px] px-2">
+          <Button asChild variant="plain" className="text-[14px] gap-2 min-h-[44px] px-2">
             <Link to="/login">
               <ArrowLeft className="w-4 h-4" />
               Back to sign in

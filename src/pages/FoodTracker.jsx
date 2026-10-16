@@ -7,6 +7,7 @@ import { searchGenericFoods, searchBrandedFoods } from "@/api/usda";
 import {
   calculateMacros,
   getDailyCalorieTrend,
+  eatenOnly,
   getRecentFoods,
   UNIT_TO_GRAMS,
   isServingLikeUnit,
@@ -35,6 +36,7 @@ import { Apple, Plus, Trash2, Pencil, Search, Loader2, BookOpen, UtensilsCrossed
 import { queryKeys, invalidateCustomFoods, invalidateFoodPortions, invalidateFood, invalidateProfile } from "@/lib/queryKeys";
 import { format, subDays, parseISO, isValid } from "date-fns";
 import { getTodayString, nowInTz } from "@/utils/dateUtils";
+import { createTapGuard, planCustomFoodSave, isMissingColumnError, FOOD_SOURCE_LABELS } from "@/utils/foodLog";
 import { toast } from "sonner";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import {
@@ -53,6 +55,9 @@ import MealPlanIdeas from "@/components/nutrition/MealPlanIdeas";
 import SwapFoodDialog from "@/components/nutrition/SwapFoodDialog";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
 import { Module, SegmentedControl } from "@/components/ui/system";
+
+// Label for an entry logged with calories only and no food name.
+const QUICK_ADD_NAME = "Quick add";
 
 const getDefaultMealType = () => {
   const hour = new Date().getHours();
@@ -336,6 +341,12 @@ export default function FoodTracker() {
   const [estimateInput, setEstimateInput] = useState("");
   const [isEstimating, setIsEstimating] = useState(false);
   const [isEstimatedFood, setIsEstimatedFood] = useState(false);
+  // Where the form's food came from, for the custom_foods.source tag:
+  // 'ai_estimate' | 'label_scan' | 'usda' | 'barcode' | 'manual' | null.
+  const [foodSource, setFoodSource] = useState(null);
+  // What the estimator said about its own answer: { kind, confidence, detail }.
+  // Shown quietly on the form; null for anything that isn't a fresh estimate.
+  const [estimateMeta, setEstimateMeta] = useState(null);
   // Quick-meal estimator (estimate-meal edge fn): a free-text or photo meal ->
   // a list of items the athlete confirms, then batch-logs. For travel/restaurants
   // where weighing each item isn't possible.
@@ -450,7 +461,7 @@ export default function FoodTracker() {
         }
       } catch (error) {
         console.error("Search failed:", error);
-        toast.error("Failed to search foods");
+        toast.error("Food search failed. Check your connection and try again.");
         setSearchError(true);
       } finally {
         setIsSearching(false);
@@ -558,10 +569,10 @@ export default function FoodTracker() {
     },
     onSuccess: () => {
       invalidateProfile(queryClient);
-      toast.success("Nutrition goals updated!");
+      toast.success("Nutrition targets updated.");
     },
     onError: () => {
-      toast.error("Failed to update goals");
+      toast.error("Goals not updated. Try again.");
     },
   });
 
@@ -652,16 +663,35 @@ export default function FoodTracker() {
   });
 
   // Save custom food mutation (fire-and-forget)
+  // A same-name food is never silently overwritten: see planCustomFoodSave.
+  // `source` needs the custom_foods.source column; until that migration is
+  // applied the write retries without it so logging never breaks on it. The
+  // "missing" verdict expires, so applying the migration needs no reload.
+  const SOURCE_RECHECK_MS = 5 * 60 * 1000;
+  const sourceMissingAtRef = useRef(0);
   const saveCustomFoodMutation = useMutation({
-    mutationFn: async (food) => {
+    mutationFn: async ({ food, activeFoodId: editingFoodId = null }) => {
       const existing = await db.entities.CustomFood.filter({ created_by: user.id });
-      const match = existing.find(
-        (f) => f.food_name.toLowerCase() === food.food_name.toLowerCase()
-      );
-      if (match) {
-        return db.entities.CustomFood.update(match.id, food);
+      const plan = planCustomFoodSave(existing, food, { activeFoodId: editingFoodId });
+      // Nothing written, so nothing for onSuccess to hang portions off.
+      if (plan.action === "keep") return null;
+      // Only a real macro edit reaches "update", and it writes just the macros
+      // (in the row's own unit) plus the manual tag; serving fields stay as saved.
+      const row = plan.action === "update" ? { ...plan.patch, source: "manual" } : food;
+      const write = (payload) =>
+        plan.action === "update"
+          ? db.entities.CustomFood.update(plan.id, payload)
+          : db.entities.CustomFood.create({ ...payload, created_by: user.id });
+      const { source, ...withoutSource } = row;
+      const sourceKnownMissing = Date.now() - sourceMissingAtRef.current < SOURCE_RECHECK_MS;
+      if (sourceKnownMissing || !source) return write(withoutSource);
+      try {
+        return await write(row);
+      } catch (err) {
+        if (!isMissingColumnError(err, "source")) throw err;
+        sourceMissingAtRef.current = Date.now();
+        return write(withoutSource);
       }
-      return db.entities.CustomFood.create({ ...food, created_by: user.id });
     },
     onSuccess: (saved) => {
       invalidateCustomFoods(queryClient);
@@ -700,6 +730,9 @@ export default function FoodTracker() {
       serving_size: baseQuantityForUnit(unit),
       serving_unit: unit,
       serving_grams: foodServingSizeGrams ?? null,
+      // Null (unknown) is dropped before the write, so a form that never learned
+      // its origin doesn't stamp a source it can't back up.
+      source: foodSource,
       calories: Math.round(baseMacros.calories * scale),
       protein_grams: Math.round(baseMacros.protein_grams * scale * 10) / 10,
       carbs_grams: Math.round(baseMacros.carbs_grams * scale * 10) / 10,
@@ -768,22 +801,30 @@ export default function FoodTracker() {
           return;
         }
         let imported = 0;
+        let skipped = 0;
         for (const line of lines.slice(1)) {
           const cols = line.split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
           const food_name = cols[nameIdx];
           if (!food_name) continue;
-          await saveCustomFoodMutation.mutateAsync({
-            food_name,
-            calories: parseFloat(cols[calIdx]) || 0,
-            protein_grams: protIdx >= 0 ? parseFloat(cols[protIdx]) || 0 : 0,
-            carbs_grams: carbIdx >= 0 ? parseFloat(cols[carbIdx]) || 0 : 0,
-            fats_grams: fatIdx >= 0 ? parseFloat(cols[fatIdx]) || 0 : 0,
-            serving_size: 1,
-            serving_unit: unitIdx >= 0 ? cols[unitIdx] || "serving" : "serving",
+          const saved = await saveCustomFoodMutation.mutateAsync({
+            food: {
+              food_name,
+              calories: parseFloat(cols[calIdx]) || 0,
+              protein_grams: protIdx >= 0 ? parseFloat(cols[protIdx]) || 0 : 0,
+              carbs_grams: carbIdx >= 0 ? parseFloat(cols[carbIdx]) || 0 : 0,
+              fats_grams: fatIdx >= 0 ? parseFloat(cols[fatIdx]) || 0 : 0,
+              serving_size: 1,
+              serving_unit: unitIdx >= 0 ? cols[unitIdx] || "serving" : "serving",
+              source: "manual",
+            },
           });
-          imported++;
+          // null = a same-name food already exists and was left untouched.
+          if (saved) imported++; else skipped++;
         }
-        toast.success(`${imported} food${imported !== 1 ? "s" : ""} imported to My Foods.`);
+        toast.success(
+          `${imported} food${imported !== 1 ? "s" : ""} imported to My Foods.` +
+          (skipped ? ` ${skipped} already existed and were left as they are.` : "")
+        );
       } catch {
         toast.error("Could not read CSV file.");
       }
@@ -835,6 +876,8 @@ export default function FoodTracker() {
     setActiveFoodId(savedMatch?.id || null);
     setActivePortions(savedMatch ? (portionsByFood[savedMatch.id] || []) : []);
     setPortionsDirty(false);
+    setFoodSource(savedMatch?.source || "manual");
+    setEstimateMeta(null);
     setNewFood({
       ...newFood,
       food_name: entry.food_name,
@@ -878,6 +921,9 @@ export default function FoodTracker() {
     setIsUsdaFood(false);
     setServingHint(null);
     setBaseMacros(baseMacroValues);
+    // Saved foods carry their tag; synthetic ones (estimates) pass it in.
+    setFoodSource(food.source || "manual");
+    setEstimateMeta(null);
     // Synthetic foods (AI estimates, label scans) have no row yet — no id, and
     // no portions until the athlete saves them to My Foods.
     setActiveFoodId(food.id || null);
@@ -925,6 +971,7 @@ export default function FoodTracker() {
         serving_size: 1,
         serving_unit: "serving",
         serving_grams: hasGrams ? estGrams : null,
+        source: "ai_estimate",
         calories: est.calories,
         protein_grams: est.protein,
         carbs_grams: est.carbs,
@@ -933,11 +980,12 @@ export default function FoodTracker() {
       });
       setServingHint(est.serving_description ? `Estimated for ${est.serving_description}` : null);
       setIsEstimatedFood(true);
+      setEstimateMeta({ kind: "AI estimate", confidence: est.confidence, detail: est.assumptions || null });
       setManualExpanded(true);
       setEstimateInput("");
       toast.success(`Estimated ${est.food_name} · ${est.confidence} confidence — review & adjust`);
     } catch (err) {
-      toast.error(err.message || "Estimate failed");
+      toast.error(err.message || "Could not estimate. Add detail and try again.");
     } finally {
       setIsEstimating(false);
     }
@@ -978,7 +1026,7 @@ export default function FoodTracker() {
       if (!data?.items?.length) throw new Error(data?.error || "No foods identified");
       setEstMealItems(data.items);
     } catch (err) {
-      toast.error(err.message || "Estimate failed");
+      toast.error(err.message || "Could not estimate. Add detail and try again.");
     } finally {
       setIsEstimatingMeal(false);
     }
@@ -1008,10 +1056,13 @@ export default function FoodTracker() {
         created_by: user.id,
         eaten_at: eatenAt,
       }));
-      const { error } = await supabase.from("food_entries").insert(rows);
+      const { data: inserted, error } = await supabase.from("food_entries").insert(rows).select("id");
       if (error) throw error;
       invalidateFood(queryClient);
-      toast.success(`Logged ${estMealItems.length} item${estMealItems.length > 1 ? "s" : ""}`);
+      toastLogged(
+        `Logged ${estMealItems.length} item${estMealItems.length > 1 ? "s" : ""}`,
+        (inserted || []).map((r) => r.id)
+      );
       resetMealEstimator();
       setShowMealEstimator(false);
       setShowAddDialog(false);
@@ -1058,6 +1109,7 @@ export default function FoodTracker() {
         serving_size: 1,
         serving_unit: "serving",
         serving_grams: Number.isFinite(labelGrams) && labelGrams > 0 ? labelGrams : null,
+        source: "label_scan",
         calories: est.calories,
         protein_grams: est.protein,
         carbs_grams: est.carbs,
@@ -1066,6 +1118,7 @@ export default function FoodTracker() {
       });
       setServingHint(est.serving_description ? `Label: ${est.serving_description}` : null);
       setIsEstimatedFood(true);
+      setEstimateMeta({ kind: "Label read", confidence: est.confidence, detail: est.note || null });
       setManualExpanded(true);
       setShowLabelCapture(false);
       resetLabelCapture();
@@ -1099,7 +1152,7 @@ export default function FoodTracker() {
   };
 
   if (newFood.food_name && baseMacros.calories > 0) {
-    saveCustomFoodMutation.mutate(buildCustomFoodPayload());
+    saveCustomFoodMutation.mutate({ food: buildCustomFoodPayload(), activeFoodId });
   }
 
   setMealItems((prev) => [...prev, item]);
@@ -1151,9 +1204,31 @@ const handleSaveMealTemplate = () => {
       activePortions
     );
 
+  // Undo for a log action: removes exactly the row(s) that action created, by
+  // id, so a later identical entry is never touched.
+  const undoLoggedEntries = (ids) => {
+    Promise.all(ids.map((id) => db.entities.FoodEntry.delete(id)))
+      .then(() => invalidateFood(queryClient))
+      .catch(() => {
+        invalidateFood(queryClient);
+        toast.error("Couldn't undo that log. Delete the entry from the list instead.");
+      });
+  };
+  const toastLogged = (message, ids) => {
+    toast.success(message, {
+      // Same reasoning as the delete toast: no second tap target beside Undo.
+      closeButton: false,
+      action: ids.length ? { label: "Undo", onClick: () => undoLoggedEntries(ids) } : undefined,
+    });
+  };
+
+  // One-tap re-log double-tap guard (see createTapGuard).
+  const relogGuardRef = useRef(null);
+  if (!relogGuardRef.current) relogGuardRef.current = createTapGuard(800);
+
   const addFoodMutation = useMutation({
     mutationFn: async (data) => {
-      await db.entities.FoodEntry.create({
+      return db.entities.FoodEntry.create({
         food_name: data.food_name,
         meal_type: data.meal_type,
         serving_size: parseFloat(data.serving_amount) || 1,
@@ -1172,7 +1247,7 @@ const handleSaveMealTemplate = () => {
         eaten_at: getEatenAt(loggingMode, data.meal_type, selectedDate),
       });
     },
-    onSuccess: (_result, variables) => {
+    onSuccess: (created, variables) => {
       invalidateFood(queryClient);
       // A quick re-log never opened/populated the Add Food form, so there's
       // nothing to close or reset for it — closing here would dismiss the
@@ -1181,11 +1256,14 @@ const handleSaveMealTemplate = () => {
         setShowAddDialog(false);
         resetForm();
       }
-      toast.success("Food logged successfully!");
+      toastLogged("Food logged.", created?.id ? [created.id] : []);
     },
     onError: () => {
-      toast.error("Failed to log food");
-    }
+      toast.error("Food not logged. Try again.");
+    },
+    onSettled: (_d, _e, variables) => {
+      if (variables?.__quickRelog) relogGuardRef.current.release();
+    },
   });
 
   // Re-log a Recent entry with one tap: same food, same last-used portion,
@@ -1194,6 +1272,9 @@ const handleSaveMealTemplate = () => {
   // portion before logging; this path is for repeating it verbatim).
   const quickRelogFood = (entry) => {
     if (addFoodMutation.isPending) return; // guard a double-tap duplicate
+    // The ref guard also catches two taps inside one frame (isPending hasn't
+    // flipped yet) and a repeat of the same food right after it settled.
+    if (!relogGuardRef.current.tryAcquire(`${entry.food_name}|${entry.serving_size}|${entry.serving_unit}`)) return;
     const servingStr = String(entry.serving_size || "");
     const parts = servingStr.split(' ');
     const originalAmount = parseFloat(parts[0]) || (typeof entry.serving_size === 'number' ? entry.serving_size : 1);
@@ -1201,7 +1282,10 @@ const handleSaveMealTemplate = () => {
     addFoodMutation.mutate({
       __quickRelog: true,
       food_name: entry.food_name,
-      meal_type: entry.meal_type,
+      // The Recent entry's meal is whenever it was last eaten, not now: a
+      // dinner item re-logged at breakfast went into Dinner. Today follows the
+      // clock (same default as a fresh form); a back-dated day keeps the entry's.
+      meal_type: selectedDate === getTodayString() ? getDefaultMealType() : entry.meal_type,
       serving_amount: originalAmount,
       serving_unit: originalUnit,
       serving_grams: entry.serving_grams ?? null,
@@ -1228,7 +1312,7 @@ const handleSaveMealTemplate = () => {
         action: {
           label: "Undo",
           onClick: () => {
-            const { id, created_at, ...rest } = entry;
+            const { id: _id, created_at: _createdAt, ...rest } = entry;
             db.entities.FoodEntry.create(rest)
               .then(() => invalidateFood(queryClient))
               .catch(() => toast.error("Couldn't restore the entry. Check your connection and add it again."));
@@ -1246,9 +1330,9 @@ const handleSaveMealTemplate = () => {
     },
     onSuccess: () => {
       invalidateFood(queryClient);
-      toast.success("Logged ✓");
+      toast.success("Food logged.");
     },
-    onError: () => toast.error("Failed to log"),
+    onError: () => toast.error("Food not logged. Try again."),
   });
 
   const updateFoodMutation = useMutation({
@@ -1271,10 +1355,10 @@ const handleSaveMealTemplate = () => {
       invalidateFood(queryClient);
       setShowAddDialog(false);
       resetForm();
-      toast.success("Food entry updated!");
+      toast.success("Food entry updated.");
     },
     onError: () => {
-      toast.error("Failed to update food entry");
+      toast.error("Food entry not updated. Try again.");
     },
   });
 
@@ -1304,6 +1388,8 @@ const handleSaveMealTemplate = () => {
     setActiveFoodId(savedMatch?.id || null);
     setActivePortions(savedMatch ? (portionsByFood[savedMatch.id] || []) : []);
     setPortionsDirty(false);
+    setFoodSource(savedMatch?.source || "manual");
+    setEstimateMeta(null);
     // Recover grams-per-unit from the total weight the entry recorded, so editing
     // a logged serving still shows what it weighs.
     setFoodServingSizeGrams(
@@ -1463,10 +1549,14 @@ const handleSaveMealTemplate = () => {
     setGenericResults([]); setBrandedResults([]);
     setEditingEntry(null);
     setIsEstimatedFood(false);
+    setFoodSource(null);
+    setEstimateMeta(null);
   };
 
   const selectFood = (food) => {
     setIsEstimatedFood(false);
+    setEstimateMeta(null);
+    setFoodSource(food.dataType === "Barcode" ? "barcode" : "usda");
     // baseMacros always stored per 100g (USDA/barcode nutrient basis)
     const baseMacroValues = {
       calories: Math.round(food.calories),
@@ -1515,7 +1605,7 @@ const handleSaveMealTemplate = () => {
 
   // Consumed macros count only EATEN entries — planned (not-yet-checked-off) plan
   // items are shown in the list but don't inflate today's intake until checked.
-  const eatenEntries = foodEntries.filter((e) => !e.planned);
+  const eatenEntries = eatenOnly(foodEntries);
   const totals = calculateMacros(eatenEntries);
 
   // Keep this day's planned portions pinned to the day's CURRENT budget. The
@@ -1555,7 +1645,7 @@ const handleSaveMealTemplate = () => {
   const revertSwap = (displaced) => {
     foodSwap.mutate({ original: displaced, replacement: null }, {
       onSuccess: () => { setSwapEntry(null); toast.success(`${displaced} is back on today's plan`); },
-      onError: (e) => toast.error(e.message || "Revert failed"),
+      onError: (e) => toast.error(e.message || "Could not revert the swap. Try again."),
     });
   };
 
@@ -1573,14 +1663,16 @@ const handleSaveMealTemplate = () => {
           ? `Swapped in ${replacement}, day re-fit around it`
           : `${original} removed; ${replacement} didn't fit today's budget`);
       },
-      onError: (e) => toast.error(e.message || "Swap failed"),
+      onError: (e) => toast.error(e.message || "Could not swap the food. Try again."),
     });
   };
 
   // ── Copy a previous day forward ────────────────────────────────────────────
   // The recents list handles one food at a time; this handles "yesterday again",
   // which is most of a repeatable diet.
-  const copySourceEntries = allFoodEntries.filter((e) => e.date === copyFromDate);
+  // Planned rows are suggestions, not a day that was eaten: copying them would
+  // log un-eaten plan items as eaten.
+  const copySourceEntries = eatenOnly(allFoodEntries).filter((e) => e.date === copyFromDate);
 
   const copyDayMutation = useMutation({
     mutationFn: async (entries) => {
@@ -1621,8 +1713,8 @@ const handleSaveMealTemplate = () => {
   // by 7 when only 4 days were logged reports a deficit that never happened.
   const intakeStats = useMemo(() => {
     const start = format(subDays(parseISO(selectedDate), statsWindow - 1), "yyyy-MM-dd");
-    const inWindow = allFoodEntries.filter(
-      (e) => e.date >= start && e.date <= selectedDate && !e.planned
+    const inWindow = eatenOnly(allFoodEntries).filter(
+      (e) => e.date >= start && e.date <= selectedDate
     );
     const byDate = {};
     for (const e of inWindow) {
@@ -1931,7 +2023,6 @@ const handleSaveMealTemplate = () => {
               const isToday = selectedDate === getTodayString();
               const calsConsumed = totals.calories;
               const calsGoal = targets.calories;
-              const calsRemaining = calsGoal - calsConsumed;
               const macroCols = [
                 { label: 'Kcal', consumed: calsConsumed, goal: calsGoal, hue: null, unit: '' },
                 { label: 'Protein', consumed: totals.protein, goal: targets.protein, hue: 'var(--hue-coral)', unit: 'g' },
@@ -1941,10 +2032,10 @@ const handleSaveMealTemplate = () => {
               return (
                 <Module bleed className="rise-in" data-tutorial="nutrition-rings">
                   <div className="flex items-center justify-between gap-2 mb-2.5">
-                    <span className="text-[13px] font-semibold text-muted-2 flex items-center gap-1.5 truncate">
+                    <span className="text-[14px] font-semibold text-muted-2 flex items-center gap-1.5 truncate">
                       Intake vs pace
                       {targets.engineSet && (
-                        <span className="text-[9px] font-extrabold tracking-wider text-ink-muted glass-inset px-1.5 py-0.5 shrink-0">
+                        <span className="text-[11px] font-extrabold tracking-wider text-ink-muted glass-inset px-1.5 py-0.5 shrink-0">
                           ENGINE-SET
                         </span>
                       )}
@@ -2009,7 +2100,7 @@ const handleSaveMealTemplate = () => {
                   {/* Fiber: already counted inside carbs, so it gets a plain line
                       rather than a 5th bar that would double-draw the same grams. */}
                   <div className="flex items-center justify-between gap-2 mt-2.5 pt-2 border-t hairline">
-                    <span className="text-[10px] text-ink-faint truncate">
+                    <span className="text-[11px] text-ink-faint truncate">
                       Fiber{targets.fiberIsDefault ? ' · 14 g / 1000 kcal' : ''}
                     </span>
                     <span className="font-technical text-[11px] font-semibold tabular-nums text-secondary">
@@ -2087,7 +2178,7 @@ const handleSaveMealTemplate = () => {
                 onClick={() => {
                   // Default to the most recent logged day before this one, so
                   // the dialog opens on something rather than an empty date.
-                  const prior = allFoodEntries
+                  const prior = eatenOnly(allFoodEntries)
                     .map((e) => e.date)
                     .filter((d) => d < selectedDate)
                     .sort()
@@ -2115,7 +2206,7 @@ const handleSaveMealTemplate = () => {
                         key={w}
                         type="button"
                         onClick={() => setStatsWindow(w)}
-                        className={`font-technical text-[10.5px] font-bold px-2 py-1 ${
+                        className={`font-technical text-[11px] font-bold px-2 py-1 ${
                           statsWindow === w ? "text-ink glass-inset" : "text-ink-faint hover:text-ink-secondary"
                         }`}
                       >
@@ -2131,7 +2222,7 @@ const handleSaveMealTemplate = () => {
                     {/* Averaged over days actually logged, not over the calendar
                         window — dividing by 28 when 9 days were logged reports a
                         deficit that never happened. */}
-                    <p className="text-[10.5px] text-ink-muted mb-2">
+                    <p className="text-[11px] text-ink-muted mb-2">
                       Average of {intakeStats.daysLogged} logged {intakeStats.daysLogged === 1 ? "day" : "days"} out of the last {intakeStats.windowDays}
                     </p>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -2147,7 +2238,7 @@ const handleSaveMealTemplate = () => {
                         </div>
                       ))}
                     </div>
-                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10.5px] text-ink-secondary">
+                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-ink-secondary">
                       {intakeStats.split && (
                         <span>
                           Split{' '}
@@ -2225,16 +2316,20 @@ const handleSaveMealTemplate = () => {
                 { mealType: 'snack',     label: 'Snack' },
               ].map(({ mealType, label }, i) => {
                 const entries = mealGroups[mealType];
-                const mealCals = entries.reduce((sum, e) => sum + (e.calories || 0), 0);
-                const mealP = entries.reduce((sum, e) => sum + (e.protein_grams || 0), 0);
-                const mealC = entries.reduce((sum, e) => sum + (e.carbs_grams || 0), 0);
-                const mealF = entries.reduce((sum, e) => sum + (e.fats_grams || 0), 0);
-                const mealCost = entries.reduce((sum, e) => sum + (e.cost_usd || 0), 0);
+                // Header totals are what was eaten, matching the ring; planned
+                // rows still list below (striped) and are counted separately.
+                const eatenInMeal = eatenOnly(entries);
+                const plannedInMeal = entries.length - eatenInMeal.length;
+                const mealCals = eatenInMeal.reduce((sum, e) => sum + (e.calories || 0), 0);
+                const mealP = eatenInMeal.reduce((sum, e) => sum + (e.protein_grams || 0), 0);
+                const mealC = eatenInMeal.reduce((sum, e) => sum + (e.carbs_grams || 0), 0);
+                const mealF = eatenInMeal.reduce((sum, e) => sum + (e.fats_grams || 0), 0);
+                const mealCost = eatenInMeal.reduce((sum, e) => sum + (e.cost_usd || 0), 0);
                 const hasEntries = entries.length > 0;
                 // Earliest VALID eaten_at across the meal's entries, for the
                 // header time badge — date-fns `format` throws on an invalid
                 // Date, so a bad/missing timestamp is skipped, not fatal.
-                const mealTime = entries.reduce((earliest, e) => {
+                const mealTime = eatenInMeal.reduce((earliest, e) => {
                   if (!e.eaten_at) return earliest;
                   const d = new Date(e.eaten_at);
                   if (!isValid(d)) return earliest;
@@ -2246,14 +2341,19 @@ const handleSaveMealTemplate = () => {
                     <div className="grid grid-cols-[1fr_42px_32px_32px_32px] gap-x-1.5 items-center py-2.5 border-b hairline">
                       <div className="flex items-center gap-2 min-w-0">
                         <div className={`w-2 h-2 rounded-full shrink-0 ${hasEntries ? 'bg-ink-secondary' : 'bg-track'}`} />
-                        <span className="text-[14.5px] font-bold text-ink truncate">{label}</span>
+                        <span className="text-[14px] font-bold text-ink truncate">{label}</span>
+                        {plannedInMeal > 0 && (
+                          <span className="font-technical text-[11px] font-semibold text-ink-muted shrink-0">
+                            +{plannedInMeal} planned
+                          </span>
+                        )}
                         {mealTime && (
                           <span className="font-technical text-[11px] font-semibold text-ink-muted shrink-0">
                             {format(mealTime, 'h:mm a')}
                           </span>
                         )}
                         {mealCost > 0 && (
-                          <span className="font-technical text-[10px] font-semibold text-ink-muted shrink-0">
+                          <span className="font-technical text-[11px] font-semibold text-ink-muted shrink-0">
                             ${mealCost.toFixed(2)}
                           </span>
                         )}
@@ -2270,10 +2370,10 @@ const handleSaveMealTemplate = () => {
                       </div>
                       {hasEntries ? (
                         <>
-                          <span className="font-technical text-[13px] font-bold text-ink text-right tabular-nums">{Math.round(mealCals)}</span>
-                          <span className="font-technical text-[13px] font-bold text-coral text-right tabular-nums">{Math.round(mealP)}</span>
-                          <span className="font-technical text-[13px] font-bold text-carb text-right tabular-nums">{Math.round(mealC)}</span>
-                          <span className="font-technical text-[13px] font-bold text-fat text-right tabular-nums">{Math.round(mealF)}</span>
+                          <span className="font-technical text-[14px] font-bold text-ink text-right tabular-nums">{Math.round(mealCals)}</span>
+                          <span className="font-technical text-[14px] font-bold text-coral text-right tabular-nums">{Math.round(mealP)}</span>
+                          <span className="font-technical text-[14px] font-bold text-carb text-right tabular-nums">{Math.round(mealC)}</span>
+                          <span className="font-technical text-[14px] font-bold text-fat text-right tabular-nums">{Math.round(mealF)}</span>
                         </>
                       ) : <span className="col-span-4" />}
                     </div>
@@ -2305,7 +2405,7 @@ const handleSaveMealTemplate = () => {
                           )}
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5 min-w-0">
-                              <span className={`text-[13px] font-bold tracking-tight truncate ${entry.planned ? 'text-ink-muted' : 'text-ink'}`}>{entry.food_name}</span>
+                              <span className={`text-[14px] font-bold tracking-tight truncate ${entry.planned ? 'text-ink-muted' : 'text-ink'}`}>{entry.food_name}</span>
                               {entry.tag && (
                                 <span className="section-label shrink-0 glass-inset px-1.5 py-0.5">
                                   {entry.tag === 'pre' ? 'Pre-WO' : 'Post-WO'}
@@ -2316,7 +2416,7 @@ const handleSaveMealTemplate = () => {
                                 serving OR cost so an entry with a cost but no
                                 parseable serving still shows its $ amount. */}
                             {(formatEntryServing(entry) || entry.cost_usd != null) && (
-                              <span className="block text-[10.5px] font-technical mt-0.5 font-semibold text-ink-muted truncate">
+                              <span className="block text-[11px] font-technical mt-0.5 font-semibold text-ink-muted truncate">
                                 {formatEntryServing(entry)}{entry.planned ? ' · planned' : ''}
                                 {entry.cost_usd != null && ` · $${entry.cost_usd.toFixed(2)}`}
                               </span>
@@ -2345,10 +2445,10 @@ const handleSaveMealTemplate = () => {
                             </button>
                           </div>
                         </div>
-                        <span data-field="kcal" className={`font-technical text-[13px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{entry.calories ?? 0}</span>
-                        <span data-field="protein" className={`font-technical text-[13px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{entry.protein_grams ?? 0}</span>
-                        <span data-field="carbs" className={`font-technical text-[13px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{entry.carbs_grams ?? 0}</span>
-                        <span data-field="fats" className={`font-technical text-[13px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{entry.fats_grams ?? 0}</span>
+                        <span data-field="kcal" className={`font-technical text-[14px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{entry.calories ?? 0}</span>
+                        <span data-field="protein" className={`font-technical text-[14px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{entry.protein_grams ?? 0}</span>
+                        <span data-field="carbs" className={`font-technical text-[14px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{entry.carbs_grams ?? 0}</span>
+                        <span data-field="fats" className={`font-technical text-[14px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{entry.fats_grams ?? 0}</span>
                       </div>
                     ))}
 
@@ -2363,7 +2463,7 @@ const handleSaveMealTemplate = () => {
                       aria-label={`Add item to ${mealType}`}
                     >
                       <Plus className="w-3.5 h-3.5 text-ink-faint group-hover:text-brand shrink-0" />
-                      <span className="text-[13px] font-bold text-ink-muted group-hover:text-brand">Add to {label.toLowerCase()}</span>
+                      <span className="text-[14px] font-bold text-ink-muted group-hover:text-brand">Add to {label.toLowerCase()}</span>
                     </button>
                   </section>
                 );
@@ -2615,6 +2715,7 @@ const handleSaveMealTemplate = () => {
                     <Camera className="w-4 h-4 text-ink-muted shrink-0" />
                   </button>
                 )}
+                {!editingEntry && (
                 <div>
                   <Label htmlFor="search">Search USDA Database</Label>
                   <div className="flex gap-2 mt-1">
@@ -2664,7 +2765,7 @@ const handleSaveMealTemplate = () => {
                               {matchingCustomFoods.map((food) => (
                                 <div key={food.id} className="flex items-center hover:bg-charcoal-elevated transition-colors duration-200 [transition-timing-function:var(--ease)]">
                                   <button onClick={() => selectCustomFood(food)} className="flex-1 text-left px-4 py-3 min-h-[44px]">
-                                    <div className="font-medium text-ink text-sm">{food.food_name}</div>
+                                    <div className="font-medium text-ink text-sm">{food.food_name}{FOOD_SOURCE_LABELS[food.source] && <span className="ml-1.5 text-[11px] font-normal text-ink-muted">{FOOD_SOURCE_LABELS[food.source]}</span>}</div>
                                     <MacroResultLine cal={food.calories} p={food.protein_grams} c={food.carbs_grams} f={food.fats_grams} />
                                   </button>
                                   <FavoriteToggle food={food} onToggle={toggleFavoriteFoodMutation.mutate} />
@@ -2758,6 +2859,7 @@ const handleSaveMealTemplate = () => {
                         )
                       )}
                     </div>
+                    )}
 
                     {/* When not searching and no food selected: show Recent Foods + My Foods */}
                     {searchQuery.length < 2 && !newFood.food_name && (
@@ -2837,7 +2939,7 @@ const handleSaveMealTemplate = () => {
                                 {sortedCustomFoods.map((food) => (
                                   <div key={food.id} className="flex items-center hover:bg-charcoal-elevated border-b border-charcoal-border last:border-b-0 transition-colors duration-200 [transition-timing-function:var(--ease)]">
                                     <button onClick={() => selectCustomFood(food)} className="flex-1 text-left px-4 py-3 min-h-[44px]">
-                                      <div className="font-medium text-ink text-sm">{food.food_name}</div>
+                                      <div className="font-medium text-ink text-sm">{food.food_name}{FOOD_SOURCE_LABELS[food.source] && <span className="ml-1.5 text-[11px] font-normal text-ink-muted">{FOOD_SOURCE_LABELS[food.source]}</span>}</div>
                                       <MacroResultLine cal={food.calories} p={food.protein_grams} c={food.carbs_grams} f={food.fats_grams} />
                                     </button>
                                     <FavoriteToggle food={food} onToggle={toggleFavoriteFoodMutation.mutate} />
@@ -2851,6 +2953,7 @@ const handleSaveMealTemplate = () => {
                     )}
 
                     {/* AI estimate — describe a food when exact macros aren't in the DB */}
+                    {!editingEntry && (
                     <div className="border-t border-charcoal-border pt-4">
                       <Label htmlFor="ai-estimate" className="flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5 text-brand" /> Can't find it? Describe it
@@ -2883,6 +2986,7 @@ const handleSaveMealTemplate = () => {
                         <p className="mt-1 text-[11px] text-ink-muted">Estimated from the name + portion. Best with an explicit amount (oz, g, cups).</p>
                       )}
                     </div>
+                    )}
 
                     {/* add-food-dialog-5: the AI-estimate section above already
                         opens this "alternatives to search" zone with a single
@@ -2890,6 +2994,9 @@ const handleSaveMealTemplate = () => {
                         drops its own top border so the two don't stack into a
                         double divider, spacing alone (pt-1) separates them. */}
                     <div className="pt-1">
+                      {/* An edit leads with amount + meal; the disclosure (and the
+                          search/estimate paths above) only belong to adding. */}
+                      {!editingEntry && (
                       <button
                         type="button"
                         onClick={() => setManualExpanded(v => !v)}
@@ -2899,25 +3006,30 @@ const handleSaveMealTemplate = () => {
                         <span className="section-label">Manual entry</span>
                         {manualExpanded ? <ChevronUp className="w-4 h-4 text-ink-muted" /> : <ChevronDown className="w-4 h-4 text-ink-muted" />}
                       </button>
+                      )}
 
                       {manualExpanded && (
-                      <div className="space-y-4 pt-1">
+                      <div className={editingEntry ? "flex flex-col gap-4 pt-1" : "space-y-4 pt-1"}>
                         <div>
-                          <Label htmlFor="food_name">Food Name *</Label>
+                          <Label htmlFor="food_name">Food Name{editingEntry ? " *" : ""}</Label>
                           <Input
                             id="food_name"
                             value={newFood.food_name}
                             onChange={(e) => setNewFood({ ...newFood, food_name: e.target.value })}
-                            placeholder="e.g., Chicken Breast"
+                            placeholder={editingEntry ? "e.g., Chicken Breast" : `e.g., Chicken Breast (blank logs as "${QUICK_ADD_NAME}")`}
                             className="mt-1"
                           />
                         </div>
 
+                        {/* Editing doesn't restamp eaten_at, so the toggle would be
+                            a control that does nothing. */}
+                        {!editingEntry && (
                         <div>
                           <LoggingModeToggle value={loggingMode} onChange={setLoggingMode} />
                         </div>
+                        )}
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className={`grid grid-cols-2 gap-4 ${editingEntry ? "order-first" : ""}`}>
                           <div>
                             <Label htmlFor="meal_type">Meal Type</Label>
                             <Select
@@ -2979,10 +3091,21 @@ const handleSaveMealTemplate = () => {
                               </Select>
                             </div>
                             {servingEquivalence && (
-                              <p className="font-technical text-[10.5px] font-semibold text-ink-faint mt-1">{servingEquivalence}</p>
+                              <p className="font-technical text-[11px] font-semibold text-ink-faint mt-1">{servingEquivalence}</p>
                             )}
                           </div>
                         </div>
+
+                        {/* The estimator's own read on its answer: how sure it was
+                            and what it assumed. Kept quiet — the macros above are
+                            still the thing to check. */}
+                        {estimateMeta && (
+                          <p className="text-[11px] text-ink-muted -mt-2">
+                            <span className="font-semibold">{estimateMeta.kind}</span>
+                            {estimateMeta.confidence && ` · ${estimateMeta.confidence} confidence`}
+                            {estimateMeta.detail && ` · ${estimateMeta.detail}`}
+                          </p>
+                        )}
 
                         {/* The weight of one serving. This is the number that was
                             missing: without it a homemade food's "serving" is a
@@ -3006,7 +3129,7 @@ const handleSaveMealTemplate = () => {
                               min="0"
                               step="1"
                             />
-                            <p className="text-[10.5px] text-ink-muted mt-1">
+                            <p className="text-[11px] text-ink-muted mt-1">
                               {foodServingSizeGrams > 0
                                 ? "Saved with the food, so grams and servings stay interchangeable."
                                 : "Optional. Weigh one serving once and every log after it is exact."}
@@ -3034,7 +3157,7 @@ const handleSaveMealTemplate = () => {
                             {portionsExpanded && (
                               <div className="mt-2 space-y-2">
                                 {activePortions.length === 0 && (
-                                  <p className="text-[10.5px] text-ink-muted">
+                                  <p className="text-[11px] text-ink-muted">
                                     Weigh one and name it. "slice = 62 g" turns every future log into a count.
                                   </p>
                                 )}
@@ -3262,7 +3385,7 @@ const handleSaveMealTemplate = () => {
               {/* Fixed footer — only mounts once a food is selected/typed, so
                   the search-first sheet isn't capped by a dead submit bar while
                   browsing results. */}
-              {(editingEntry || newFood.food_name) && (
+              {(editingEntry || newFood.food_name || (manualExpanded && baseMacros.calories > 0)) && (
               <div className="px-6 pt-4 border-t bg-charcoal-surface shrink-0" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
                 <Button
                   onClick={() => {
@@ -3285,15 +3408,18 @@ const handleSaveMealTemplate = () => {
                       updateFoodMutation.mutate({ id: editingEntry.id, data: newFood });
                       return;
                     }
-                    addFoodMutation.mutate(newFood);
+                    // Calorie-only quick add: no name typed means "Quick add",
+                    // and a nameless entry is never worth a My Foods row.
+                    const isQuickAdd = !newFood.food_name.trim();
+                    addFoodMutation.mutate(isQuickAdd ? { ...newFood, food_name: QUICK_ADD_NAME } : newFood);
                     // Save manually-entered foods to custom_foods (fire-and-forget, per-serving values)
-                    if (newFood.food_name && baseMacros.calories > 0) {
-                      saveCustomFoodMutation.mutate(buildCustomFoodPayload());
+                    if (!isQuickAdd && baseMacros.calories > 0) {
+                      saveCustomFoodMutation.mutate({ food: buildCustomFoodPayload(), activeFoodId });
                     }
                   }}
                   // Block a blank/zero amount: it would log a real entry with 0
                   // calories and serving_size coerced to 1 (a silent empty log).
-                  disabled={!newFood.food_name || (parseFloat(newFood.serving_amount) || 0) <= 0 || addFoodMutation.isPending || updateFoodMutation.isPending}
+                  disabled={(!newFood.food_name.trim() && (editingEntry || !(baseMacros.calories > 0))) || (parseFloat(newFood.serving_amount) || 0) <= 0 || addFoodMutation.isPending || updateFoodMutation.isPending}
                   variant="volt"
                   size="lg"
                   className="w-full"
@@ -3666,7 +3792,7 @@ const handleSaveMealTemplate = () => {
                   {matchingCustomFoods.map((food) => (
                     <div key={food.id} className="flex items-center hover:bg-charcoal-elevated transition-colors duration-200 [transition-timing-function:var(--ease)]">
                       <button onClick={() => selectCustomFood(food)} className="flex-1 text-left px-4 py-3 min-h-[44px]">
-                        <div className="font-medium text-ink text-sm">{food.food_name}</div>
+                        <div className="font-medium text-ink text-sm">{food.food_name}{FOOD_SOURCE_LABELS[food.source] && <span className="ml-1.5 text-[11px] font-normal text-ink-muted">{FOOD_SOURCE_LABELS[food.source]}</span>}</div>
                         <MacroResultLine cal={food.calories} p={food.protein_grams} c={food.carbs_grams} f={food.fats_grams} />
                       </button>
                       <FavoriteToggle food={food} onToggle={toggleFavoriteFoodMutation.mutate} />
@@ -3757,7 +3883,7 @@ const handleSaveMealTemplate = () => {
                 </Select>
               </div>
               {servingEquivalence && (
-                <p className="font-technical text-[10.5px] font-semibold text-ink-faint mt-1">{servingEquivalence}</p>
+                <p className="font-technical text-[11px] font-semibold text-ink-faint mt-1">{servingEquivalence}</p>
               )}
             </div>
             {isServingLikeUnit(newFood.serving_unit) && (
@@ -3981,7 +4107,7 @@ const handleSaveMealTemplate = () => {
                     />
                     <span className="flex-1 min-w-0">
                       <span className="block text-sm text-ink truncate">{entry.food_name}</span>
-                      <span className="block text-[10.5px] text-ink-muted">
+                      <span className="block text-[11px] text-ink-muted">
                         {entry.meal_type} · {formatEntryServing(entry)}
                       </span>
                     </span>

@@ -113,7 +113,7 @@ export function useWorkoutExercises(initialExercises = []) {
   // the load even when the athlete had logged the replacement before.
   const replaceExercise = useCallback((oldName, newExercise, seedWeight = 0) => {
     if (!newExercise?.name?.trim()) {
-      toast.error("Please pick or enter a replacement exercise");
+      toast.error("Pick or enter a replacement exercise.");
       return;
     }
     const newName = newExercise.name.trim();
@@ -160,7 +160,7 @@ export function useWorkoutExercises(initialExercises = []) {
   // session's reps), so a repeat lift is one tick instead of clear-the-0-then-type.
   const addExercise = useCallback((exerciseName, defaultWeight = 0, defaultReps = 0) => {
     if (!exerciseName?.trim()) {
-      toast.error("Please enter an exercise name");
+      toast.error("Enter an exercise name.");
       return false;
     }
 

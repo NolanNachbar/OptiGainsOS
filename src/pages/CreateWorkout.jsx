@@ -147,7 +147,7 @@ export default function CreateWorkout() {
         }
       } catch (error) {
         console.error("Error fetching workout:", error);
-        if (isMounted.current) toast.error("Failed to load workout");
+        if (isMounted.current) toast.error("Could not load the workout. Check your connection and try again.");
       } finally {
         if (isMounted.current) setIsLoading(false);
       }
@@ -236,11 +236,11 @@ export default function CreateWorkout() {
       if (editId) {
         await db.entities.Workout.update(editId, workoutData);
         invalidateWorkouts(queryClient);
-        toast.success("Workout updated successfully");
+        toast.success("Workout updated.");
       } else {
         await db.entities.Workout.create({ ...workoutData, created_by: user.id });
         invalidateWorkouts(queryClient);
-        toast.success("Workout created successfully");
+        toast.success("Workout created.");
       }
       if (overrideProgramWorkoutId) {
         const rows = await db.entities.ProgramWorkout.filter({ id: overrideProgramWorkoutId });
@@ -258,7 +258,7 @@ export default function CreateWorkout() {
       navigate("/workouts");
     } catch (error) {
       console.error(`Error ${editId ? 'updating' : 'creating'} workout:`, error);
-      toast.error(`Failed to ${editId ? 'update' : 'create'} workout`);
+      toast.error(`Workout not ${editId ? 'updated' : 'created'}. Try again.`);
     }
   };
 
@@ -296,7 +296,7 @@ export default function CreateWorkout() {
                   onChange={(e) => setWorkout({ ...workout, title: e.target.value })}
                   placeholder="e.g., Upper Body Strength"
                   required
-                  className="mt-1 h-auto py-2.5 text-[20px] font-extrabold tracking-[-0.02em]"
+                  className="mt-1 h-auto py-2.5 text-[17px] font-extrabold tracking-[-0.02em]"
                 />
               </div>
 

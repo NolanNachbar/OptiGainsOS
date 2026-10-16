@@ -47,9 +47,9 @@ export function ConfirmDialog({
             {details}
           </div>
         )}
-        {/* Teal (var(--color-brand) #19C8A6) is THE single action color;
+        {/* Off-white (var(--color-brand) #ECEEF1) is THE single action color;
             destructive confirms route to the `bad` `destructive` variant so a
-            delete never masquerades as the teal CTA.
+            delete never masquerades as the primary CTA.
             Stacked + full-width across the full bottom-sheet range (thumb zone),
             reverting to an inline row only from md: up (centered desktop dialog)
             so the layout holds for the whole sheet breakpoint.

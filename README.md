@@ -1,60 +1,55 @@
-# Application Link
+# OptiGains
 
-The deployment can be accessed through this link:
+**The training instrument that shows its working.**
 
-https://nolannachbar.github.io/VektorPub/
+OptiGains is a private, single-user training app. A deterministic Python engine
+computes athlete state and prescribes sessions, with no LLM in the loop. The
+React app logs workouts, nutrition, body measurements and recovery, and shows
+what the engine prescribed and why. Personal use only.
 
-# How to build and run this
+Voice, naming and visual rules: [`brand/BRAND_GUIDE.md`](brand/BRAND_GUIDE.md).
 
-1.  install Node.js (version 20.0.0 or higher)
-2.  Then run the following
+## Stack
 
-- 'npm install' #this installs dependencies
-- 'npm run dev' # starts the development server
+- React + Vite frontend, installable PWA
+- Supabase: Postgres, auth, edge functions in `supabase/functions/`
+- Python engine in `scripts/`, run on a GitHub Actions cron
 
-# Accounts: which user owns the real data
+## Run locally
+
+Requires Node.js 20 or higher.
+
+```
+npm install
+npm run dev
+```
+
+## Engine checks
+
+```
+python3 scripts/smoke.py
+```
+
+## Accounts: which user owns the real data
 
 There are two rows in `auth.users`, and mixing them up will send you on a long
 debugging detour. Every table is scoped by a `created_by` UUID.
 
 | account | UUID | what it is |
 |---|---|---|
-| `nvtnachbar@gmail.com` | `169d2f0b-cf5a-44fb-8551-845004725a26` | **The real athlete.** All live data. |
+| `nvtnachbar@gmail.com` | `169d2f0b-cf5a-44fb-8551-845004725a26` | The real athlete. All live data. |
 | `athlete@local.test` | `5ec4eebf-ae62-4f3f-9c1d-f44f92716bc8` | Test fixture. Local dev only. |
-| `optigains-sim-test@example.invalid` | see `auth.users` | **Hosted test clone** for `ios-sim`. Login: password `OptiGainsSimTest_2026!`. Created/refreshed by `ios-sim/clone-test-user.mjs`, which clones the real athlete's rows under this id. Profile is overwritten to `display_name: "TEST ACCOUNT (ios-sim clone)"` so it's never mistaken for real data in the UI. |
+| `optigains-sim-test@example.invalid` | see `auth.users` | Hosted test clone for `ios-sim`. Created and refreshed by `ios-sim/clone-test-user.mjs`, which clones the real athlete's rows under this id. Profile is overwritten to `display_name: "TEST ACCOUNT (ios-sim clone)"` so it is never mistaken for real data. |
 
 The engine (`scripts/*.py`, via the `USER_ID` GitHub secret) and the Garmin edge
-functions (via the `USER_ID` Supabase secret) both read and write **only** the
-real athlete's UUID. The test account holds a frozen snapshot from late June 2026
-and nothing writes to it any more.
+functions (via the `USER_ID` Supabase secret) read and write only the real
+athlete's UUID. The test account holds a frozen snapshot from late June 2026
+and nothing writes to it.
 
-The trap: `athlete@local.test` **and** `optigains-sim-test@example.invalid` both
-hold byte-identical copies of the real account's rows — `garmin_activities` with
-the same Garmin `activity_id`s, and `workout_logs` rows on dates that also exist
-on the real account. Query any of these tables without a `created_by` filter and
-every one of those looks like a duplicated workout. None of them are. The engine
-filters by `created_by` and never sees them, RLS keeps them out of the browser,
-and there are zero true duplicates within the real account (one double-submit on
+`athlete@local.test` and `optigains-sim-test@example.invalid` both hold
+byte-identical copies of the real account's rows. Query any user-scoped table
+without a `created_by` filter and those rows look like duplicated workouts. They
+are not. The engine filters by `created_by`, RLS keeps them out of the browser,
+and there are no true duplicates within the real account (one double-submit on
 2026-06-22 aside). Always filter by `created_by` before concluding the data is
-corrupt.
-
-This keeps getting re-discovered. Details and the other closed findings are in
-`KNOWN_NON_ISSUES.md`.
-
-# React + Vite
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
- 
+corrupt. Closed findings are in `KNOWN_NON_ISSUES.md`.

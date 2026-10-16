@@ -254,7 +254,7 @@ export default function RecoveryDetail() {
                       text-ink-muted) so it never reads as a second colored hero;
                       it only earns the physiological spectrum once it leaves the
                       0.8–1.3 band (warn/bad). */}
-                  <div className={`font-technical text-3xl font-bold md:text-5xl md:font-extrabold tabular-nums ${acwrColor} mb-1`}>{acwr != null ? acwr.toFixed(2) : "—"}</div>
+                  <div className={`font-technical text-3xl font-numeral md:text-5xl tabular-nums ${acwrColor} mb-1`}>{acwr != null ? acwr.toFixed(2) : "—"}</div>
                   <div className="section-label">Current Ratio</div>
                 </div>
                 <div className="w-full md:flex-1">
@@ -423,7 +423,7 @@ export default function RecoveryDetail() {
             {hasData[resolvedChart] && (
               <div className="px-4 pt-3 flex items-baseline justify-between gap-2">
                 <div className="flex items-baseline gap-1.5">
-                  <span className="font-technical text-3xl font-bold tabular-nums text-ink">{chartMeta[resolvedChart].value}</span>
+                  <span className="font-technical text-3xl font-numeral tabular-nums text-ink">{chartMeta[resolvedChart].value}</span>
                   <span className="section-label">{chartMeta[resolvedChart].unit}</span>
                 </div>
                 <div className="text-right">
@@ -583,7 +583,7 @@ export default function RecoveryDetail() {
                         <i className="w-[5px] h-[5px] rounded-full shrink-0 bg-carb" />
                         {sport}
                       </div>
-                      <div className="font-technical text-2xl font-extrabold text-ink">{val}</div>
+                      <div className="font-technical text-2xl font-numeral text-ink">{val}</div>
                       <div className="section-label mt-1">Today's Load</div>
                     </div>
                   );

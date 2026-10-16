@@ -30,17 +30,17 @@ export function Module({ label, detail, detailHref, onDetailClick, right, childr
     <div className={`surface px-4 sm:px-5 lg:px-4 py-3 ${bleedClass} ${className}`} {...rest}>
       {(label || detail || right) && (
         <div className="flex items-center justify-between gap-2 mb-2">
-          {label && <span className="text-[13px] font-semibold text-muted-2 truncate">{label}</span>}
+          {label && <span className="text-[14px] font-semibold text-muted-2 truncate">{label}</span>}
           {/* `right` is a free-form node (e.g. "1,034 kcal left") for when the
               header's right slot isn't a "Detail ›" navigation affordance. */}
           {right && !detail && <span className="shrink-0">{right}</span>}
           {detail && (
             detailHref ? (
-              <Link to={detailHref} className="flex items-center gap-0.5 text-[13px] font-semibold text-muted-2 min-h-[44px] -my-3">
+              <Link to={detailHref} className="flex items-center gap-0.5 text-[14px] font-semibold text-muted-2 min-h-[44px] -my-3">
                 {detail}<ChevronRight className="w-3.5 h-3.5" />
               </Link>
             ) : (
-              <button type="button" onClick={onDetailClick} className="flex items-center gap-0.5 text-[13px] font-semibold text-muted-2 min-h-[44px] -my-3">
+              <button type="button" onClick={onDetailClick} className="flex items-center gap-0.5 text-[14px] font-semibold text-muted-2 min-h-[44px] -my-3">
                 {detail}<ChevronRight className="w-3.5 h-3.5" />
               </button>
             )
@@ -104,7 +104,7 @@ export function VerdictBanner({ score, headline, detail, className = "" }) {
           {headline || v.word}
         </span>
       </div>
-      {detail && <p className="text-[13px] sm:text-sm text-secondary leading-snug">{detail}</p>}
+      {detail && <p className="text-[14px] sm:text-sm text-secondary leading-snug">{detail}</p>}
     </div>
   );
 }
@@ -239,7 +239,7 @@ export function ProfileStatsCard({
         </div>
       )}
       <p className={`text-ink font-semibold ${showAvatar ? "mt-3 text-sm" : "text-base"} leading-tight`}>{name}</p>
-      {subtitle && <p className="text-ink-secondary text-[13px] mt-0.5">{subtitle}</p>}
+      {subtitle && <p className="text-ink-secondary text-[14px] mt-0.5">{subtitle}</p>}
       {stats?.length > 0 && (
         <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-charcoal-border">
           {stats.map(({ value, label }, i) => (
@@ -247,7 +247,7 @@ export function ProfileStatsCard({
               {/* Stats are DATA, not the single action color: they read in
                   NEUTRAL ink. At most ONE stat (heroIndex) leads in brand teal. */}
               <p className={`font-bold leading-tight font-technical ${showAvatar ? "text-lg" : "text-2xl leading-none"} ${i === heroIndex ? "text-brand" : "text-ink"}`}>{value}</p>
-              <p className="text-ink-secondary text-[10px] uppercase tracking-wider mt-1">{label}</p>
+              <p className="text-ink-secondary text-[11px] uppercase tracking-wider mt-1">{label}</p>
             </div>
           ))}
         </div>

@@ -7,7 +7,7 @@ import { queryKeys } from "@/lib/queryKeys";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
 import { Module } from "@/components/ui/system";
 import ExerciseProgressChart from "@/components/progress/ExerciseProgressChart";
-import { getLoggedExerciseSummaries } from "@/utils/exerciseStats";
+import { getLoggedExerciseSummaries, getRepPRTable } from "@/utils/exerciseStats";
 import { format, parseISO } from "date-fns";
 import { ChevronDown } from "lucide-react";
 
@@ -31,6 +31,13 @@ export default function Lifts() {
 
   const summaries = useMemo(() => getLoggedExerciseSummaries(workoutLogs), [workoutLogs]);
 
+  // Per-rep-count records for the open row only (computed on expand, not for
+  // every lift in the list).
+  const prTable = useMemo(
+    () => (expanded ? getRepPRTable(workoutLogs, expanded) : []),
+    [workoutLogs, expanded]
+  );
+
   if (!user || isLoading) {
     return <LoadingScreen />;
   }
@@ -41,7 +48,7 @@ export default function Lifts() {
       style={{ paddingBottom: "calc(var(--floating-chrome-bottom) + 64px)" }}
     >
       <div className="hidden lg:block mb-5">
-        <h1 className="type-display text-[26px]">Lifts</h1>
+        <h1 className="type-display text-[28px]">Lifts</h1>
       </div>
 
       {summaries.length === 0 ? (
@@ -64,20 +71,20 @@ export default function Lifts() {
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-extrabold text-ink truncate">{s.name}</p>
-                    <p className="text-[10px] font-semibold text-muted-2 mt-0.5">
+                    <p className="text-[11px] font-semibold text-muted-2 mt-0.5">
                       {format(parseISO(s.lastDate), "MMM d")} · {s.count} session{s.count === 1 ? "" : "s"}
                     </p>
                   </div>
                   <div className="text-right shrink-0">
                     {s.currentE1rm != null ? (
                       <p className="font-technical text-xs font-bold text-ink tabular-nums">
-                        {s.currentE1rm} <span className="text-[10px] font-semibold text-muted-2">{weightUnit}</span>
+                        {s.currentE1rm} <span className="text-[11px] font-semibold text-muted-2">{weightUnit}</span>
                       </p>
                     ) : s.bestWeight != null ? (
                       // Never trained ≤12 reps (calf raises and most isolation
                       // work): no honest e1RM to show, so show the actual PR instead.
                       <p className="font-technical text-xs font-bold text-ink tabular-nums">
-                        {s.bestWeight}<span className="text-[10px] font-semibold text-muted-2">{weightUnit}</span>
+                        {s.bestWeight}<span className="text-[11px] font-semibold text-muted-2">{weightUnit}</span>
                         {" × "}{s.bestReps}
                       </p>
                     ) : s.bodyweightReps != null ? (
@@ -90,7 +97,7 @@ export default function Lifts() {
                       <p className="font-technical text-xs font-bold text-faint tabular-nums">—</p>
                     )}
                     <p
-                      className={`font-technical text-[10px] font-bold tabular-nums mt-0.5 ${
+                      className={`font-technical text-[11px] font-bold tabular-nums mt-0.5 ${
                         s.change4w == null
                           ? "text-faint"
                           : s.change4w > 0
@@ -121,6 +128,33 @@ export default function Lifts() {
                           ? `best set logged is ${s.bodyweightReps} reps.`
                           : "no completed sets logged yet."}
                       </p>
+                    )}
+                    {prTable.length > 0 && (
+                      <div className="px-1 pt-3">
+                        <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted-2 mb-1">
+                          Records by reps
+                        </p>
+                        <table className="w-full text-[11px] font-technical tabular-nums">
+                          <thead>
+                            <tr className="text-muted-2 text-left">
+                              <th className="font-semibold py-0.5">Reps</th>
+                              <th className="font-semibold py-0.5">Best ({weightUnit})</th>
+                              <th className="font-semibold py-0.5 text-right">Set on</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {prTable.map((p) => (
+                              <tr key={p.reps} className="border-t hairline text-ink">
+                                <td className="py-1">{p.reps}</td>
+                                <td className="py-1 font-bold">{p.weight}</td>
+                                <td className="py-1 text-right text-muted-2">
+                                  {p.date ? format(parseISO(p.date), "MMM d, yyyy") : "—"}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     )}
                   </div>
                 )}

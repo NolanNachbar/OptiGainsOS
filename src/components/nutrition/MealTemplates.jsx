@@ -30,6 +30,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { searchGenericFoods, searchBrandedFoods } from "@/api/usda";
 import { toast } from "sonner";
+import { parseTemplateServing, templateItemFromEntry } from "@/utils/foodLog";
 
 // Sum macros across a template/entry item list. Module-scoped so the apply +
 // save dialogs (separate components) share one source of truth.
@@ -66,7 +67,7 @@ export default function MealTemplates({ compact = false }) {
       invalidateMealTemplates(queryClient);
       toast.success("Template deleted");
     },
-    onError: () => toast.error("Failed to delete template"),
+    onError: () => toast.error("Template not deleted. Check your connection and try again."),
   });
 
   const toggleFavoriteMutation = useMutation({
@@ -79,11 +80,11 @@ export default function MealTemplates({ compact = false }) {
     mutationFn: ({ id, ...data }) => db.entities.MealTemplate.update(id, data),
     onSuccess: () => {
       invalidateMealTemplates(queryClient);
-      toast.success("Template updated!");
+      toast.success("Template updated");
       setShowEditDialog(false);
       setEditingTemplate(null);
     },
-    onError: () => toast.error("Failed to update template"),
+    onError: () => toast.error("Template not updated. Check your connection and try again."),
   });
 
   const handleDelete = (template) => {
@@ -130,7 +131,7 @@ export default function MealTemplates({ compact = false }) {
         <div className="text-center py-6 text-ink-muted text-sm">
           <UtensilsCrossed className="w-8 h-8 mx-auto mb-2 opacity-40" />
           <p>No templates yet.</p>
-          <p className="text-xs mt-1">Save a meal from the daily log to get started.</p>
+          <p className="text-xs mt-1">Meals you save from the daily log appear here.</p>
         </div>
       ) : compact ? (
         <div className="space-y-2">
@@ -347,10 +348,9 @@ function ApplyTemplateDialog({ open, onOpenChange, template, userId }) {
   const applyMutation = useMutation({
     mutationFn: async () => {
       const entries = (template.items || []).map((item) => {
-        // Parse "300 g" into amount=300, unit="g"
-        const parts = String(item.serving_size || "").split(" ");
-        const amount = parseFloat(parts[0]) || 1;
-        const unit = parts.slice(1).join(" ") || "serving";
+        // "300 g" -> 300 / g; falls back to the item's own serving_unit for
+        // templates saved with a bare number.
+        const { amount, unit } = parseTemplateServing(item);
 
         return {
           food_name: item.food_name,
@@ -358,6 +358,7 @@ function ApplyTemplateDialog({ open, onOpenChange, template, userId }) {
           serving_size: amount,
           serving_unit: unit,
           serving_grams: item.serving_grams ?? null,
+          fiber_grams: item.fiber_grams ?? null,
           calories: item.calories,
           protein_grams: item.protein_grams,
           carbs_grams: item.carbs_grams,
@@ -370,10 +371,10 @@ function ApplyTemplateDialog({ open, onOpenChange, template, userId }) {
     },
     onSuccess: () => {
       invalidateFood(queryClient);
-      toast.success(`Template "${template.name}" applied!`);
+      toast.success(`Template "${template.name}" applied`);
       onOpenChange(false);
     },
-    onError: () => toast.error("Failed to apply template"),
+    onError: () => toast.error("Template not applied. Check your connection and try again."),
   });
 
   const totals = getTemplateTotals(template.items || []);
@@ -542,7 +543,13 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
   };
 
   const updateItem = (index, field, value) => {
-    setItems(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item));
+    setItems(prev => prev.map((item, i) => {
+      if (i !== index) return item;
+      // Retyping the serving invalidates the recorded total weight and the
+      // structured unit; the typed "150 g" is the truth now.
+      if (field === 'serving_size') return { ...item, serving_size: value, serving_grams: null, serving_unit: null };
+      return { ...item, [field]: value };
+    }));
   };
 
   const handleSave = () => {
@@ -801,16 +808,16 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
     mutationFn: (data) => db.entities.MealTemplate.create(data),
     onSuccess: () => {
       invalidateMealTemplates(queryClient);
-      toast.success("Template saved!");
+      toast.success("Template saved");
       onOpenChange(false);
       setName("");
     },
-    onError: () => toast.error("Failed to save template"),
+    onError: () => toast.error("Template not saved. Check your connection and try again."),
   });
 
   const handleSave = () => {
     if (!name.trim()) {
-      toast.error("Please enter a template name");
+      toast.error("Enter a template name.");
       return;
     }
     if (selectedEntries.length === 0) {
@@ -818,15 +825,7 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
       return;
     }
 
-    const items = selectedEntries.map((e) => ({
-      food_name: e.food_name,
-      serving_size: e.serving_size,
-      calories: e.calories,
-      protein_grams: e.protein_grams,
-      carbs_grams: e.carbs_grams,
-      fats_grams: e.fats_grams,
-      meal_type: e.meal_type,
-    }));
+    const items = selectedEntries.map(templateItemFromEntry);
 
     createMutation.mutate({
       name: name.trim(),

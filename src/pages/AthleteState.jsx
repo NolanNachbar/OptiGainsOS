@@ -26,12 +26,12 @@ import {
 function InfoNote({ children, label = "What do these mean?" }) {
   return (
     <details className="group mt-1">
-      <summary className="list-none flex items-center gap-1.5 cursor-pointer min-h-[44px] py-2.5 text-[10px] font-bold uppercase tracking-[0.08em] text-faint hover:text-muted-2 transition-colors duration-200 ease-[var(--ease)]">
+      <summary className="list-none flex items-center gap-1.5 cursor-pointer min-h-[44px] py-2.5 text-[11px] font-bold uppercase tracking-[0.08em] text-faint hover:text-muted-2 transition-colors duration-200 ease-[var(--ease)]">
         <Info className="w-3.5 h-3.5" />
         <span>{label}</span>
         <ChevronDown className="w-3.5 h-3.5 transition-transform duration-200 ease-[var(--ease)] group-open:rotate-180" />
       </summary>
-      <p className="text-[10px] font-semibold text-muted-2 mt-1.5 leading-relaxed">{children}</p>
+      <p className="text-[11px] font-semibold text-muted-2 mt-1.5 leading-relaxed">{children}</p>
     </details>
   );
 }
@@ -106,7 +106,7 @@ function AdaptiveEnginePanel({ date }) {
             </div>
             <div className="font-technical text-xl font-extrabold text-ink">{vdot != null ? Number(vdot).toFixed(1) : "—"}</div>
             {vdotTrend != null && Math.abs(vdotTrend) >= 0.05 && (
-              <div className={`font-technical text-[10px] font-bold ${vdotTrend >= 0 ? "text-teal" : "text-muted-2"}`}>
+              <div className={`font-technical text-[11px] font-bold ${vdotTrend >= 0 ? "text-teal" : "text-muted-2"}`}>
                 {vdotTrend >= 0 ? "▲" : "▼"} {Math.abs(vdotTrend).toFixed(1)}
               </div>
             )}
@@ -241,7 +241,7 @@ function WeeklyPlanPanel() {
       <CardHeader className="pb-2 pt-4 px-5">
         <CardTitle className="section-label flex items-center gap-2 normal-case">
           <CalendarDays className="w-3.5 h-3.5 text-gold" /> This Week&apos;s Plan
-          {plan?.week_start && <span className="font-technical text-[10px] font-bold text-faint normal-case">wk of {plan.week_start}</span>}
+          {plan?.week_start && <span className="font-technical text-[11px] font-bold text-faint normal-case">wk of {plan.week_start}</span>}
         </CardTitle>
       </CardHeader>
       <CardContent className="px-5 pb-4 space-y-3">
@@ -262,14 +262,14 @@ function WeeklyPlanPanel() {
         {Object.keys(setTargets).length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {Object.entries(setTargets).map(([muscle, sets]) => (
-              <span key={muscle} className="glass-inset px-2 py-1 text-[10px] font-bold text-secondary capitalize">
+              <span key={muscle} className="glass-inset px-2 py-1 text-[11px] font-bold text-secondary capitalize">
                 {muscle.replace(/_/g, " ")} <span className="font-technical font-extrabold text-ink">{sets}</span>
               </span>
             ))}
           </div>
         )}
         {plan?.run_plan && Array.isArray(plan.run_plan) && plan.run_plan.length > 0 && (
-          <p className="text-[10px] font-semibold text-muted-2">
+          <p className="text-[11px] font-semibold text-muted-2">
             Runs: {plan.run_plan.map(r => `${r.count} ${r.type}`).join(" · ")}
           </p>
         )}
@@ -285,9 +285,9 @@ function WeeklyPlanPanel() {
 
 function StallBadge({ risk }) {
   if (risk == null) return null;
-  if (risk >= 0.75) return <Badge className="bg-bad/15 text-bad border-none text-[10px]">Stalled</Badge>;
-  if (risk >= 0.4)  return <Badge className="bg-warn/15 text-warn border-none text-[10px]">Watch</Badge>;
-  return <Badge className="bg-teal/15 text-teal border-none text-[10px]">Progressing</Badge>;
+  if (risk >= 0.75) return <Badge className="bg-bad/15 text-bad border-none text-[11px]">Stalled</Badge>;
+  if (risk >= 0.4)  return <Badge className="bg-warn/15 text-warn border-none text-[11px]">Watch</Badge>;
+  return <Badge className="bg-teal/15 text-teal border-none text-[11px]">Progressing</Badge>;
 }
 
 function FatigueColor({ score }) {
@@ -345,8 +345,8 @@ function StrengthSection({ data }) {
               <div className="h-1.5 bg-track rounded-full overflow-hidden mt-1.5">
                 {/* Teal data-hue fill encodes progress-to-target so the bar reads
                     as a measure, not decoration. Here teal is used as the
-                    data/positive hue; the single action color is teal
-                    (var(--color-brand) #19C8A6), reserved for actual controls and
+                    data/positive hue; the single action color is off-white
+                    (var(--color-brand) #ECEEF1), reserved for actual controls and
                     never spent on this readout. The fill width itself
                     differentiates each lift's ratio. Stall state stays on the
                     StallBadge, so no threshold tinting here. */}
@@ -356,18 +356,18 @@ function StrengthSection({ data }) {
                 />
               </div>
             )}
-            <div className="flex items-center gap-3 font-technical text-[10px] font-semibold text-muted-2 mt-1">
+            <div className="flex items-center gap-3 font-technical text-[11px] font-semibold text-muted-2 mt-1">
               {d.progression_rate_lbs_per_week !== 0 && (
                 <span className={d.progression_rate_lbs_per_week > 0 ? "text-teal" : "text-muted-2"}>
                   {d.progression_rate_lbs_per_week > 0 ? "+" : ""}{d.progression_rate_lbs_per_week} lbs/wk
                 </span>
               )}
-              {d.eta_days === 0 && <span className="text-teal">Target reached!</span>}
+              {d.eta_days === 0 && <span className="text-teal">Target reached.</span>}
               <span>{d.sessions} sessions</span>
               {d.progression_command && d.progression_command !== "HOLD" && (
                 // Non-imperative status chip (glass-inset pill, muted ink) so the
                 // engine's progression verdict reads as state, not a tappable CTA.
-                <span className="glass-inset px-2 py-0.5 text-[10px] font-bold text-muted-2 uppercase tracking-[0.06em]">
+                <span className="glass-inset px-2 py-0.5 text-[11px] font-bold text-muted-2 uppercase tracking-[0.06em]">
                   {{
                     INCREASE_LOAD: "Load ready",
                     DELOAD: "Trending down",
@@ -469,7 +469,7 @@ function HypertrophySection({ data, landmarks }) {
                 <div className="flex items-center gap-1.5">
                   <span className="font-bold text-secondary capitalize">{muscle.replace(/_/g, " ")}</span>
                   {learned && (
-                    <span className="text-[10px] uppercase tracking-[0.08em] text-muted-2 font-extrabold" title="Volume landmark learned by the engine from your response (MRV adapts when a muscle stalls while sore)">
+                    <span className="text-[11px] uppercase tracking-[0.08em] text-muted-2 font-extrabold" title="Volume landmark learned by the engine from your response (MRV adapts when a muscle stalls while sore)">
                       learned
                     </span>
                   )}
@@ -566,7 +566,7 @@ function FatigueSection({ data }) {
               {label}
             </div>
             <div className={`font-technical text-sm font-extrabold mt-0.5 ${warn ? "text-warn" : "text-ink"}`}>{value}</div>
-            <div className="text-[10px] font-semibold text-muted-2 mt-0.5">{desc}</div>
+            <div className="text-[11px] font-semibold text-muted-2 mt-0.5">{desc}</div>
           </div>
         ))}
       </div>
@@ -603,7 +603,7 @@ function EnduranceSection({ data }) {
           <div className="h-1.5 bg-track rounded-full overflow-hidden">
             <div className="h-full bg-teal rounded-full transition-[width] duration-200 ease-[var(--ease)]" style={{ width: `${data.aerobic_fitness_proxy * 100}%` }} />
           </div>
-          <p className="text-[10px] font-semibold text-muted-2 mt-1">
+          <p className="text-[11px] font-semibold text-muted-2 mt-1">
             Based on Garmin VO2max ({data.vo2max}). 0% = VO2max 30, 100% = VO2max 60.
           </p>
         </div>
@@ -663,7 +663,7 @@ function NutritionSection({ data, targets }) {
           {phase ?? "—"}
         </span>
         {on_track != null && (
-          <Badge className={`border-none text-[10px] ${on_track ? "bg-teal/15 text-teal" : "bg-bad/15 text-bad"}`}>
+          <Badge className={`border-none text-[11px] ${on_track ? "bg-teal/15 text-teal" : "bg-bad/15 text-bad"}`}>
             {on_track ? "On Track" : "Off Track"}
           </Badge>
         )}
@@ -781,7 +781,7 @@ function SummaryStrip({ state, vdot }) {
             {hero.label}
           </div>
           <div className="flex items-baseline gap-1 mt-1.5">
-            <span className="hero-metric text-ink text-[40px]">{hero.value ?? "—"}</span>
+            <span className="hero-metric text-ink text-[44px]">{hero.value ?? "—"}</span>
             {hero.unit && <span className="text-sm font-semibold text-muted-2">{hero.unit}</span>}
           </div>
           {hero.sub && <div className="text-xs font-semibold text-muted-2 mt-1 capitalize">{hero.sub}</div>}
@@ -865,16 +865,16 @@ export default function AthleteState({ hideHeader = false }) {
       <div className="max-w-4xl mx-auto">
         {!hideHeader && (
           <div className="mb-6 rise-in">
-            {/* Title reconciled to the dock label ("Body"). On mobile the shared
-                Layout header already prints "Body", so the in-page H1 is
+            {/* Title reconciled to the dock label ("State"). On mobile the shared
+                Layout header already prints "State", so the in-page H1 is
                 desktop-only to keep the title appearing exactly once; the
                 computed/last-updated caption is surfaced on every viewport. */}
-            <h1 className="type-display text-[22px] hidden lg:block">Body</h1>
+            <h1 className="type-display text-[28px] hidden lg:block">State</h1>
             {/* Desktop: full provenance caption (no shared header date to dup).
                 Mobile: Layout already prints today's date in the header, so the
                 page caption collapses to a single faint "Updated HH:MM" line to
                 avoid restating the date. */}
-            <p className="hidden lg:block font-technical text-[13px] font-semibold text-muted-2 lg:mt-0.5">
+            <p className="hidden lg:block font-technical text-[14px] font-semibold text-muted-2 lg:mt-0.5">
               {isStale ? `As of ${state.date}` : `Computed daily · ${today}`}
               {state?.computed_at && (
                 <span className="ml-2 text-faint">
@@ -1007,7 +1007,7 @@ export default function AthleteState({ hideHeader = false }) {
             </span>
             <span className="flex-1 min-w-0 text-left">
               <span className="block section-label !text-ink">Body analytics</span>
-              <span className="block text-[10.5px] font-semibold text-muted-2 truncate">Fatigue · Volume · Endurance · Nutrition</span>
+              <span className="block text-[11px] font-semibold text-muted-2 truncate">Fatigue · Volume · Endurance · Nutrition</span>
             </span>
             <ChevronDown className={`w-4 h-4 text-muted-2 transition-transform duration-200 ease-[var(--ease)] ${detailOpen ? "rotate-180" : ""}`} />
           </button>
@@ -1092,7 +1092,7 @@ export default function AthleteState({ hideHeader = false }) {
               </span>
               <span className="flex-1 min-w-0 text-left">
                 <span className="block section-label !text-ink">Engine internals</span>
-                <span className="block text-[10.5px] font-semibold text-muted-2 truncate">Adaptive engine · Weekly plan · Pace zones</span>
+                <span className="block text-[11px] font-semibold text-muted-2 truncate">Adaptive engine · Weekly plan · Pace zones</span>
               </span>
               <ChevronDown className={`w-4 h-4 text-muted-2 transition-transform duration-200 ease-[var(--ease)] ${engineOpen ? "rotate-180" : ""}`} />
             </button>

@@ -144,7 +144,7 @@ export default function Coach() {
   return (
     <div className="flex flex-col px-4 py-6 md:px-8 bg-charcoal min-h-screen pb-[calc(var(--dock-total-height)+24px+env(safe-area-inset-bottom))]">
       <div className="max-w-3xl mx-auto w-full flex flex-col">
-        <h1 className="type-display text-[22px] mb-1 rise-in">Coach office hours</h1>
+        <h1 className="type-display text-[28px] mb-1 rise-in">Coach office hours</h1>
         <p className="text-sm text-muted-2 mb-4">
           Upload a few reps and get a form critique. Best on a side view of squat,
           deadlift, or bench. A single angle can't see depth or load, so treat it as a second set of eyes.
@@ -306,7 +306,7 @@ function Critique({ c, embedded = false }) {
         {typeof c.rating === "number" && (
           <div className="text-right shrink-0">
             <div className={`type-display text-2xl ${RATING_COLOR(c.rating)}`}>{c.rating}<span className="text-sm text-muted-2">/10</span></div>
-            {c.confidence && <div className="text-[10px] uppercase tracking-wide text-muted-2">{c.confidence} confidence</div>}
+            {c.confidence && <div className="text-[11px] uppercase tracking-wide text-muted-2">{c.confidence} confidence</div>}
           </div>
         )}
       </div>

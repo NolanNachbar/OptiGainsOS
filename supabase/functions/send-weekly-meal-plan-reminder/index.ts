@@ -39,11 +39,11 @@ Deno.serve(async () => {
   const target = rec?.calorie_target;
   const deficitPct = rec?.deficit_ratio != null ? Math.round(rec.deficit_ratio * 100) : null;
   const body = target
-    ? `Engine-optimal week ready: ~${Math.round(target).toLocaleString()} kcal/day` +
+    ? `Week prescribed at ~${Math.round(target).toLocaleString()} kcal/day` +
       (deficitPct != null && deficitPct > 0 ? ` (${deficitPct}% deficit, recovery-gated)` : "") +
-      ". Review & approve to pre-fill your log."
-    : "Your weekly meal plan is ready — review & approve to pre-fill your log.";
-  const payload = JSON.stringify({ title: "This Week's Plan 🍽️", body, url: "/fuel" });
+      ". Awaiting approval."
+    : "Weekly meal plan is ready. Awaiting approval.";
+  const payload = JSON.stringify({ title: "Weekly meal plan", body, url: "/fuel" });
 
   const results = await Promise.allSettled(
     subs.map((sub) =>

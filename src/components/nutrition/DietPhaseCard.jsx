@@ -129,10 +129,10 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
       invalidateDietPhases(queryClient);
       invalidateProfile(queryClient);
       setShowNewPhase(false);
-      toast.success("New diet phase started!");
+      toast.success("New diet phase started");
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to start phase");
+      toast.error(error.message || "Phase not started. Check your connection and try again.");
     },
   });
 
@@ -237,7 +237,7 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
                   <div className="flex items-center gap-2">
                     <Trophy className="w-4 h-4 text-warn" />
                     <span className="font-semibold text-sm text-amber-800">
-                      Target Reached!
+                      Target reached
                     </span>
                     <Button
                       size="sm"

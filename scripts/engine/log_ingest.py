@@ -229,6 +229,19 @@ def load_sets_csv(path: str) -> list:
     return rows
 
 
+def is_warmup_set(s) -> bool:
+    """True for a set the athlete marked as a warm-up (set.set_type == "warmup",
+    written by the logger's set-type menu). Warm-ups are not work: they are
+    excluded from e1RM, volume, fatigue and every other engine input. Matches the
+    frontend rule in src/utils/setTypes.js (any set_type containing "warm")."""
+    return "warm" in str((s or {}).get("set_type") or "").lower()
+
+
+def work_sets(sets) -> list:
+    """`sets` minus warm-ups. Tolerates None / non-list."""
+    return [s for s in (sets or []) if not is_warmup_set(s)]
+
+
 def _parse_reps(raw) -> int:
     """Reps may arrive as an int, a float, or a prescription range string like
     "6-8" (rep_target passed through the logger untouched). Take the first
@@ -258,7 +271,7 @@ def normalize_workout_logs(logs: list) -> list:
         date = (log.get("log_date") or "").strip()
         for ex in log.get("exercises", []) or []:
             name = canon(ex.get("name", ""))
-            for s in ex.get("sets", []) or []:
+            for s in work_sets(ex.get("sets", [])):
                 if s.get("completed") is False:
                     continue
                 try:

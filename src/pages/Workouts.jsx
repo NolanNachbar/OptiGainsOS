@@ -20,6 +20,7 @@ import { parseISO } from "date-fns";
 import { parseProgramJson } from "@/utils/programIO";
 import { toast } from "sonner";
 import WorkoutCard from "@/components/workouts/WorkoutCard";
+import { workSets } from "@/utils/setTypes";
 
 // One filter-pill recipe shared across Library (Type, Folder) and Activity so the
 // three selectors read as one family: same shape, same neutral selected fill
@@ -117,11 +118,11 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
     },
     onSuccess: (clonedWorkout) => {
       invalidateWorkouts(queryClient);
-      toast.success('Workout cloned successfully');
+      toast.success('Workout cloned.');
       navigate(`/create-workout?edit=${clonedWorkout.id}`);
     },
     onError: (error) => {
-      toast.error('Failed to clone workout');
+      toast.error('Workout not cloned. Try again.');
       console.error('Error cloning workout:', error);
     }
   });
@@ -148,10 +149,10 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
       invalidateReactions(queryClient);
       invalidateSchedule(queryClient);
       invalidateWorkoutLogs(queryClient);
-      toast.success('Workout deleted successfully');
+      toast.success('Workout deleted.');
     },
     onError: (error) => {
-      toast.error('Failed to delete workout');
+      toast.error('Workout not deleted. Try again.');
       console.error('Error deleting workout:', error);
     }
   });
@@ -170,7 +171,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
       if (folderFilter === renamingFolder) setFolderFilter(newName.trim() || "all");
       toast.success("Folder renamed");
     },
-    onError: () => toast.error("Failed to rename folder"),
+    onError: () => toast.error("Folder not renamed. Try again."),
   });
 
   const handleEdit = (workoutId) => {
@@ -216,7 +217,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
           created_by: user.id,
         });
         invalidateWorkouts(queryClient);
-        toast.success(`"${data.title}" imported to your library!`);
+        toast.success(`"${data.title}" imported to your library.`);
       } catch {
         toast.error("Could not read workout file.");
       }
@@ -248,7 +249,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
         const parsed = parseProgramJson(ev.target.result);
         navigate('/program-builder', { state: { importedProgram: parsed } });
       } catch (err) {
-        toast.error(err.message || 'Failed to load JSON');
+        toast.error(err.message || 'Could not read the JSON file. Check the file and try again.');
       }
     };
     reader.readAsText(file);
@@ -295,8 +296,8 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
         {!hideHeader && (
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
             <div>
-              <h1 className="text-[22px] font-bold text-ink leading-tight">Workouts</h1>
-              <p className="text-[13px] text-ink-muted mt-0.5">Library & session history</p>
+              <h1 className="text-[28px] font-bold text-ink leading-tight">Workouts</h1>
+              <p className="text-[14px] text-ink-muted mt-0.5">Library & session history</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <Link to="/weekly-schedule">
@@ -864,8 +865,8 @@ function StrengthEntryCard({ entry }) {
         </div>
         {/* Dominant figure — the row's one hero metric. */}
         <div className="flex items-baseline gap-1 shrink-0">
-          <span className="font-technical font-extrabold text-[24px] leading-none text-ink whitespace-nowrap">{hero.value}</span>
-          {hero.suffix && <span className="text-[10px] text-ink-muted uppercase">{hero.suffix}</span>}
+          <span className="font-technical font-numeral text-[28px] leading-none text-ink whitespace-nowrap">{hero.value}</span>
+          {hero.suffix && <span className="text-[11px] text-ink-muted uppercase">{hero.suffix}</span>}
         </div>
       </div>
       {/* Stable 4-cell scaffold. Dividers derive from grid position so a wrapped
@@ -880,7 +881,7 @@ function StrengthEntryCard({ entry }) {
             <span className="section-label">{cell.label}</span>
             <div className="flex items-baseline gap-1 mt-1">
               <span className={`font-technical font-bold text-[15px] whitespace-nowrap ${cell.value === '—' ? 'text-ink-faint' : 'text-ink-secondary'}`}>{cell.value}</span>
-              {cell.suffix && <span className="text-[10px] text-ink-muted uppercase">{cell.suffix}</span>}
+              {cell.suffix && <span className="text-[11px] text-ink-muted uppercase">{cell.suffix}</span>}
             </div>
           </div>
         ))}
@@ -959,8 +960,8 @@ function CardioEntryCard({ entry }) {
         </div>
         {/* Dominant figure — the row's one hero metric. */}
         <div className="flex items-baseline gap-1 shrink-0">
-          <span className="font-technical font-extrabold text-[24px] leading-none text-ink whitespace-nowrap">{hero.value}</span>
-          {hero.suffix && <span className="text-[10px] text-ink-muted uppercase">{hero.suffix}</span>}
+          <span className="font-technical font-numeral text-[28px] leading-none text-ink whitespace-nowrap">{hero.value}</span>
+          {hero.suffix && <span className="text-[11px] text-ink-muted uppercase">{hero.suffix}</span>}
         </div>
       </div>
 
@@ -974,7 +975,7 @@ function CardioEntryCard({ entry }) {
               <span className="section-label">{cell.label}</span>
               <div className="flex items-baseline gap-1 mt-1">
                 <span className="font-technical font-bold text-[15px] text-ink-secondary">{cell.value}</span>
-                {cell.suffix && <span className="text-[10px] text-ink-muted uppercase">{cell.suffix}</span>}
+                {cell.suffix && <span className="text-[11px] text-ink-muted uppercase">{cell.suffix}</span>}
               </div>
             </div>
           ))}
@@ -986,7 +987,7 @@ function CardioEntryCard({ entry }) {
 
 // ─── Activity Log Tab ────────────────────────────────────────────────────────
 
-function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoading, error, onRetry }) {
+function ActivityLogTab({ workoutLogs, cardioSessions, workouts, isLoading, error, onRetry }) {
   const [filter, setFilter] = useState('all');
   const [visibleCount, setVisibleCount] = useState(8);
 
@@ -1019,12 +1020,12 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
     const workout = workouts.find(w => w.id === log.workout_id);
     const logExercises = log.exercises || [];
     const totalSets = logExercises.reduce((sum, ex) => {
-      if (Array.isArray(ex.sets)) return sum + ex.sets.length;
+      if (Array.isArray(ex.sets)) return sum + workSets(ex.sets).length;
       return sum + (Number(ex.sets) || 0);
     }, 0);
     const totalVolume = logExercises.reduce((sum, ex) => {
       if (!Array.isArray(ex.sets)) return sum;
-      return sum + ex.sets.reduce((s, set) => s + (Number(set.weight) || 0) * (Number(set.reps) || 0), 0);
+      return sum + workSets(ex.sets).reduce((s, set) => s + (Number(set.weight) || 0) * (Number(set.reps) || 0), 0);
     }, 0);
     // Distinct titles: when the source workout is gone (or never had a name),
     // derive a title from the logged content (lead exercise + count) so stacked
@@ -1091,7 +1092,7 @@ function ActivityLogTab({ workoutLogs, cardioSessions, workouts, profile, isLoad
         {/* Hero: This Week */}
         <div className="flex flex-col justify-center shrink-0 pr-4 border-r hairline">
           <span className="section-label mb-1">This Week</span>
-          <span className="hero-metric text-[34px] text-ink">
+          <span className="hero-metric text-[28px] text-ink">
             {thisWeek.length}<span className="text-[12px] font-semibold text-ink-muted ml-1 align-baseline">sess</span>
           </span>
         </div>

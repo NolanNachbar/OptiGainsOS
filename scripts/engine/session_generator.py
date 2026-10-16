@@ -2342,11 +2342,11 @@ def _build_session(
             from engine.athlete_profile import is_strength_movement as _is_str
             if _is_str(e):
                 e["notes"] = ((e.get("notes", "") + " · ") if e.get("notes") else "") \
-                    + "⚠ flagged pain — monitor form / load"
+                    + "Pain flagged. Monitor form and load."
             elif e.get("sets"):
                 e["sets"] = 1
                 e["notes"] = ((e.get("notes", "") + " · ") if e.get("notes") else "") \
-                    + "backed off — flagged pain"
+                    + "Backed off. Pain flagged."
         out.append(_clean(e))
     # Last word: a lift and its back-offs leave here as ONE exercise. Runs after
     # the philosophy pass so the per-block set counts in the scheme are final.

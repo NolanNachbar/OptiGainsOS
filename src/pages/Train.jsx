@@ -46,7 +46,7 @@ export default function Train() {
             </div>
             <Link
               to={`/program-builder?edit=${activeEnrollment.program.id}`}
-              className="shrink-0 flex items-center gap-1.5 min-h-[44px] px-3 text-[13px] font-semibold text-ink"
+              className="shrink-0 flex items-center gap-1.5 min-h-[44px] px-3 text-[14px] font-semibold text-ink"
             >
               <PenLine className="w-4 h-4" />
               Edit

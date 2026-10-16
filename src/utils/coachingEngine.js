@@ -1,3 +1,4 @@
+import { workSets } from "./setTypes";
 /**
  * Coaching engine — phase detection, pre-session insights, between-set chips.
  *
@@ -65,7 +66,7 @@ function buildExerciseHistory(workoutLogs) {
       const key = (ex.name || '').toLowerCase().trim();
       if (!key) continue;
 
-      const workingSets = (ex.sets || []).filter(s => s.completed !== false);
+      const workingSets = workSets(ex.sets).filter(s => s.completed !== false);
       if (workingSets.length === 0) continue;
 
       const setsWithRir = workingSets.filter(s => s.rir != null);
@@ -192,8 +193,8 @@ export function getPreSessionInsight(workoutLogs) {
  * @param {Array} sessionSets - All sets logged so far this session for this exercise
  * @returns {{ message, suggestedWeight, type: 'go_heavier'|'affirm'|'back_off' } | null}
  */
-export function getBetweenSetCoaching(workoutLogs, exerciseName, completedSet, totalSetsPlanned, sessionSets) {
-  const { weight, reps, rir, set_number } = completedSet;
+export function getBetweenSetCoaching(workoutLogs, exerciseName, completedSet, totalSetsPlanned) {
+  const { weight, rir, set_number } = completedSet;
   if (rir == null) return null;
 
   const isLastSet = set_number >= totalSetsPlanned;

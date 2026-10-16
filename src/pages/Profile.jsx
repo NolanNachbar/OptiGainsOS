@@ -24,6 +24,7 @@ import DataExport from "@/components/DataExport";
 import NotificationSettings from "@/components/NotificationSettings";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { workSets } from "@/utils/setTypes";
 
 function SectionHeader({ icon: Icon, title }) {
   return (
@@ -113,7 +114,7 @@ export default function Profile({ hideHeader }) {
       let totalVolumeLbs = 0;
       for (const log of data) {
         for (const ex of (log.exercises || [])) {
-          for (const set of (ex.sets || [])) {
+          for (const set of workSets(ex.sets)) {
             totalVolumeLbs += (Number(set.weight) || 0) * (Number(set.reps) || 0);
           }
         }
@@ -279,10 +280,10 @@ export default function Profile({ hideHeader }) {
       invalidateProfile(queryClient);
       queryClient.invalidateQueries({ queryKey: ['athlete-state-nutrition'] });
       if (weightToLog) invalidateBodyWeight(queryClient);
-      toast.success("Profile saved!");
+      toast.success("Profile saved.");
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to update profile");
+      toast.error(error.message || "Profile not saved. Check your connection and try again.");
     },
   });
 
@@ -405,8 +406,8 @@ export default function Profile({ hideHeader }) {
               <button
                 type="button"
                 onClick={async () => {
-                  try { await signOut(); toast.success('Signed out successfully'); }
-                  catch { toast.error('Failed to sign out'); }
+                  try { await signOut(); toast.success('Signed out.'); }
+                  catch { toast.error('Could not sign out. Try again.'); }
                 }}
                 className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-left text-ink-muted hover:text-ink hover:bg-charcoal-elevated transition-colors"
               >
@@ -469,8 +470,8 @@ export default function Profile({ hideHeader }) {
               <button
                 type="button"
                 onClick={async () => {
-                  try { await signOut(); toast.success('Signed out successfully'); }
-                  catch { toast.error('Failed to sign out'); }
+                  try { await signOut(); toast.success('Signed out.'); }
+                  catch { toast.error('Could not sign out. Try again.'); }
                 }}
                 className="mt-3 w-full flex items-center justify-center gap-2 min-h-[48px] rounded-xl glass-inset text-ink-muted font-semibold text-sm active:bg-charcoal-elevated hover:text-ink hover:bg-charcoal-elevated transition-colors"
               >
@@ -502,7 +503,7 @@ export default function Profile({ hideHeader }) {
                   <ChevronLeft className="w-4 h-4" />
                   Profile
                 </button>
-                <h1 className="type-display text-2xl text-ink">
+                <h1 className="type-display text-[17px] text-ink">
                   {NAV.find(n => n.id === activeSection)?.label}
                 </h1>
               </div>
@@ -514,7 +515,7 @@ export default function Profile({ hideHeader }) {
                 <h1 className="type-display text-2xl text-ink">
                   {NAV.find(n => n.id === resolvedSection)?.label}
                 </h1>
-                <p className="text-[13px] text-ink-muted mt-0.5">
+                <p className="text-[14px] text-ink-muted mt-0.5">
                   {resolvedSection === 'identity' ? 'Your account details' :
                   resolvedSection === 'body'     ? 'Body stats, nutrition goals, and app preferences' :
                   resolvedSection === 'training' ? 'What the adaptive engine optimizes for' :
@@ -724,7 +725,7 @@ export default function Profile({ hideHeader }) {
                         <div className="flex items-center justify-between">
                           <div>
                             <div className="text-sm text-ink-muted">Estimated TDEE</div>
-                            <div className="text-2xl font-bold text-gold font-technical">{tdee.tdee} cal/day</div>
+                            <div className="text-2xl font-numeral text-gold font-technical">{tdee.tdee} cal/day</div>
                           </div>
                           {/* Metadata tag, not data: keep BOTH states neutral
                               (glass-inset + muted ink) so no leaf/biometric hue is
@@ -1004,10 +1005,10 @@ export default function Profile({ hideHeader }) {
                         setDeleteLoading(true);
                         try {
                           await deleteAccount();
-                          toast.success('Account deleted successfully');
+                          toast.success('Account deleted.');
                           navigate('/login');
                         } catch (error) {
-                          toast.error(error.message || 'Failed to delete account');
+                          toast.error(error.message || 'Account not deleted. Try again.');
                           setDeleteLoading(false);
                         }
                       }}

@@ -12,6 +12,8 @@
 // Model overridable via GROQ_MODEL (no redeploy if the id changes). Uses the same
 // GROQ_API_KEY the other functions already rely on.
 
+import { guardAiRequest } from "../_shared/ai-guard.ts";
+
 const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY")!;
 const GROQ_MODEL = Deno.env.get("GROQ_MODEL") || "llama-3.3-70b-versatile";
 
@@ -37,6 +39,9 @@ const num = (v: unknown, d = 0) => {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+
+  const guard = await guardAiRequest(req, "estimate-food-macros");
+  if (!guard.ok) return json({ error: guard.error }, guard.status);
 
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return json({ error: "invalid JSON body" }, 400); }

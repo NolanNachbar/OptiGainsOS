@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- A · Gauge: 270° instrument arc, flat butt caps, one reading tick past the arc. -->
+  <rect width="512" height="512" fill="#0B0C0E"/>
+  <path d="M157.0 355.0 A140 140 0 1 1 355.0 355.0" fill="none" stroke="#ECEEF1" stroke-opacity="0.14" stroke-width="32"/>
+  <path d="M157.0 355.0 A140 140 0 1 1 376.5 184.7" fill="none" stroke="#ECEEF1" stroke-width="32"/>
+  <path d="M362.7 192.9 L409.2 165.4" stroke="#ECEEF1" stroke-width="10" fill="none"/>
+</svg>

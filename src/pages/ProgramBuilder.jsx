@@ -125,7 +125,7 @@ export default function ProgramBuilder() {
         wasImported.current = true;
         toast.success(`Loaded "${programMeta.name}"`);
       } catch (err) {
-        toast.error(err.message || "Failed to load JSON");
+        toast.error(err.message || "Could not read the JSON file. Check the file and try again.");
       }
     };
     reader.readAsText(file);
@@ -196,7 +196,7 @@ export default function ProgramBuilder() {
       <Card className="max-w-sm w-full">
         <CardContent className="pt-6 text-center space-y-4">
           <div>
-            <p className="type-display text-lg text-ink">Failed to load program</p>
+            <p className="type-display text-lg text-ink">Program not loaded</p>
             <p className="text-ink-muted text-sm mt-1">Check your connection and try again.</p>
           </div>
           <Button variant="volt" onClick={() => window.location.reload()} className="w-full min-h-[44px]">
@@ -457,7 +457,7 @@ export default function ProgramBuilder() {
             toast.success("Program updated");
             navigate(`/program/${editId}`);
           },
-          onError: () => toast.error("Failed to update program"),
+          onError: () => toast.error("Program not updated. Try again."),
         }
       );
     } else {
@@ -465,11 +465,11 @@ export default function ProgramBuilder() {
         { program: programData, workouts: enrichedWorkouts },
         {
           onSuccess: async (created) => {
-            toast.success("Program created!");
+            toast.success("Program created.");
             setCreatedProgram({ ...created, ...programData });
             setShowScheduleModal(true);
           },
-          onError: () => toast.error("Failed to create program"),
+          onError: () => toast.error("Program not created. Try again."),
         }
       );
     }

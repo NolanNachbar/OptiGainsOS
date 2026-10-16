@@ -32,9 +32,9 @@ export default function ForgotPassword() {
     try {
       await resetPassword(email);
       setEmailSent(true);
-      toast.success('Password reset email sent! Check your inbox.');
+      toast.success('Reset email sent. Check your inbox.');
     } catch (error) {
-      toast.error(error.message || 'Failed to send reset email');
+      toast.error(error.message || 'Could not send the reset email. Check the address and try again.');
     } finally {
       setLoading(false);
     }
@@ -86,7 +86,7 @@ export default function ForgotPassword() {
                   aria-describedby={errorMsg ? 'email-error' : undefined}
                 />
               </div>
-              {errorMsg && <p id="email-error" role="alert" className="text-ink text-[13px] mt-1.5">{errorMsg}</p>}
+              {errorMsg && <p id="email-error" role="alert" className="text-ink text-[14px] mt-1.5">{errorMsg}</p>}
             </div>
 
             <Button

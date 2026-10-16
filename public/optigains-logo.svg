@@ -1,17 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
-  <!-- OptiGainsOS — the Readiness Ring: the product's signature gauge.
-       Teal gradient arc at 82% with the coral action dot at the live edge. -->
-  <defs>
-    <linearGradient id="og-ring" x1="6" y1="6" x2="42" y2="42" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#7FE9DD"/>
-      <stop offset="1" stop-color="#3DB8AE"/>
-    </linearGradient>
-  </defs>
-  <!-- track -->
-  <circle cx="24" cy="24" r="18" stroke="rgba(255,255,255,0.10)" stroke-width="4.5"/>
-  <!-- readiness arc — 82%, clockwise from 12 o'clock -->
-  <path d="M 24 6 A 18 18 0 1 1 7.71 16.34"
-        stroke="url(#og-ring)" stroke-width="4.5" stroke-linecap="round"/>
-  <!-- the coral action dot at the live edge -->
-  <circle cx="7.71" cy="16.34" r="3.6" fill="#EF7368"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- OptiGains mark: the Instrument. 270-degree arc, flat ends, one reading tick.
+       Off-white on transparent; no brand hue (see BRAND guide). -->
+  <g transform="translate(0 22)">
+    <path d="M161.2 350.8 A134 134 0 1 1 350.8 350.8" fill="none" stroke="#ECEEF1" stroke-opacity="0.16" stroke-width="40"/>
+    <path d="M161.2 350.8 A134 134 0 1 1 371.3 187.8" fill="none" stroke="#ECEEF1" stroke-width="40"/>
+    <path d="M354.1 198.0 L414.4 162.3" stroke="#ECEEF1" stroke-width="12" fill="none"/>
+  </g>
 </svg>

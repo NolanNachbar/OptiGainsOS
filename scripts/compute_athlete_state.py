@@ -34,7 +34,7 @@ sys.path.insert(0, _SCRIPT_DIR)
 # Epley, ≤12-rep cap, competition-variant goal rollup). Imported outside the
 # numpy guard because compute_strength always runs and this needs no numpy.
 from engine.log_ingest import (normalize_workout_logs, goal_histories, GOAL_TARGETS,
-                               proximity_fatigue_factor, EFFORT_COST_PRIOR)
+                               proximity_fatigue_factor, EFFORT_COST_PRIOR, work_sets)
 from engine.tdee import (estimate_tdee as _estimate_tdee, ewma_trend as _ewma_trend,
                          learned_intake_bias, energy_density_kcal_per_lb,
                          KG_PER_LB, DEFAULT_BODYFAT_FRAC)
@@ -353,7 +353,7 @@ def compute_hypertrophy(workout_logs: list) -> dict:
             if ex.get("name", "") in _GOAL_LIFT_NAMES:
                 continue
             credit = get_muscle_credit(ex.get("name", ""))
-            sets = ex.get("sets", []) or []
+            sets = work_sets(ex.get("sets", []))
             # Weight each logged set by its effective-reps stimulus fraction (N1: a set
             # with weight/reps but RIR>=5 used to count as a full hard set; it now counts
             # for ~0, per the spec's own stimulus model).
@@ -408,7 +408,7 @@ def compute_joint_action_volume(workout_logs: list) -> dict:
             pattern = get_joint_action(ex.get("name", ""))
             if not pattern:
                 continue
-            sets = ex.get("sets", []) or []
+            sets = work_sets(ex.get("sets", []))
             hard_sets = len([s for s in sets if s.get("weight") or s.get("reps")])
             if not hard_sets:
                 continue
@@ -448,7 +448,7 @@ def compute_fatigue(workout_logs: list, recovery_rows: list) -> dict:
             volume = sum(
                 float(s.get("weight") or 0) * int(s.get("reps") or 0)
                 for ex in (log.get("exercises") or [])
-                for s in (ex.get("sets") or [])
+                for s in work_sets(ex.get("sets"))
             )
             tss = min(volume / 100.0, 150.0)  # normalize; cap at 150 per session
             tss_by_date[d] = tss_by_date.get(d, 0) + tss
@@ -489,7 +489,7 @@ def compute_fatigue(workout_logs: list, recovery_rows: list) -> dict:
             name_lower = (ex.get("name") or "").lower()
             if not any(c in name_lower for c in CNS_HEAVY):
                 continue
-            for s in ex.get("sets") or []:
+            for s in work_sets(ex.get("sets")):
                 w = float(s.get("weight") or 0)
                 r = int(s.get("reps") or 0)
                 if w > 0 and r > 0:
@@ -515,7 +515,7 @@ def compute_fatigue(workout_logs: list, recovery_rows: list) -> dict:
         volume = sum(
             float(s.get("weight") or 0) * int(s.get("reps") or 0)
             for ex in (log.get("exercises") or [])
-            for s in (ex.get("sets") or [])
+            for s in work_sets(ex.get("sets"))
         )
         daily_tss[d] = daily_tss.get(d, 0.0) + min(volume / 100.0, 150.0)
     acute_7d    = sum(daily_tss.get((today_acwr - datetime.timedelta(days=i)).isoformat(), 0.0) for i in range(7))
@@ -894,7 +894,7 @@ def compute_training_load_tss(workout_logs: list, recovery_rows: list,
         if log.get("log_date", "") != load_day:
             continue
         sets = [s for ex in (log.get("exercises") or [])
-                for s in (ex.get("sets") or [])]
+                for s in work_sets(ex.get("sets"))]
         session_vol = sum(
             float(s.get("weight") or 0) * int(s.get("reps") or 0) for s in sets
         )
@@ -1182,7 +1182,7 @@ def compute_normalized_strength_vol(workout_logs: list) -> float:
         if log.get("log_date", "") != TODAY:
             continue
         for ex in (log.get("exercises") or []):
-            sets = ex.get("sets") or []
+            sets = work_sets(ex.get("sets"))
             hard = sum(1 for s in sets if s.get("weight") or s.get("reps"))
             total_sets += hard
     return round(min(total_sets / 25.0, 1.0), 3)

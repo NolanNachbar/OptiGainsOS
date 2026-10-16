@@ -59,8 +59,8 @@ export default function ProgramCompleteCard({ className = "" }) {
           <Flag className="h-[18px] w-[18px]" aria-hidden="true" />
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="type-display text-[17px] sm:text-[18px]">Program complete</h3>
-          <p className="mt-1 text-[12.5px] font-semibold text-secondary">
+          <h3 className="type-display text-[17px] sm:text-[17px]">Program complete</h3>
+          <p className="mt-1 text-[12px] font-semibold text-secondary">
             {title} finished
             {gap == null ? "" : gap === 0 ? " today" : gap === 1 ? " yesterday" : `, ${gap} days ago`}.
           </p>
@@ -78,7 +78,7 @@ export default function ProgramCompleteCard({ className = "" }) {
             {finished.program_id && (
               <Link
                 to={`/program/${finished.program_id}`}
-                className="inline-flex min-h-[44px] items-center px-3 text-[12.5px] font-semibold text-ink-muted transition-colors duration-200 hover:text-ink [transition-timing-function:var(--ease)]"
+                className="inline-flex min-h-[44px] items-center px-3 text-[12px] font-semibold text-ink-muted transition-colors duration-200 hover:text-ink [transition-timing-function:var(--ease)]"
               >
                 Run {title} again
               </Link>

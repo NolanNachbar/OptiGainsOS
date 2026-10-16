@@ -10,7 +10,7 @@ function parseServingGrams(servingStr) {
   return match ? parseFloat(match[1]) : null;
 }
 
-function mapOffProduct(product) {
+export function mapOffProduct(product) {
   const n = product.nutriments || {};
 
   // OFF stores values per 100g with _100g suffix; fall back to per-serving if needed
@@ -26,7 +26,11 @@ function mapOffProduct(product) {
   // Reject products with completely missing nutrition data
   if (calories === 0 && protein === 0 && carbs === 0 && fats === 0) return null;
 
-  const servingG = parseServingGrams(product.serving_size) ?? 100;
+  // Null when the product states no gram serving. Macros above are per 100 g, so
+  // inventing "1 serving = 100 g" here made the picker log a 100 g serving as if
+  // the label said so; with null the form stays on grams (100 g) and offers no
+  // "serving" unit it can't back up.
+  const servingG = parseServingGrams(product.serving_size);
   const name = product.product_name_en || product.product_name || 'Unknown product';
 
   return {
@@ -55,12 +59,12 @@ export async function lookupBarcode(barcode) {
         if (food) return food;
       }
     }
-  } catch {}
+  } catch { /* fall through to the next source */ }
 
   // Fall back to USDA branded foods database (better coverage for US products)
   try {
     return await lookupByGtin(barcode);
-  } catch {}
+  } catch { /* fall through to the next source */ }
 
   return null;
 }

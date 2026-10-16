@@ -89,6 +89,8 @@ async function uploadToGeminiFiles(buf: ArrayBuffer, mimeType: string): Promise<
   return file.uri;
 }
 
+import { guardAiRequest } from "../_shared/ai-guard.ts";
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", {
@@ -99,6 +101,9 @@ Deno.serve(async (req) => {
       },
     });
   }
+
+  const guard = await guardAiRequest(req, "analyze-form");
+  if (!guard.ok) return json({ error: guard.error }, guard.status);
 
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return json({ error: "invalid JSON body" }, 400); }

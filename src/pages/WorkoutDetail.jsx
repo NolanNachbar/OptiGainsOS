@@ -28,9 +28,12 @@ import MuscleHeatMap from "@/components/MuscleHeatMap";
 import { SegmentedControl } from "@/components/ui/system";
 import ExerciseCard from "@/components/workouts/ExerciseCard";
 import WorkoutLoggingHeader from "@/components/workouts/WorkoutLoggingHeader";
+import FinishSummary from "@/components/workouts/FinishSummary";
 import AddExerciseForm from "@/components/workouts/AddExerciseForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { getLastExercisePerformance, getExerciseE1rmHistory } from "@/utils/exerciseStats";
+import { isWarmupSet, baseType } from "@/utils/setTypes";
+import { buildLoadWhy } from "@/utils/loadRationale";
 import { currentE1rm, loadForTarget } from "@/utils/e1rm";
 import { blockProgressionWeight, exerciseProgressionWeight, doubleSeed } from "@/utils/progressionRules";
 import { applyEquipmentProfile, applyEquipmentProfileToWorkout, substituteFor } from "@/utils/equipmentProfile";
@@ -878,11 +881,11 @@ export default function WorkoutDetail() {
     },
     onSuccess: (clonedWorkout) => {
       invalidateWorkouts(queryClient);
-      toast.success("Workout cloned successfully");
+      toast.success("Workout cloned.");
       navigate(`/create-workout?edit=${clonedWorkout.id}`);
     },
     onError: (error) => {
-      toast.error("Failed to clone workout");
+      toast.error("Workout not cloned. Try again.");
       console.error("Error cloning workout:", error);
     },
   });
@@ -1016,20 +1019,20 @@ export default function WorkoutDetail() {
               invalidateSchedule(queryClient);
 
               if (result.status === 'completed') {
-                toast.success("Program completed! Congratulations!", { duration: 5000 });
+                toast.success("Program complete.", { duration: 5000 });
               } else {
-                toast.success("Workout logged! Progression updated.");
+                toast.success("Workout logged. Progression updated.");
               }
               navigate(isProgramSource && enrollment ? `/program/${enrollment.program_id}` : "/dashboard");
             },
             onError: () => {
-              toast.success("Workout logged! (Progression update failed)");
+              toast.success("Workout logged. Progression not updated.");
               navigate(isProgramSource && enrollment ? `/program/${enrollment.program_id}` : "/dashboard");
             },
           }
         );
       } else {
-        toast.success("Workout logged successfully!");
+        toast.success("Workout logged.");
         navigate(isProgramSource && enrollment ? `/program/${enrollment.program_id}` : "/dashboard");
       }
     },
@@ -1046,7 +1049,7 @@ export default function WorkoutDetail() {
         navigate(isProgramSource && enrollment ? `/program/${enrollment.program_id}` : "/dashboard");
         return;
       }
-      toast.error(error.message || "Failed to save workout log");
+      toast.error(error.message || "Workout not saved. Check your connection and try again.");
     },
   });
 
@@ -1075,6 +1078,8 @@ export default function WorkoutDetail() {
       const top = prev[exIdx];
       if (!top || !/\(top set\)/i.test(top.name)) return prev;
       const set = top.sets?.[setIdx];
+      // A warm-up is not the top set; never derive back-off loads from it.
+      if (isWarmupSet(set)) return prev;
       const weight = Number(set?.weight);
       const reps = Number(set?.reps);
       if (!weight || !reps) return prev;
@@ -1256,6 +1261,29 @@ export default function WorkoutDetail() {
 
   const totalSetsCount = exerciseLogs.reduce((n, ex) => n + (ex.sets?.length || 0), 0);
 
+  // "Done?" prompt, same rule as QuickWorkout: when the tick that was just made
+  // completes EVERY set, ask whether the lifter is finished. It fires only on
+  // the single-set transition (done: N-1 -> N with the set count unchanged), so
+  // restoring a finished session, "Complete All", or editing the plan never
+  // triggers it. It never finishes anything itself: "Finish workout" runs the
+  // same handler as the header's Finish (RIR warning included), and Finish
+  // stays a deliberate tap (CLAUDE.md: a workout never stops on its own).
+  const prevSetCountsRef = useRef({ done: 0, total: 0 });
+  const [showAllDonePrompt, setShowAllDonePrompt] = useState(false);
+  useEffect(() => {
+    const prev = prevSetCountsRef.current;
+    prevSetCountsRef.current = { done: loggedSetsCount, total: totalSetsCount };
+    if (resumeSession || isTutorialDemo) return;
+    if (
+      totalSetsCount > 0
+      && loggedSetsCount === totalSetsCount
+      && prev.total === totalSetsCount
+      && prev.done === totalSetsCount - 1
+    ) {
+      setShowAllDonePrompt(true);
+    }
+  }, [loggedSetsCount, totalSetsCount, resumeSession, isTutorialDemo]);
+
   // Focused-exercise model (Ledger rebuild): exactly one exercise renders the
   // full rich card; every other exercise (before or after it) renders as a
   // compact one-line row (ExerciseCard's own isFocused=false branch), which
@@ -1361,7 +1389,7 @@ export default function WorkoutDetail() {
   // logged before this rule). Flagged once on Finish, never a hard block, so
   // older data can't trap a workout.
   const topSetsMissingRir = () => exerciseLogs.flatMap(ex => (ex.sets || [])
-    .filter(s => s.completed && s.set_type === 'top_set' && s.rir == null && s.rpe == null)
+    .filter(s => s.completed && baseType(s) === 'top_set' && s.rir == null && s.rpe == null)
     .map(s => `${ex.name} set ${s.set_number}`));
   const rirFlaggedRef = useRef(false);
 
@@ -1766,6 +1794,7 @@ export default function WorkoutDetail() {
                           onUpdateName={updateExerciseName}
                           originalExercise={originalEx}
                           lastPerformance={lastPerformance}
+                          loadWhy={isProgramSource ? buildLoadWhy(engineByName.get(exerciseLog.name), exerciseLog.sets, weightUnit) : null}
                           programExercise={programEx}
                           progressionTargets={targets}
                           onReplaceExercise={handleReplaceExercise}
@@ -2017,6 +2046,31 @@ export default function WorkoutDetail() {
         </DialogContent>
       </Dialog>
 
+      {/* "All sets done" confirm: opened only by the transition effect above.
+          "Not yet" just closes it; nothing is saved or ended on its own. */}
+      <Dialog open={showAllDonePrompt} onOpenChange={setShowAllDonePrompt}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>All sets done. Finish workout?</DialogTitle>
+          </DialogHeader>
+          <DialogDescription>
+            That was the last set. Finish and save this session, or keep going if you want to add more.
+          </DialogDescription>
+          <div className="flex gap-3 pt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setShowAllDonePrompt(false)}>
+              Not yet
+            </Button>
+            <Button
+              variant="volt"
+              className="flex-1"
+              onClick={() => { setShowAllDonePrompt(false); handleSaveWorkoutLog(); }}
+            >
+              Finish workout
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Incomplete sets prompt */}
       <Dialog open={showIncompletePrompt} onOpenChange={(open) => { if (!open) setShowIncompletePrompt(false); }}>
         <DialogContent className="max-w-sm">
@@ -2070,6 +2124,7 @@ export default function WorkoutDetail() {
             <DialogTitle>Finish Workout</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
+            <FinishSummary exercises={exerciseLogs} allWorkoutLogs={allWorkoutLogs} weightUnit={weightUnit} />
             <div className="space-y-2">
               <label className="section-label">Workout Notes</label>
               <Textarea

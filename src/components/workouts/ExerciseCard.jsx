@@ -12,7 +12,8 @@ import { getSmartRestDuration } from "@/utils/fatigueManagement";
 import { EXERCISE_DB } from "@/ml/exerciseDB";
 import { getLibraryNames, getExerciseInfo, inferSetKind } from "@/utils/exerciseLibrary";
 import { FAILURE_REASONS, reasonsForExercise, stickingPointReasons, isMissedSet } from "@/config/failureReasons";
-import { estimateOneRepMax, isE1rmEligibleSet } from "@/utils/exerciseStats";
+import { estimateOneRepMax, isE1rmEligibleSet, previousSetForRow } from "@/utils/exerciseStats";
+import { SET_MARKS, SET_MARK_LABEL, SET_MARK_TAG, currentMark, markPatch, isWarmupSet, baseType } from "@/utils/setTypes";
 
 const DB_NAMES = EXERCISE_DB.map(e => e.name).sort((a, b) =>
   a.toLowerCase().localeCompare(b.toLowerCase())
@@ -31,6 +32,7 @@ export default function ExerciseCard({
   onUpdateName,
   originalExercise = null,
   lastPerformance = null,
+  loadWhy = null,
   programExercise = null, // exercise config from program_workouts
   progressionTargets = null, // from calculateDailyTargets
   onNudge = null, // callback when a nudge is generated
@@ -168,7 +170,7 @@ export default function ExerciseCard({
 
     const repsOf = (s) => (isHold ? s.duration_s : s.reps);
     const completedSets = exercise.sets.filter(
-      (s) => s.completed && Number(s.weight) > 0 && Number(repsOf(s)) > 0
+      (s) => s.completed && !isWarmupSet(s) && Number(s.weight) > 0 && Number(repsOf(s)) > 0
     );
     const currentVolume = completedSets.reduce((sum, s) => sum + Number(s.weight) * Number(repsOf(s)), 0);
     // Apples-to-apples comparison (coordinator review, r4d/step3): comparing
@@ -178,18 +180,13 @@ export default function ExerciseCard({
     // first N sets of last time, N = completedSets.length here, so both
     // sides cover the same amount of work. No last session, or fewer than N
     // sets logged last time (rep scheme not comparable), -> null ("–").
-    // getLastExercisePerformance returns EVERY set from that log verbatim
-    // (weight/reps zeroed, not dropped, for an incomplete set -- it carries
-    // no `completed` or `set_type` field at all). Filtering to nonzero
-    // weight/reps before slicing keeps a zeroed leftover set from last time
-    // from occupying one of the first N slots and silently deflating
-    // lastVolume (the "+550%" symptom traced to exactly this: an
-    // incomplete/zero set from last session landing in the comparison
-    // window). This doesn't distinguish a real warmup set from a working
-    // set -- getLastExercisePerformance drops set_type entirely, so that
-    // distinction isn't recoverable here without changing its return shape.
+    // getLastExercisePerformance returns EVERY set from that log (weight/reps
+    // zeroed, not dropped, for an incomplete set), carrying set_type. Filtering
+    // to nonzero weight/reps before slicing keeps a zeroed leftover set from
+    // last time from occupying one of the first N slots and silently deflating
+    // lastVolume (the "+550%" symptom). Warm-ups are skipped on both sides.
     const lastComparableSets = (lastPerformance?.sets ?? [])
-      .filter((s) => Number(s.weight) > 0 && Number(s.reps) > 0)
+      .filter((s) => !isWarmupSet(s) && Number(s.weight) > 0 && Number(s.reps) > 0)
       .slice(0, completedSets.length);
     const comparable = lastComparableSets.length === completedSets.length;
     const lastVolume = comparable
@@ -356,10 +353,13 @@ export default function ExerciseCard({
   // is never pre-filled, so completing a blank top set routes to the RIR
   // input instead. RIR 0 is a real value (null-check, not truthiness).
   const [rirRequiredIndex, setRirRequiredIndex] = useState(null);
+  // Which row's set-type menu (working / warm-up / drop / failure) is open.
+  const [markMenuIndex, setMarkMenuIndex] = useState(null);
+  const [whyOpen, setWhyOpen] = useState(false);
   const handleSetCompleted = (setIndex, completed) => {
     const target = exercise.sets[setIndex];
     if (
-      completed && showRIR && target?.set_type === 'top_set'
+      completed && showRIR && baseType(target) === 'top_set'
       && target.rir == null && target.rpe == null
     ) {
       setRirRequiredIndex(setIndex);
@@ -412,7 +412,7 @@ export default function ExerciseCard({
       if (rir != null && programExercise && progressionTargets) {
         const nudge = evaluateSetPerformance(
           programExercise,
-          { rir, weight: set.weight, set_type: set.set_type || 'working', set_number: set.set_number },
+          { rir, weight: set.weight, set_type: baseType(set) || 'working', set_number: set.set_number },
           progressionTargets.workingWeight,
           exercise.sets.length
         );
@@ -450,7 +450,7 @@ export default function ExerciseCard({
     if (set.completed && programExercise && progressionTargets) {
       const nudge = evaluateSetPerformance(
         programExercise,
-        { rir, weight: set.weight, set_type: set.set_type || 'working', set_number: set.set_number },
+        { rir, weight: set.weight, set_type: baseType(set) || 'working', set_number: set.set_number },
         progressionTargets.workingWeight,
         exercise.sets.length
       );
@@ -533,7 +533,7 @@ export default function ExerciseCard({
   const repsInputRefs = useRef({});
   const rirInputRefs = useRef({});
 
-  // Phase B: completing a set from the keypad (RIR-pill tap, or "Done ✓")
+  // Phase B: completing a set from the keypad (RIR-pill tap, or "Done")
   // must NOT call handleSetCompleted in the same synchronous handler that
   // just committed the RIR/weight/reps value -- handleSetCompleted closes
   // over the CURRENT-render's `exercise` prop, which is still the
@@ -968,6 +968,26 @@ export default function ExerciseCard({
           </div>
         )}
 
+        {/* Why this weight: only lines the engine wrote for this lift (load,
+            % of e1RM, reps @ RIR, its own notes). Absent data renders nothing. */}
+        {Array.isArray(loadWhy) && loadWhy.length > 0 && (
+          <div className="pb-1.5">
+            <button
+              type="button"
+              aria-expanded={whyOpen}
+              onClick={() => setWhyOpen((v) => !v)}
+              className="text-[11px] font-semibold text-ink-faint underline-offset-2 hover:underline min-h-[28px] touch-manipulation"
+            >
+              {whyOpen ? 'Hide why this weight' : 'Why this weight'}
+            </button>
+            {whyOpen && (
+              <ul className="mt-1 space-y-0.5 text-[11px] text-ink-muted font-technical">
+                {loadWhy.map((line, i) => <li key={i}>{line}</li>)}
+              </ul>
+            )}
+          </div>
+        )}
+
         {/* Column header */}
         <div className={`${gridCols} gap-1 sm:gap-1.5 pb-1.5 text-[9.5px] font-bold uppercase tracking-[0.08em] text-ink-muted`}>
           <span className="pl-0.5">Set</span>
@@ -992,10 +1012,13 @@ export default function ExerciseCard({
         {/* Set rows */}
         {exercise.sets.map((set, setIndex) => {
           const isActive = !set.completed && setIndex === activeSetIndex;
+          // This row's own previous-session set (same position; falls back to
+          // the last one). Display + tap-to-copy only; saved data is untouched.
+          const prevSet = previousSetForRow(lastPerformance?.sets, exercise.sets, setIndex);
           // Compare against what was PRESCRIBED for this set (working/daily-min
           // weight × the exercise's rep target), not a heavier all-time best — so
           // programmed-lighter sets that hit their target aren't flagged as misses.
-          const prescribedWeight = set.set_type === 'daily_min'
+          const prescribedWeight = baseType(set) === 'daily_min'
             ? progressionTargets?.dailyMin
             : progressionTargets?.workingWeight;
           // A back-off set's target is its own reps, not the exercise's headline
@@ -1031,25 +1054,29 @@ export default function ExerciseCard({
                 isActive ? 'bg-charcoal-surface2 rounded-xl -mx-2 px-2' : ''
               } ${!set.completed && !isActive ? 'text-ink-faint' : ''}`}
             >
-              <span className={`font-technical text-[13px] font-extrabold pl-0.5 ${
-                set.set_type === 'daily_min' ? 'text-info' : (set.completed || isActive) ? 'text-ink' : 'text-ink-faint'
-              }`}>
-                {set.set_number}
-              </span>
               <button
                 type="button"
-                disabled={!lastPerformance?.lastWeight}
-                onClick={() => {
-                  // Tap "last time" to copy it into this set (Hevy-style prefill).
-                  onUpdateSet(exerciseIndex, setIndex, 'weight', lastPerformance.lastWeight);
-                  onUpdateSet(exerciseIndex, setIndex, 'reps', lastPerformance.lastReps);
-                }}
-                aria-label={lastPerformance?.lastWeight ? `Use last set ${lastPerformance.lastWeight} by ${lastPerformance.lastReps}` : 'No previous set'}
-                className="font-technical text-[11px] font-semibold text-ink-faint whitespace-nowrap pr-1 text-left tabular-nums disabled:cursor-default enabled:active:text-brand min-h-[44px] -my-3.5 inline-flex items-center"
+                onClick={() => setMarkMenuIndex((cur) => (cur === setIndex ? null : setIndex))}
+                aria-expanded={markMenuIndex === setIndex}
+                aria-label={`Set ${set.set_number}${currentMark(set) ? `, ${SET_MARK_LABEL[currentMark(set)]}` : ''}. Change set type`}
+                className={`relative font-technical text-[13px] font-extrabold pl-0.5 text-left touch-manipulation min-h-[44px] -my-3.5 after:content-[''] after:absolute after:inset-y-0 after:-left-2 after:right-0 ${
+                  baseType(set) === 'daily_min' ? 'text-info' : currentMark(set) ? 'text-brand' : (set.completed || isActive) ? 'text-ink' : 'text-ink-faint'
+                }`}
               >
-                {lastPerformance?.lastWeight
-                  ? `${lastPerformance.lastWeight}×${lastPerformance.lastReps}`
-                  : '—'}
+                {currentMark(set) ? SET_MARK_TAG[currentMark(set)] : set.set_number}
+              </button>
+              <button
+                type="button"
+                disabled={!prevSet}
+                onClick={() => {
+                  // Tap the previous set to copy it into this row (Hevy-style prefill).
+                  onUpdateSet(exerciseIndex, setIndex, 'weight', prevSet.weight);
+                  onUpdateSet(exerciseIndex, setIndex, 'reps', prevSet.reps);
+                }}
+                aria-label={prevSet ? `Previous set ${prevSet.weight} by ${prevSet.reps}, tap to use` : 'No previous set'}
+                className="font-technical text-[11px] font-semibold text-ink-faint pr-1 text-left tabular-nums disabled:cursor-default enabled:active:text-brand min-h-[44px] min-w-0 max-w-full overflow-hidden -my-3.5 flex items-center"
+              >
+                <span className="min-w-0 truncate whitespace-nowrap">{prevSet ? `${prevSet.weight}×${prevSet.reps}` : '—'}</span>
               </button>
               <div className="relative min-w-0">
                 <input
@@ -1078,7 +1105,7 @@ export default function ExerciseCard({
                     if (useKeypad) setActiveField({ setIndex, field: 'weight' });
                   }}
                   placeholder={
-                    isProgramMode && set.set_type === 'daily_min' && progressionTargets?.dailyMin
+                    isProgramMode && baseType(set) === 'daily_min' && progressionTargets?.dailyMin
                       ? String(progressionTargets.dailyMin)
                       : isProgramMode && progressionTargets?.workingWeight
                       ? String(progressionTargets.workingWeight)
@@ -1172,6 +1199,32 @@ export default function ExerciseCard({
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {markMenuIndex === setIndex && (
+              <div role="group" aria-label={`Set ${set.set_number} type`} className="flex gap-1.5 pb-1.5 pl-0.5">
+                {['working', ...SET_MARKS].map((m) => {
+                  const on = (currentMark(set) || 'working') === m;
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => {
+                        const patch = markPatch(set, m);
+                        onUpdateSet(exerciseIndex, setIndex, 'set_type', patch.set_type);
+                        onUpdateSet(exerciseIndex, setIndex, 'set_type_base', patch.set_type_base);
+                        setMarkMenuIndex(null);
+                      }}
+                      className={`min-h-[36px] px-2.5 rounded-[9px] text-[11px] font-bold touch-manipulation ${
+                        on ? 'bg-brand/20 text-brand' : 'bg-[#1C1F23] text-ink-muted'
+                      }`}
+                    >
+                      {SET_MARK_LABEL[m]}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             {rirRequiredIndex === setIndex && !set.completed && set.rir == null && (
               <div role="alert" className="pb-1.5 pl-0.5 text-[11px] font-semibold text-warn">
@@ -1725,7 +1778,7 @@ function KeypadSheet({
               aria-label="Done, mark set complete"
               className="flex-1 min-h-[52px] rounded-xl bg-brand text-[var(--key-ink-on-brand)] text-base font-extrabold flex items-center justify-center active:bg-brand/80 touch-manipulation"
             >
-              Done ✓
+              Done
             </button>
           </div>
         </div>
@@ -1764,7 +1817,7 @@ function KeypadSheet({
               aria-label={isLastField ? "Done, mark set complete" : "Next field"}
               className="flex-1 min-h-[52px] rounded-xl bg-brand text-[var(--key-ink-on-brand)] text-base font-extrabold flex items-center justify-center active:bg-brand/80 touch-manipulation"
             >
-              {isLastField ? "Done ✓" : "Next"}
+              {isLastField ? "Done" : "Next"}
             </button>
           </div>
         </div>

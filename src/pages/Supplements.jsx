@@ -66,7 +66,7 @@ function WaterCard({ today }) {
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["water-logs", today] }),
-    onError: () => toast.error("Failed to log water"),
+    onError: () => toast.error("Water not logged. Try again."),
   });
 
   const deleteEntry = useMutation({
@@ -240,7 +240,7 @@ export default function Supplements({ embedded = false }) {
       setShowAddType(false);
       toast.success("Supplement added");
     },
-    onError: () => toast.error("Failed to save"),
+    onError: () => toast.error("Supplement not saved. Try again."),
   });
 
   const updateType = useMutation({
@@ -253,7 +253,7 @@ export default function Supplements({ embedded = false }) {
       setEditingType(null);
       toast.success("Updated");
     },
-    onError: () => toast.error("Failed to update"),
+    onError: () => toast.error("Supplement not updated. Try again."),
   });
 
   const deleteType = useMutation({
@@ -262,7 +262,7 @@ export default function Supplements({ embedded = false }) {
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["supplement-types"] }),
-    onError: () => toast.error("Failed to delete"),
+    onError: () => toast.error("Supplement not deleted. Try again."),
   });
 
   const logSupp = useMutation({
@@ -281,7 +281,7 @@ export default function Supplements({ embedded = false }) {
       setLogDoses(prev => ({ ...prev, [type.id]: "" }));
       toast.success(`${type.name} logged`);
     },
-    onError: () => toast.error("Failed to log"),
+    onError: () => toast.error("Supplement not logged. Try again."),
   });
 
   const deleteLog = useMutation({
@@ -350,7 +350,7 @@ export default function Supplements({ embedded = false }) {
                         {type.timing_note && (
                           <div className="flex items-center gap-1 mt-0.5">
                             <Clock className="w-3 h-3 text-muted-2" />
-                            <span className="text-[10px] text-muted-2">{type.timing_note}</span>
+                            <span className="text-[11px] text-muted-2">{type.timing_note}</span>
                           </div>
                         )}
                       </div>
@@ -407,13 +407,13 @@ export default function Supplements({ embedded = false }) {
                     <CheckCircle2 className="w-3.5 h-3.5 text-brand shrink-0" />
                     <span className="text-sm text-ink font-medium">{log.supplement_name}</span>
                     {log.dose && (
-                      <Badge variant="outline" className="text-[10px] text-muted-2 hairline bg-transparent">
+                      <Badge variant="outline" className="text-[11px] text-muted-2 hairline bg-transparent">
                         {log.dose}{log.unit || ""}
                       </Badge>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="font-technical text-[10px] text-muted-2 tabular-nums">{format(parseISO(log.taken_at), "h:mm a")}</span>
+                    <span className="font-technical text-[11px] text-muted-2 tabular-nums">{format(parseISO(log.taken_at), "h:mm a")}</span>
                     <button
                       aria-label="Delete supplement log"
                       onClick={() => deleteLog.mutate(log.id)}

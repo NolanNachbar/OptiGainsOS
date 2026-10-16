@@ -307,7 +307,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
             route title is lg:hidden, so without this lg:block heading the page
             has no title on lg+. The two never overlap (mutually exclusive
             breakpoints). */}
-        <h1 className="hidden lg:block type-display text-[22px] mb-4 rise-in">Physique</h1>
+        <h1 className="hidden lg:block type-display text-[28px] mb-4 rise-in">Physique</h1>
 
         {/* Hidden file input — every upload trigger drives it. `multiple` lets a
             check-in morning stage all its shots at once; the review sheet steps
@@ -396,7 +396,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
               )}
               {sessionDone && (
                 <p className="mt-3 flex items-center gap-1.5 text-xs font-bold text-ok rise-in">
-                  <Check className="w-3.5 h-3.5" /> All {POSES.length} poses captured. Nice work.
+                  <Check className="w-3.5 h-3.5" /> All {POSES.length} poses captured.
                 </p>
               )}
             </>
@@ -416,7 +416,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
             <div className="glass px-4 pt-4 pb-4 rise-in">
             <div className="flex items-baseline justify-between">
               <div>
-                <div className="font-technical text-2xl font-extrabold text-ink">
+                <div className="font-technical text-2xl font-numeral text-ink">
                   {sessionBf}% <span className="text-sm font-semibold text-muted-2">est. BF</span>
                 </div>
                 <div className="font-technical text-xs font-semibold text-muted-2">
@@ -604,7 +604,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                           alt={`${POSE_LABEL[filterPose]} on ${format(parseISO(e.taken_at), "MMM d, yyyy")}`}
                           className="w-20 h-28 object-cover rounded-md glass-inset"
                         />
-                        <div className="mt-1 font-technical text-[10px] font-semibold text-muted-2">
+                        <div className="mt-1 font-technical text-[11px] font-semibold text-muted-2">
                           {format(parseISO(e.taken_at), "MMM d")}
                         </div>
                         {e.bodyfat_estimate != null && (

@@ -55,11 +55,11 @@ const navigationItems = [
       { label: "Hydration", url: "/fuel?tab=hydration",
         active: (l) => l.pathname.startsWith("/fuel") && qp(l, "tab") === "hydration" },
     ] },
-  { title: "Body", url: "/athlete-state", icon: HeartPulse,
+  { title: "State", url: "/athlete-state", icon: HeartPulse,
     matches: ["/athlete-state", "/recovery", "/physique", "/coach", "/lifts"],
     mobileStrip: true,
     children: [
-      { label: "State", url: "/athlete-state",
+      { label: "Overview", url: "/athlete-state",
         active: (l) => l.pathname.startsWith("/athlete-state") },
       { label: "Recovery", url: "/recovery",
         active: (l) => l.pathname.startsWith("/recovery") },
@@ -112,11 +112,11 @@ function isNavActive(item, pathname) {
 }
 
 function Wordmark({ size = 17 }) {
-  // Ledger: no brand hue. The wordmark reads as one neutral ink voice instead
-  // of a teal-accented second half (that accent no longer exists).
+  // Ledger: no brand hue. The name is typed "OptiGains" (never shouted); the
+  // wordmark is one neutral ink voice at display weight.
   return (
-    <span className="type-display select-none whitespace-nowrap" style={{ fontSize: size }}>
-      OPTIGAINS
+    <span className="type-display select-none whitespace-nowrap" style={{ fontSize: size, letterSpacing: '-0.03em' }}>
+      OptiGains
     </span>
   );
 }
@@ -125,7 +125,6 @@ function Wordmark({ size = 17 }) {
 // (30-34px) + a one-line muted subtitle + the avatar on the same row.
 // Everything else keeps the smaller default title treatment unless it's a
 // drill-down page (below).
-const TAB_ROOT_PAGES = new Set(["Today", "Train", "Workouts", "Fuel", "FoodTracker", "AthleteState"]);
 
 // Drill-down pages that already have their own in-page back navigation get a
 // compact, centered title + a back chevron in the Layout header instead —
@@ -286,7 +285,7 @@ export default function Layout({ children, currentPageName }) {
     CreateWorkout: "Create Workout",
     ProgramDetail: "Program",
     ProgramBuilder: "Program Builder",
-    AthleteState: "Body",
+    AthleteState: "State",
     Recovery: "Recovery",
     BriefHistory: "Brief History",
   }[currentPageName] || currentPageName || "Home";
@@ -310,7 +309,6 @@ export default function Layout({ children, currentPageName }) {
     ? pageSubtitle[currentPageName]
     : format(nowInTz(), "EEEE, MMMM d");
 
-  const isTabRoot = TAB_ROOT_PAGES.has(currentPageName);
   const isDrillDown = DRILL_DOWN_PAGES.has(currentPageName);
 
   // The active top-level section. Its cross-route children populate the mobile
@@ -366,7 +364,7 @@ export default function Layout({ children, currentPageName }) {
         }`}
       >
         <item.icon className="w-5 h-5" strokeWidth={isActive ? 2 : 1.7} />
-        <span className="text-[9.5px] font-bold">{item.title}</span>
+        <span className="text-[11px] font-semibold leading-[14px] tracking-normal truncate max-w-full">{item.title}</span>
       </Link>
     );
   };
@@ -391,7 +389,7 @@ export default function Layout({ children, currentPageName }) {
                 <div key={item.title}>
                   <Link
                     to={item.url}
-                    className={`flex items-center gap-[11px] px-3 py-2.5 rounded-lg text-[13.5px] font-bold transition-colors duration-200 [transition-timing-function:var(--ease)] ${
+                    className={`flex items-center gap-[11px] px-3 py-2.5 rounded-lg text-[14px] font-semibold transition-colors duration-200 [transition-timing-function:var(--ease)] ${
                       isActive
                         ? "text-[var(--brand-tint)] bg-brand/[0.16]"
                         : "text-ink-faint hover:text-ink"
@@ -409,7 +407,7 @@ export default function Layout({ children, currentPageName }) {
                           <Link
                             key={c.label}
                             to={c.url}
-                            className={`px-2 py-[5px] rounded-md text-[12px] font-bold transition-colors duration-200 [transition-timing-function:var(--ease)] ${
+                            className={`px-2 py-[5px] rounded-md text-[12px] font-semibold transition-colors duration-200 [transition-timing-function:var(--ease)] ${
                               on
                                 ? "text-ink bg-white/[0.05]"
                                 : "text-ink-faint hover:text-ink-muted"
@@ -428,7 +426,7 @@ export default function Layout({ children, currentPageName }) {
 
           <div className="mt-auto px-2.5">
             <div className="flex items-center justify-between px-0.5">
-              <span className="font-technical text-[10.5px] font-semibold text-ink-faint uppercase tracking-[0.08em]">
+              <span className="font-technical text-[11px] font-semibold text-ink-faint uppercase tracking-[0.08em]">
                 {format(nowInTz(), "EEE MMM d")}
               </span>
               <div className="flex items-center gap-2">
@@ -516,7 +514,7 @@ export default function Layout({ children, currentPageName }) {
             ) : (
               <>
                 <div className="flex-1 min-w-0">
-                  <h1 className={`type-display truncate ${isTabRoot ? "text-[32px]" : "text-[22px]"}`}>
+                  <h1 className="type-display truncate text-[28px]">
                     {pageDisplayName}
                   </h1>
                   {mobileSubtitle && (
