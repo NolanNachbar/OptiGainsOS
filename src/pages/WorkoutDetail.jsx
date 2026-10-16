@@ -32,7 +32,7 @@ import AddExerciseForm from "@/components/workouts/AddExerciseForm";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { getLastExercisePerformance, getExerciseE1rmHistory } from "@/utils/exerciseStats";
 import { currentE1rm, loadForTarget } from "@/utils/e1rm";
-import { blockProgressionWeight, exerciseProgressionWeight } from "@/utils/progressionRules";
+import { blockProgressionWeight, exerciseProgressionWeight, doubleSeed } from "@/utils/progressionRules";
 import { applyEquipmentProfile, applyEquipmentProfileToWorkout, substituteFor } from "@/utils/equipmentProfile";
 import EquipmentProfileToggle from "@/components/workouts/EquipmentProfileToggle";
 import OverrideProgramWorkout from "@/components/workouts/OverrideProgramWorkout";
@@ -700,6 +700,9 @@ export default function WorkoutDetail() {
           const e1 = currentE1rm(allWorkoutLogs, ex.name, { components: ex.components || [], anchor: ex.e1rm_anchor });
           const e1Load = (reps, rir) => loadForTarget(e1, reps, parseRirTarget(rir), loadStep);
           const targetReps = parseRepTarget(ex.rep_target);
+          // Double progression: prefill per-set rep targets (last reps + 1, or lo after a weight jump).
+          const dSeed = !ex.set_scheme && ex.progression?.type === 'double'
+            ? doubleSeed(allWorkoutLogs, ex) : null;
           const scaledWeight = lastPerf?.lastWeight && lastPerf?.lastReps
             ? scaleWeightToReps(lastPerf.lastWeight, lastPerf.lastReps, targetReps)
             : lastPerf?.lastWeight || 0;
@@ -736,7 +739,7 @@ export default function WorkoutDetail() {
             // All sets default to working type at working weight
             : Array.from({ length: numSets }, (_, setIndex) => ({
                 set_number: setIndex + 1,
-                reps: targetReps,
+                reps: dSeed?.reps[setIndex] ?? targetReps,
                 weight: exerciseProgressionWeight(allWorkoutLogs, ex)
                   || e1Load(targetReps, ex.rir_target) || targets?.workingWeight || scaledWeight,
                 completed: false,
@@ -1121,6 +1124,9 @@ export default function WorkoutDetail() {
           ? scaleWeightToReps(lastPerf.lastWeight, lastPerf.lastReps, newReps)
           : lastPerf?.lastWeight || 0);
 
+      const swapSeed = newExercise.progression?.type === 'double'
+        ? doubleSeed(allWorkoutLogs, newExercise) : null;
+
       // Carry forward already-completed sets exactly as logged so a mid-exercise
       // swap never discards finished work; only the remaining (uncompleted) sets
       // adopt the replacement's seed load/reps.
@@ -1137,7 +1143,7 @@ export default function WorkoutDetail() {
           : {
               ...s,
               set_number: i + 1,
-              reps: newReps,
+              reps: swapSeed?.reps[i] ?? newReps,
               weight: seedWeight,
               completed: false,
               rpe: null,
