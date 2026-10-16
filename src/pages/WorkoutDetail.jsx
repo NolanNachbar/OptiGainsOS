@@ -14,14 +14,13 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
 import { queryKeys, invalidateSchedule, invalidateWorkoutLogs, invalidateWorkouts, invalidatePrograms } from "@/lib/queryKeys";
-import { ArrowLeft, Clock, Target, Dumbbell, Edit, Copy, AlertTriangle, Activity, RotateCw, ChevronDown, Camera } from "lucide-react";
+import { ArrowLeft, Clock, Target, Dumbbell, Edit, Copy, Activity, RotateCw, ChevronDown, Camera } from "lucide-react";
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import SortableExerciseRow from "@/components/workouts/SortableExerciseRow";
 import { getTodayString } from "@/utils/dateUtils";
 import { toast } from "sonner";
 import { calculateDailyTargets, transferProgressionState } from "@/utils/programProgression";
-import { checkRecoveryWindow, getWorkoutMuscleGroups } from "@/utils/fatigueManagement";
 import { getTodayProgramWorkout } from "@/utils/programSchedule";
 import { getWorkoutBodyData } from "@/utils/muscleVolumeUtils";
 import MuscleHeatMap from "@/components/MuscleHeatMap";
@@ -157,7 +156,6 @@ export default function WorkoutDetail() {
   const [postWorkoutNotes, setPostWorkoutNotes] = useState("");
   const [showPostWorkoutDialog, setShowPostWorkoutDialog] = useState(false);
   const [startTime, setStartTime] = useState(null);
-  const [recoveryWarnings, setRecoveryWarnings] = useState([]);
   const [restTimer, setRestTimer] = useState(null); // seconds remaining for rest (display only)
   const [restDuration, setRestDuration] = useState(90); // default rest duration
   const [muscleView, setMuscleView] = useState("anterior");
@@ -598,20 +596,6 @@ export default function WorkoutDetail() {
     }
     return map;
   }, [isProgramSource, programWorkout, enrollment]);
-
-  // Compute recovery warnings as a derived value
-  const computedRecoveryWarnings = useMemo(() => {
-    if (isProgramSource && programWorkout?.exercises && enrollment) {
-      const muscleGroups = getWorkoutMuscleGroups(programWorkout.exercises);
-      return checkRecoveryWindow(muscleGroups, enrollment.progression_state || {});
-    }
-    return [];
-  }, [isProgramSource, programWorkout, enrollment]);
-
-  // Update recovery warnings when they change
-  useEffect(() => {
-    setRecoveryWarnings(computedRecoveryWarnings);
-  }, [computedRecoveryWarnings]);
 
   // Initialize exercise logs when workout loads or logging mode starts
   useEffect(() => {
@@ -1701,23 +1685,6 @@ export default function WorkoutDetail() {
         {isLogging ? (
           // Logging Mode - Show editable exercise logs
           <div className="space-y-6">
-            {/* Recovery warnings (program mode) */}
-            {recoveryWarnings.length > 0 && (
-              <div className="glass px-4 py-3">
-                <div className="flex items-start gap-2.5">
-                  <i className="w-[26px] h-[26px] rounded-sm bg-warn/[0.15] text-warn flex items-center justify-center flex-shrink-0 not-italic">
-                    <AlertTriangle className="w-3.5 h-3.5" />
-                  </i>
-                  <div className="pt-0.5">
-                    <p className="text-[12px] font-bold text-warn">Recovery Advisory</p>
-                    {recoveryWarnings.map((w, i) => (
-                      <p key={i} className="text-xs font-semibold text-ink-muted leading-relaxed mt-1">{w.message}</p>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Zero-exercise fallback: with no exercises there's no focused
                 card, so its kebab (the only other place "Cancel workout"
                 lives after Phase A removed the header's own kebab) never

@@ -11,7 +11,6 @@ import {
 } from "@/hooks/useProgramQueries";
 import { calculateDailyTargets } from "@/utils/programProgression";
 import { exportProgramAsJson } from "@/utils/programIO";
-import { checkRecoveryWindow, getWorkoutMuscleGroups } from "@/utils/fatigueManagement";
 import CycleDayGrid from "@/components/programs/CycleDayGrid";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -159,15 +158,6 @@ export default function ProgramDetail() {
   const currentWorkout = enrollment
     ? workouts.find((w) => (w.day_index || w.day_number) === currentDayIndex)
     : null;
-
-  // Recovery warnings for current workout
-  const recoveryWarnings =
-    currentWorkout && enrollment
-      ? checkRecoveryWindow(
-          getWorkoutMuscleGroups(currentWorkout.exercises || []),
-          enrollment.progression_state
-        )
-      : [];
 
   const handleEnroll = () => {
     enrollMutation.mutate(
@@ -519,20 +509,6 @@ export default function ProgramDetail() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Recovery warnings */}
-        {recoveryWarnings.length > 0 && (
-          <Card className="mb-4 border-[0.5px] border-warn/30">
-            <CardContent className="pt-3 pb-3">
-              {recoveryWarnings.map((w) => (
-                <div key={w.muscle} className="flex items-start gap-2 text-sm text-ink-muted">
-                  <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 text-warn" />
-                  <span>{w.message}</span>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
 
         {/* Schedule Grid */}
         <Card className="mb-6 rise-in-2">
