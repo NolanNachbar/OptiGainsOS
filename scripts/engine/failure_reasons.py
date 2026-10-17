@@ -48,11 +48,27 @@ FAILURE_REASONS: dict[str, dict] = {
                     "region": {"deadlift": "floor"}},
     "grip":        {"label": "Grip failed",        "technical": True, "region": {}},
     "form":        {"label": "Form broke down",    "technical": True, "region": {}},
+    # Mechanism reasons (any exercise, no bar-path region). Technical: a miss caused by
+    # stability, side-to-side imbalance, or a stricter standard than the prior best is
+    # not under-fuelling, so it must not ease the cut and is excluded from the strength
+    # slope (the prior best was set under looser conditions).
+    "unstable":    {"label": "Unstable / wobbled", "technical": True, "region": {}},
+    "asymmetric":  {"label": "One side lagged",    "technical": True, "region": {}},
+    "strict_form": {"label": "Cleaner form, just not strong enough",
+                    "technical": True, "region": {}},
     # Catch-all: a miss that fits no bucket. Neither systemic (must NOT ease the cut
     # — we can't claim under-fuelling) nor technical (must NOT exclude the lift from
     # the strength signal — an unexplained miss leaves the slope to speak for itself).
     "other":       {"label": "Other",              "technical": False, "region": {}},
 }
+
+
+# Reasons that describe HOW a set failed rather than WHERE on the bar path. They apply
+# to every exercise (not just the big 3), so they are tracked per exercise name and
+# surfaced once they recur. TUNABLE: no source sets this number; two sightings inside
+# the lookback window is "not a one-off" and nothing more.
+MECHANISMS = ("unstable", "asymmetric", "strict_form", "grip", "form")
+MECHANISM_RECURRENCE_MIN = 2
 
 
 def is_technical(reason: str) -> bool:
@@ -107,6 +123,8 @@ def parse_set_failures(workout_logs: list, lookback_days: int = 14,
     technical: set[str] = set()
     systemic: set[str] = set()
     region_hits: dict[str, dict] = {}
+    mech_counts: dict[str, dict[str, int]] = {}   # exercise name -> {mechanism: n}
+    unexplained: list[dict] = []                  # "other" misses with a typed note
 
     def _add_region(lift: str | None, region: str | None,
                     from_sticking: bool = False) -> None:
@@ -134,6 +152,12 @@ def parse_set_failures(workout_logs: list, lookback_days: int = 14,
                     continue
                 reason = s.get("failure_reason")
                 if reason and reason in FAILURE_REASONS:
+                    if reason in MECHANISMS and ex.get("name"):
+                        by_ex = mech_counts.setdefault(ex["name"], {})
+                        by_ex[reason] = by_ex.get(reason, 0) + 1
+                    elif reason == "other" and (s.get("failure_note") or "").strip():
+                        unexplained.append({"exercise": ex.get("name"), "date": d,
+                                            "note": s["failure_note"].strip()})
                     if reason == SYSTEMIC:
                         if lift:
                             systemic.add(lift)
@@ -150,8 +174,13 @@ def parse_set_failures(workout_logs: list, lookback_days: int = 14,
                 sticking = s.get("sticking_point")
                 if sticking and sticking in FAILURE_REASONS:
                     _add_region(lift, reason_to_region(sticking, lift), from_sticking=True)
+    recurring = {name: {m: n for m, n in by.items() if n >= MECHANISM_RECURRENCE_MIN}
+                 for name, by in mech_counts.items()}
+    recurring = {name: by for name, by in recurring.items() if by}
     return {"technical_miss_lifts": technical, "systemic_miss_lifts": systemic,
-            "weakness": region_hits}
+            "weakness": region_hits,
+            "mechanism_flags": recurring,       # exercise -> {mechanism: count >= min}
+            "unexplained_notes": unexplained}   # free-text "other" misses, for review
 
 
 def format_sticking_summary(weakness: dict) -> str | None:

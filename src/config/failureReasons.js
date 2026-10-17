@@ -21,7 +21,12 @@ export const FAILURE_REASONS = {
   off_chest:   { label: "Off the chest",     systemic: false, lifts: ["bench"] },
   out_of_hole: { label: "Out of the hole",   systemic: false, lifts: ["squat"] },
   off_floor:   { label: "Off the floor",     systemic: false, lifts: ["deadlift"] },
-  grip:        { label: "Grip failed",       systemic: false, lifts: ["deadlift"] },
+  // Mechanism reasons: HOW the set failed, valid on any exercise. Technical-equivalent
+  // on the engine side (never eases the cut). Mirror of MECHANISMS in the Python module.
+  strict_form: { label: "Cleaner form, just not strong enough", systemic: false, universal: true },
+  unstable:    { label: "Unstable / wobbled", systemic: false, universal: true },
+  asymmetric:  { label: "One side lagged",   systemic: false, universal: true },
+  grip:        { label: "Grip failed",       systemic: false, universal: true },
   // Catch-all for a miss that doesn't fit the buckets above. Neither systemic
   // (won't ease the cut — we can't claim it's a fuelling issue) nor a sticking
   // point (no region → steers no assistance). Always offered, last.
