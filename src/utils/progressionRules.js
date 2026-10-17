@@ -9,7 +9,12 @@
  * no qualifying history (callers then fall back to the e1RM rule).
  * Name + components matching and e1rm_anchor filtering mirror e1rm.js.
  */
+import { baseType, isWarmupSet } from './setTypes';
+
 const norm = (n) => String(n || '').toLowerCase().trim();
+// Progression inputs: no warm-ups, and no drop sets (a lighter back-down set
+// would read as the working load) -- same rule as setTypes.js.
+const isProgressionSet = (s) => !isWarmupSet(s) && s?.set_type !== 'drop';
 
 const logTime = (log) => {
   const t = new Date(log?.log_date).getTime();
@@ -44,7 +49,7 @@ export const singleStepWeight = (logs, exercise, progression) => {
   const step = Number(progression?.step);
   if (progression?.type !== 'single_step' || !(step > 0)) return null;
   const hist = historyFor(logs, exercise)
-    .map(({ sets }) => sets.filter((s) => s?.set_type === 'top_set' && Number(s?.weight) > 0))
+    .map(({ sets }) => sets.filter((s) => baseType(s) === 'top_set' && Number(s?.weight) > 0))
     .filter((tops) => tops.length);
   if (!hist.length) return null;
   const last = hist[0][hist[0].length - 1];
@@ -57,23 +62,44 @@ export const singleStepWeight = (logs, exercise, progression) => {
   return null;
 };
 
-/** double progression on a "lo-hi" rep_target; `ex.sets` is the prescribed count. */
-export const doubleWeight = (logs, exercise, progression = exercise?.progression) => {
+/**
+ * Double progression seed on a "lo-hi" rep_target; `exercise.sets` is the prescribed count.
+ * Returns { weight, reps: number[] } (one rep target per prescribed set) or null.
+ * Every working set of the last session at hi -> weight + step, reps back to lo.
+ * Otherwise hold the top weight and aim one rep above each set's last reps (clamped to lo-hi).
+ */
+export const doubleSeed = (logs, exercise, progression = exercise?.progression) => {
   const step = Number(progression?.step);
   if (progression?.type !== 'double' || !(step > 0)) return null;
   const m = String(exercise?.rep_target ?? '').match(/^(\d+)\s*-\s*(\d+)/);
   if (!m) return null;
+  const lo = Number(m[1]);
   const hi = Number(m[2]);
   const prescribed = Number(exercise?.sets) || 1;
+  const clamp = (n) => Math.min(hi, Math.max(lo, n));
   for (const { sets } of historyFor(logs, exercise)) {
-    const work = sets.filter((s) => s?.completed && Number(s?.weight) > 0 && !/warm/i.test(s?.set_type || ''));
+    const work = sets.filter((s) => s?.completed && Number(s?.weight) > 0 && isProgressionSet(s));
     if (!work.length) continue;
     const top = Math.max(...work.map((s) => Number(s.weight)));
-    const hit = work.length >= prescribed && work.every((s) => Number(s.reps) >= hi);
-    return hit ? top + step : top;
+    if (work.length >= prescribed && work.every((s) => Number(s.reps) >= hi)) {
+      return { weight: top + step, reps: Array.from({ length: prescribed }, () => lo) };
+    }
+    const atTop = work
+      .filter((s) => Number(s.weight) === top)
+      .sort((a, b) => (Number(a.set_number) || 0) - (Number(b.set_number) || 0))
+      .map((s) => Number(s.reps) || 0);
+    const fallback = Math.min(...atTop) + 1;
+    return {
+      weight: top,
+      reps: Array.from({ length: prescribed }, (_, i) => clamp(i < atTop.length ? atTop[i] + 1 : fallback)),
+    };
   }
   return null;
 };
+
+/** double progression weight (see doubleSeed). */
+export const doubleWeight = (logs, exercise, progression = exercise?.progression) =>
+  doubleSeed(logs, exercise, progression)?.weight ?? null;
 
 /** Seed weight for a set_scheme block (progression on the block, else on the exercise). */
 export const blockProgressionWeight = (logs, exercise, block) => {

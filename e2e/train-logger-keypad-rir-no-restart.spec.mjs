@@ -76,6 +76,8 @@ test('reopening RIR on an already-completed set via the keypad does not restart 
     await sheet.getByRole('button', { name: 'RIR 2' }).click();
     await sheet.getByRole('button', { name: 'Done, mark set complete' }).click();
     await expect(sheet).not.toBeVisible();
+    // Completing the only set asks "Finish workout?"; keep going.
+    await page.getByRole('button', { name: 'Not yet' }).click();
 
     const restLabel = page.getByLabel(/Rest, .* remaining/);
     await expect(restLabel).toBeVisible({ timeout: 3000 });
@@ -106,6 +108,9 @@ test('reopening RIR on an already-completed set via the keypad does not restart 
     const remaining = async () => parseRemaining(await restLabel.getAttribute('aria-label'));
     await expect.poll(remaining, { timeout: 5000 }).toBeLessThan(before);
   } finally {
+    // Close first: an open logger autosaves the session back after cleanup deletes it,
+    // leaving an in_progress orphan that breaks every later Today/auto-finish spec.
+    await page.close().catch(() => {});
     await cleanup(workoutId);
     await removeSeededWeighIn();
   }

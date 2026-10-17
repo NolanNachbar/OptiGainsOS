@@ -14,14 +14,13 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
 import { queryKeys, invalidateSchedule, invalidateWorkoutLogs, invalidateWorkouts, invalidatePrograms } from "@/lib/queryKeys";
-import { ArrowLeft, Clock, Target, Dumbbell, Edit, Copy, AlertTriangle, Activity, RotateCw, ChevronDown, Camera } from "lucide-react";
+import { ArrowLeft, Clock, Target, Dumbbell, Edit, Copy, Activity, RotateCw, ChevronDown, Camera } from "lucide-react";
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import SortableExerciseRow from "@/components/workouts/SortableExerciseRow";
 import { getTodayString } from "@/utils/dateUtils";
 import { toast } from "sonner";
 import { calculateDailyTargets, transferProgressionState } from "@/utils/programProgression";
-import { checkRecoveryWindow, getWorkoutMuscleGroups } from "@/utils/fatigueManagement";
 import { getTodayProgramWorkout } from "@/utils/programSchedule";
 import { getWorkoutBodyData } from "@/utils/muscleVolumeUtils";
 import MuscleHeatMap from "@/components/MuscleHeatMap";
@@ -35,7 +34,7 @@ import { getLastExercisePerformance, getExerciseE1rmHistory } from "@/utils/exer
 import { isWarmupSet, baseType } from "@/utils/setTypes";
 import { buildLoadWhy } from "@/utils/loadRationale";
 import { currentE1rm, loadForTarget } from "@/utils/e1rm";
-import { blockProgressionWeight, exerciseProgressionWeight } from "@/utils/progressionRules";
+import { blockProgressionWeight, exerciseProgressionWeight, doubleSeed } from "@/utils/progressionRules";
 import { applyEquipmentProfile, applyEquipmentProfileToWorkout, substituteFor } from "@/utils/equipmentProfile";
 import EquipmentProfileToggle from "@/components/workouts/EquipmentProfileToggle";
 import OverrideProgramWorkout from "@/components/workouts/OverrideProgramWorkout";
@@ -157,7 +156,6 @@ export default function WorkoutDetail() {
   const [postWorkoutNotes, setPostWorkoutNotes] = useState("");
   const [showPostWorkoutDialog, setShowPostWorkoutDialog] = useState(false);
   const [startTime, setStartTime] = useState(null);
-  const [recoveryWarnings, setRecoveryWarnings] = useState([]);
   const [restTimer, setRestTimer] = useState(null); // seconds remaining for rest (display only)
   const [restDuration, setRestDuration] = useState(90); // default rest duration
   const [muscleView, setMuscleView] = useState("anterior");
@@ -599,20 +597,6 @@ export default function WorkoutDetail() {
     return map;
   }, [isProgramSource, programWorkout, enrollment]);
 
-  // Compute recovery warnings as a derived value
-  const computedRecoveryWarnings = useMemo(() => {
-    if (isProgramSource && programWorkout?.exercises && enrollment) {
-      const muscleGroups = getWorkoutMuscleGroups(programWorkout.exercises);
-      return checkRecoveryWindow(muscleGroups, enrollment.progression_state || {});
-    }
-    return [];
-  }, [isProgramSource, programWorkout, enrollment]);
-
-  // Update recovery warnings when they change
-  useEffect(() => {
-    setRecoveryWarnings(computedRecoveryWarnings);
-  }, [computedRecoveryWarnings]);
-
   // Initialize exercise logs when workout loads or logging mode starts
   useEffect(() => {
     // Program-mode seeding needs today's engine loads to be in hand before it
@@ -703,6 +687,9 @@ export default function WorkoutDetail() {
           const e1 = currentE1rm(allWorkoutLogs, ex.name, { components: ex.components || [], anchor: ex.e1rm_anchor });
           const e1Load = (reps, rir) => loadForTarget(e1, reps, parseRirTarget(rir), loadStep);
           const targetReps = parseRepTarget(ex.rep_target);
+          // Double progression: prefill per-set rep targets (last reps + 1, or lo after a weight jump).
+          const dSeed = !ex.set_scheme && ex.progression?.type === 'double'
+            ? doubleSeed(allWorkoutLogs, ex) : null;
           const scaledWeight = lastPerf?.lastWeight && lastPerf?.lastReps
             ? scaleWeightToReps(lastPerf.lastWeight, lastPerf.lastReps, targetReps)
             : lastPerf?.lastWeight || 0;
@@ -739,7 +726,7 @@ export default function WorkoutDetail() {
             // All sets default to working type at working weight
             : Array.from({ length: numSets }, (_, setIndex) => ({
                 set_number: setIndex + 1,
-                reps: targetReps,
+                reps: dSeed?.reps[setIndex] ?? targetReps,
                 weight: exerciseProgressionWeight(allWorkoutLogs, ex)
                   || e1Load(targetReps, ex.rir_target) || targets?.workingWeight || scaledWeight,
                 completed: false,
@@ -1126,6 +1113,9 @@ export default function WorkoutDetail() {
           ? scaleWeightToReps(lastPerf.lastWeight, lastPerf.lastReps, newReps)
           : lastPerf?.lastWeight || 0);
 
+      const swapSeed = newExercise.progression?.type === 'double'
+        ? doubleSeed(allWorkoutLogs, newExercise) : null;
+
       // Carry forward already-completed sets exactly as logged so a mid-exercise
       // swap never discards finished work; only the remaining (uncompleted) sets
       // adopt the replacement's seed load/reps.
@@ -1142,7 +1132,7 @@ export default function WorkoutDetail() {
           : {
               ...s,
               set_number: i + 1,
-              reps: newReps,
+              reps: swapSeed?.reps[i] ?? newReps,
               weight: seedWeight,
               completed: false,
               rpe: null,
@@ -1695,23 +1685,6 @@ export default function WorkoutDetail() {
         {isLogging ? (
           // Logging Mode - Show editable exercise logs
           <div className="space-y-6">
-            {/* Recovery warnings (program mode) */}
-            {recoveryWarnings.length > 0 && (
-              <div className="glass px-4 py-3">
-                <div className="flex items-start gap-2.5">
-                  <i className="w-[26px] h-[26px] rounded-sm bg-warn/[0.15] text-warn flex items-center justify-center flex-shrink-0 not-italic">
-                    <AlertTriangle className="w-3.5 h-3.5" />
-                  </i>
-                  <div className="pt-0.5">
-                    <p className="text-[12px] font-bold text-warn">Recovery Advisory</p>
-                    {recoveryWarnings.map((w, i) => (
-                      <p key={i} className="text-xs font-semibold text-ink-muted leading-relaxed mt-1">{w.message}</p>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Zero-exercise fallback: with no exercises there's no focused
                 card, so its kebab (the only other place "Cancel workout"
                 lives after Phase A removed the header's own kebab) never

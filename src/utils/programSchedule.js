@@ -121,6 +121,9 @@ export function getProgramSchedule(enrollment, workouts, timezone) {
       date,
       title: activeWorkout.title,
       programWorkoutId: activeWorkout.id,
+      // Set only on MPC-written rows. The daily engine resolves its plan by
+      // scheduled_date, so a cycle-template day (none) is one it never saw.
+      scheduledDate: activeWorkout.scheduled_date || null,
       enrollmentId: enrollment.id,
       cycle,
       dayIndex,

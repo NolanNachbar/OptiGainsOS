@@ -14,6 +14,13 @@ import { getTodayString } from '../src/utils/dateUtils.js';
 const CASE = '3fuel-recent-toggle';
 const FOOD_NAME = `OVN-${CASE} turkey wrap`;
 
+// Mirrors FoodTracker getDefaultMealType: a re-log for today lands in the meal
+// the browser clock says it is (7c79822d), not the seed's meal.
+const clockMeal = (page) => page.evaluate(() => {
+  const h = new Date().getHours();
+  return h < 10 ? 'breakfast' : h < 14 ? 'lunch' : h < 17 ? 'snack' : 'dinner';
+});
+
 async function cleanup(uid, db) {
   await db.from('food_entries').delete().eq('created_by', uid).ilike('food_name', `%${FOOD_NAME}%`);
 }
@@ -67,9 +74,10 @@ test('Fuel: the Recent rail re-logs with one tap, and Consumed/Remaining toggles
     for (const row of rows) {
       expect(row.calories).toBe(480);
       expect(row.protein_grams).toBe(38);
-      expect(row.meal_type).toBe('lunch');
       expect(row.date).toBe(today);
     }
+    // The seed stays lunch; the re-log follows the clock.
+    expect(rows.map((r) => r.meal_type).sort()).toEqual(['lunch', await clockMeal(page)].sort());
 
     // Consumed/Remaining toggle on the Intake vs pace module: "Remaining" is
     // the default and reads "N left"/"N over"; switching to "Consumed" reads
