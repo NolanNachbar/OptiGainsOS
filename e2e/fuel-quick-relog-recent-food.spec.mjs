@@ -10,6 +10,13 @@ import { getTodayString } from '../src/utils/dateUtils.js';
 const CASE = '3b-relog';
 const FOOD_NAME = `OVN-${CASE} chicken bowl`;
 
+// Mirrors FoodTracker getDefaultMealType: a re-log for today lands in the meal
+// the browser clock says it is (7c79822d), not the seed's meal.
+const clockMeal = (page) => page.evaluate(() => {
+  const h = new Date().getHours();
+  return h < 10 ? 'breakfast' : h < 14 ? 'lunch' : h < 17 ? 'snack' : 'dinner';
+});
+
 async function cleanup(uid, db) {
   await db.from('food_entries').delete().eq('created_by', uid).ilike('food_name', `%${FOOD_NAME}%`);
 }
@@ -65,10 +72,11 @@ test('tapping + on a Recent food re-logs it with its last portion', async ({ pag
       expect(row.protein_grams).toBe(45);
       expect(row.carbs_grams).toBe(50);
       expect(row.fats_grams).toBe(12);
-      expect(row.meal_type).toBe('lunch');
       expect(row.date).toBe(today);
       expect(row.serving_grams).toBe(350);
     }
+    // The seed stays lunch; the re-log follows the clock.
+    expect(rows.map((r) => r.meal_type).sort()).toEqual(['lunch', await clockMeal(page)].sort());
   } finally {
     await cleanup(uid, db);
   }

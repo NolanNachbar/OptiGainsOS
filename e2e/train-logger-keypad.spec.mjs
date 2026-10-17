@@ -82,6 +82,8 @@ test('a full set logged entirely through the keypad sheet saves weight, reps and
 
     // Sheet closes...
     await expect(sheet).not.toBeVisible();
+    // Completing the only set asks "Finish workout?"; keep going.
+    await page.getByRole('button', { name: 'Not yet' }).click();
     // ...and the set completed through the real path: the checkbox flips
     // and the rest timer -- which only handleSetCompleted starts -- shows a
     // countdown, not the idle label.
@@ -99,6 +101,7 @@ test('a full set logged entirely through the keypad sheet saves weight, reps and
     // prompt instead of going straight to Log Workout.
     await page.getByRole('checkbox', { name: /Mark set 2/ }).click();
     await expect(page.getByRole('checkbox', { name: 'Mark set 2 incomplete' })).toBeVisible();
+    await page.getByRole('button', { name: 'Not yet' }).click();
 
     await page.getByRole('button', { name: 'Finish', exact: true }).click();
     await page.getByRole('button', { name: 'Log Workout' }).click();

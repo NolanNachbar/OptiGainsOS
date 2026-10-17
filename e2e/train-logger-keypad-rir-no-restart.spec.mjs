@@ -76,6 +76,8 @@ test('reopening RIR on an already-completed set via the keypad does not restart 
     await sheet.getByRole('button', { name: 'RIR 2' }).click();
     await sheet.getByRole('button', { name: 'Done, mark set complete' }).click();
     await expect(sheet).not.toBeVisible();
+    // Completing the only set asks "Finish workout?"; keep going.
+    await page.getByRole('button', { name: 'Not yet' }).click();
 
     const restLabel = page.getByLabel(/Rest, .* remaining/);
     await expect(restLabel).toBeVisible({ timeout: 3000 });

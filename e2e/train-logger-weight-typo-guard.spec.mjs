@@ -43,7 +43,8 @@ test.describe('weight typo guard', () => {
     // lastWeight=80 for this uniquely-named exercise.
     // A run that died before its cleanup leaves this exact seed behind, and the
     // no-exact-dupes constraint would then reject the insert.
-    const { data: stale } = await db.from('workout_logs').select('id, exercises').eq('created_by', uid).eq('log_date', '2026-09-01');
+    // Any date: the accepted 1710 log from a dead run would also become "last time".
+    const { data: stale } = await db.from('workout_logs').select('id, exercises').eq('created_by', uid);
     const staleIds = (stale || []).filter((l) => (l.exercises || []).some((e) => e?.name === EXERCISE)).map((l) => l.id);
     if (staleIds.length) await db.from('workout_logs').delete().in('id', staleIds);
     const priorLog = await db.from('workout_logs').insert({
@@ -93,6 +94,9 @@ test.describe('weight typo guard', () => {
       await page.waitForTimeout(300);
       await expect(page.getByRole('checkbox', { name: 'Mark set 1 incomplete' })).toBeVisible();
 
+      // Completing the only set asks "Finish workout?"; keep going.
+      await page.getByRole('button', { name: 'Not yet' }).click();
+
       // Once confirmed, a later set at the same weight must not nag again.
       await page.getByRole('button', { name: 'Add Set' }).first().click();
       await setNumberField(page, page.getByLabel(/Set 2 weight in/).first(), '1710');
@@ -105,6 +109,7 @@ test.describe('weight typo guard', () => {
       page.off('dialog', onDialog);
       expect(secondDialog).toBeNull();
       await expect(page.getByRole('checkbox', { name: 'Mark set 2 incomplete' })).toBeVisible();
+      await page.getByRole('button', { name: 'Not yet' }).click();
 
       await page.getByRole('button', { name: 'Finish', exact: true }).click();
       await page.getByRole('button', { name: 'Log Workout' }).click();
