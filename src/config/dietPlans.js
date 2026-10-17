@@ -3,7 +3,8 @@
 // The engine (useDailyTargets) decides WHAT the day should be — calories,
 // protein anchor, fat floor. This module decides the CHEAPEST way to get there
 // from Nolan's food list (per-100g macros + Walmart GV purchase pricing from
-// his spreadsheet, 2026-06). Pipeline per day:
+// his spreadsheet, 2026-06; egg whites, chicken, potatoes and whey re-priced from
+// store sites 2026-10-17, see grocery_prices). Pipeline per day:
 //
 //   optimizeDay()  — greedy cheapest-first fill: protein $/g → fat $/g → kcal $/cal,
 //                    inside per-food palatability bounds ("not too crazy" knobs)
@@ -48,7 +49,7 @@ export const FOOD_CATALOG = [
   { food: "Rice Bar",              per100g: { cal: 409, p: 4.5,  c: 77.3, f: 11.4 }, role: "carb",    meal: "breakfast", timing: "pre",     min: 0,  max: 44,  minServe: 22, step: 22,  purchase: { label: "8-count box",    gramsPerUnit: 176,  price: 2.78 } },
   { food: "Oats (Dry)",            per100g: { cal: 375, p: 12.5, c: 67.5, f: 6.3 },  role: "carb",    meal: "breakfast", timing: "post",    min: 0,  max: 120, minServe: 40,            purchase: { label: "42 oz",          gramsPerUnit: 1191, price: 4.18 } },
   { food: "Eggs",                  per100g: { cal: 140, p: 12.0, c: 0.0,  f: 10.0 }, role: "protein", meal: "breakfast", timing: "post",    min: 0,  max: 150, minServe: 50, step: 50,  purchase: { label: "60-count",       gramsPerUnit: 3000, price: 7.13 } },
-  { food: "Egg Whites",            per100g: { cal: 44,  p: 10.0, c: 0.0,  f: 0.0 },  role: "protein", meal: "breakfast", timing: "post",    min: 0,  max: 300, minServe: 50,            purchase: { label: "32 oz carton",   gramsPerUnit: 907,  price: 6.17 } },
+  { food: "Egg Whites",            per100g: { cal: 44,  p: 10.0, c: 0.0,  f: 0.0 },  role: "protein", meal: "breakfast", timing: "post",    min: 0,  max: 300, minServe: 50,            purchase: { label: "32 oz carton",   gramsPerUnit: 907,  price: 4.87 } },
   // max capped 60->40: at 60g PB alone carried 32g fat, blowing well past the 64g
   // fat floor and dragging total calories up with it. 40g still clears the floor
   // once combined with eggs/cottage cheese, with less of the overshoot.
@@ -58,7 +59,7 @@ export const FOOD_CATALOG = [
   // not the ~75% most databases assume. 1 lb raw (453 g) → 247 g cooked. Protein is
   // conserved through cooking, so the same 88.8 g lands in less mass: 35.9 p per 100 g.
   // The old row had RAW macros against a cooked weight and under-logged him by 1.37x.
-  { food: "Chicken Breast",        per100g: { cal: 188, p: 35.9, c: 0.0,  f: 4.9 },  role: "protein", meal: "lunch",     timing: "anytime", min: 0,  max: 400, minServe: 100,           purchase: { label: "lb",             gramsPerUnit: 247,  price: 2.48 } },
+  { food: "Chicken Breast",        per100g: { cal: 188, p: 35.9, c: 0.0,  f: 4.9 },  role: "protein", meal: "lunch",     timing: "anytime", min: 0,  max: 400, minServe: 100,           purchase: { label: "lb",             gramsPerUnit: 247,  price: 2.23 } },
   { food: "Turkey 90/10",          per100g: { cal: 202, p: 23.4, c: 0.0,  f: 10.7 }, role: "protein", meal: "lunch",     timing: "anytime", min: 0,  max: 250, minServe: 100,           purchase: { label: "1 lb roll",      gramsPerUnit: 341,  price: 4.94 } },
   // Cheapest protein Nolan can buy ($0.025/g P, undercutting chicken). Cooked macros
   // at an ASSUMED 65% yield — his chicken runs 54.5%, well under textbook, so this is
@@ -69,7 +70,7 @@ export const FOOD_CATALOG = [
   { food: "Beef 85/15",            per100g: { cal: 289, p: 25.0, c: 0.0,  f: 20.2 }, role: "protein", meal: "dinner",    timing: "anytime", min: 0,  max: 250, minServe: 100,           purchase: { label: "3 lb patties",   gramsPerUnit: 1021, price: 15.96 } },
   { food: "Tilapia",               per100g: { cal: 107, p: 20.2, c: 0.0,  f: 1.8 },  role: "protein", meal: "dinner",    timing: "anytime", min: 0,  max: 250, minServe: 100,           purchase: { label: "4 lb bag",       gramsPerUnit: 1360, price: 15.72 } },
   { food: "Salmon",                per100g: { cal: 155, p: 23.4, c: 0.0,  f: 6.0 },  role: "protein", meal: "dinner",    timing: "anytime", min: 0,  max: 250, minServe: 100,           purchase: { label: "2 lb frozen",    gramsPerUnit: 680,  price: 10.87 } },
-  { food: "Potatoes",              per100g: { cal: 77,  p: 2.0,  c: 17.0, f: 0.0 },  role: "carb",    meal: "dinner",    timing: "anytime", min: 0,  max: 400, minServe: 150,           purchase: { label: "5 lb bag",       gramsPerUnit: 2268, price: 2.94 } },
+  { food: "Potatoes",              per100g: { cal: 77,  p: 2.0,  c: 17.0, f: 0.0 },  role: "carb",    meal: "dinner",    timing: "anytime", min: 0,  max: 400, minServe: 150,           purchase: { label: "5 lb bag",       gramsPerUnit: 2268, price: 2.86 } },
   // Creami minServe is raised to 250 g (not the usual "real serving" size) so
   // that whenever the optimizer includes it, there's enough for an actual Ninja
   // Creami batch — water fills the rest of the ~470 g tub, uncounted/free.
@@ -89,7 +90,7 @@ export const FIXED_ITEMS = [
     food: "Gold Standard 100% Whey (Milk Chocolate)",
     grams: 31, per100g: { cal: 387, p: 77.4, c: 9.7, f: 4.8 },
     role: "protein", meal: "breakfast", timing: "post", creami: true,
-    purchase: { label: "5 lb bag", gramsPerUnit: 2270, price: 96.28 },
+    purchase: { label: "5.64 lb tub", gramsPerUnit: 2558, price: 84.98 },
   },
   {
     food: "Nutricost Dextrose",
