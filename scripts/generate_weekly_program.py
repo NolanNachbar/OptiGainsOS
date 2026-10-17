@@ -1069,7 +1069,9 @@ def main():
     # Structured set-level failure tags are higher-confidence than parsed free text —
     # merge them in (overriding the note-derived region) so a tagged bench lockout
     # reliably drives triceps-biased assistance (_pick_assistance / _WEAKNESS_ACCESSORY).
-    _fail_weakness = parse_set_failures(workout_log_rows, today_iso=TODAY.isoformat())["weakness"]
+    _fail = parse_set_failures(workout_log_rows, today_iso=TODAY.isoformat())
+    _fail_weakness = _fail["weakness"]
+    mechanism_flags = _fail["mechanism_flags"]
     for _lift, _w in _fail_weakness.items():
         weakness[_lift] = _w
     if (_sp := format_sticking_summary(_fail_weakness)):
@@ -1570,6 +1572,7 @@ def main():
             exercise_values=exercise_values,
             caution=caution,
             weakness=weakness,
+            mechanism_flags=mechanism_flags,
             blocked_exercises=blocked_ex,
             preferred_exercises=preferred_ex,
             split_override=split,   # honor the convergent split (title + session agree)

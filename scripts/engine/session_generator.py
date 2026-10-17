@@ -33,6 +33,7 @@ from engine.athlete_profile import (apply_philosophy, MUSCLE_EMPHASIS,
                                     MIN_EXERCISES_PER_SESSION,
                                     split_type as _split_type_of)
 from engine.log_ingest import canon
+from engine.mechanism_swaps import apply_mechanism_swaps
 from engine.muscle_map import get_joint_action, _norm as _mm_norm
 
 # How strongly the learned exercise-value posterior (learners.exercise_value) and
@@ -1527,6 +1528,7 @@ def _build_session(
     exercise_values: dict = None,
     caution: dict = None,
     weakness: dict = None,
+    mechanism_flags: dict = None,
     blocked: set = None,
     preferred: set = None,
     joint_action_volume: dict = None,
@@ -2154,6 +2156,15 @@ def _build_session(
             exercises.append(_assistance_slot(acc, weekly_set_targets or {}, intensity, readiness_z))
             _present.add(acc)
 
+    # Recurring failure MECHANISM (unstable / one side lagged / grip) on an exercise
+    # in today's session -> swap it for a variation that removes the cause. Goal
+    # lifts, back-offs and assistance are left alone (engine/mechanism_swaps.py).
+    apply_mechanism_swaps(
+        exercises, mechanism_flags, catalog=_EX_BY_NAME,
+        blocked=lambda n: canon(n) in blocked,
+        build=lambda n: _assistance_slot(n, weekly_set_targets or {}, intensity, readiness_z),
+    )
+
     # Sync chosen_names with all assistance/back-off slots appended above so
     # any future dedup checks (EN-05) see the full picture.
     chosen_names.update(e.get("name") for e in exercises if e.get("name"))
@@ -2424,6 +2435,7 @@ def generate(
     exercise_values: dict = None,
     caution: dict = None,
     weakness: dict = None,
+    mechanism_flags: dict = None,
     blocked_exercises: set = None,
     preferred_exercises: set = None,
     split_override: str = None,
@@ -2493,6 +2505,7 @@ def generate(
         exercise_values=exercise_values,
         caution=caution,
         weakness=weakness,
+        mechanism_flags=mechanism_flags,
         blocked=blocked_exercises,
         preferred=preferred_exercises,
         joint_action_volume=joint_action_volume,
@@ -2648,6 +2661,7 @@ class SessionGenerator:
         exercise_values: dict = None,
         caution: dict = None,
         weakness: dict = None,
+        mechanism_flags: dict = None,
         blocked_exercises: set = None,
         preferred_exercises: set = None,
         split_override: str = None,
@@ -2728,6 +2742,7 @@ class SessionGenerator:
             exercise_values=exercise_values,
             caution=caution,
             weakness=weakness,
+            mechanism_flags=mechanism_flags,
             blocked_exercises=blocked_exercises,
             preferred_exercises=preferred_exercises,
             split_override=resolved_split,

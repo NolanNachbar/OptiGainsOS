@@ -698,7 +698,9 @@ def main():
     _caution = _notes["caution"]
     _weakness = dict(_notes["weakness"])   # sticking points → aim assistance
     # Structured set-level failure tags (higher confidence than parsed text) override.
-    _fail_weakness = parse_set_failures(workout_log_rows, today_iso=str(TODAY))["weakness"]
+    _fail = parse_set_failures(workout_log_rows, today_iso=str(TODAY))
+    _fail_weakness = _fail["weakness"]
+    _mechanism_flags = _fail["mechanism_flags"]
     for _lift, _w in _fail_weakness.items():
         _weakness[_lift] = _w
     if (_sp := format_sticking_summary(_fail_weakness)):
@@ -819,6 +821,7 @@ def main():
         exercise_values = _exercise_values,
         caution = _caution,
         weakness = _weakness,
+        mechanism_flags = _mechanism_flags,
         blocked_exercises = _blocked_ex,
         preferred_exercises = _preferred_ex,
         split_override = _today_split,
