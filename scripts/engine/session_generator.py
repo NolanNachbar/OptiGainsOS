@@ -34,6 +34,7 @@ from engine.athlete_profile import (apply_philosophy, MUSCLE_EMPHASIS,
                                     split_type as _split_type_of)
 from engine.log_ingest import canon
 from engine.mechanism_swaps import apply_mechanism_swaps
+from engine.hypertrophy_block import build_block_session
 from engine.muscle_map import get_joint_action, _norm as _mm_norm
 
 # How strongly the learned exercise-value posterior (learners.exercise_value) and
@@ -275,6 +276,11 @@ EXERCISES = [
      "fatigue_cost": 1.0, "muscles": ["upper_chest"],
      "sets": 2, "rep_target": "10-12","rir_target": 1, "rest_seconds": 45,
      "notes": "Low pulley, sweep up and in — upper-chest line of pull."},
+    {"name": "Cable Fly",            "pattern": "isolation_upper", "type": "ISOLATION",
+     "fatigue_cost": 1.0, "muscles": ["chest"],
+     "sets": 2, "rep_target": "10-12","rir_target": 0, "rest_seconds": 60,
+     "notes": "Mid-height pulleys, arms nearly straight, sweep in and slightly down. "
+              "Hold the stretch for a beat; stop where tension drops."},
 
     # ── Vertical push (accessory) ──────────────────────────────────────────
     {"name": "Overhead Press (BB)",   "pattern": "vertical_push", "type": "COMPOUND_AXIAL",
@@ -1529,6 +1535,7 @@ def _build_session(
     caution: dict = None,
     weakness: dict = None,
     mechanism_flags: dict = None,
+    block: str = None,
     blocked: set = None,
     preferred: set = None,
     joint_action_volume: dict = None,
@@ -1554,6 +1561,17 @@ def _build_session(
     blocked   = blocked or set()
     preferred = preferred or set()
     joint_action_volume = joint_action_volume or {}
+    # A named training block replaces the knapsack with fixed templates for the splits
+    # it defines (hypertrophy_block.py). Other splits fall through unchanged.
+    _block_rows = build_block_session(
+        block, split, intensity, catalog=_EX_BY_NAME, scale=_scale,
+        blocked=lambda n: canon(n) in blocked, readiness_z=readiness_z)
+    if _block_rows is not None:
+        apply_mechanism_swaps(
+            _block_rows, mechanism_flags, catalog=_EX_BY_NAME,
+            blocked=lambda n: canon(n) in blocked,
+            build=lambda n: _assistance_slot(n, weekly_set_targets or {}, intensity, readiness_z))
+        return _block_rows
     def _allowed(names):
         return [n for n in names if canon(n) not in blocked]
     split_map = {
@@ -2436,6 +2454,7 @@ def generate(
     caution: dict = None,
     weakness: dict = None,
     mechanism_flags: dict = None,
+    block: str = None,
     blocked_exercises: set = None,
     preferred_exercises: set = None,
     split_override: str = None,
@@ -2506,6 +2525,7 @@ def generate(
         caution=caution,
         weakness=weakness,
         mechanism_flags=mechanism_flags,
+        block=block,
         blocked=blocked_exercises,
         preferred=preferred_exercises,
         joint_action_volume=joint_action_volume,
@@ -2662,6 +2682,7 @@ class SessionGenerator:
         caution: dict = None,
         weakness: dict = None,
         mechanism_flags: dict = None,
+        block: str = None,
         blocked_exercises: set = None,
         preferred_exercises: set = None,
         split_override: str = None,
@@ -2743,6 +2764,7 @@ class SessionGenerator:
             caution=caution,
             weakness=weakness,
             mechanism_flags=mechanism_flags,
+            block=block,
             blocked_exercises=blocked_exercises,
             preferred_exercises=preferred_exercises,
             split_override=resolved_split,

@@ -71,6 +71,7 @@ from engine.strength_progression import StrengthProgressionRegistry, compute_tre
 from engine.log_ingest           import normalize_workout_logs, populate_registry, GOAL_LIFTS, canon
 from engine.notes_parser         import parse_workout_notes
 from engine.failure_reasons       import parse_set_failures, format_sticking_summary
+from engine.hypertrophy_block     import load_active_block
 from engine.deviation_tracker    import track_deviations
 from engine.learners             import update_exercise_value, exercise_reward, update_session_size
 from engine.muscle_map           import hypertrophy_muscles, soreness_by_muscle
@@ -1573,6 +1574,7 @@ def main():
             caution=caution,
             weakness=weakness,
             mechanism_flags=mechanism_flags,
+            block=load_active_block(),
             blocked_exercises=blocked_ex,
             preferred_exercises=preferred_ex,
             split_override=split,   # honor the convergent split (title + session agree)

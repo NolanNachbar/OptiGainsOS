@@ -115,6 +115,7 @@ _REQUIRES = {
     "Cable Lateral Raise":          {CABLE},
     "Face Pull":                    {CABLE},
     "Low-to-High Cable Fly":        {CABLE},
+    "Cable Fly":                    {CABLE},
 
     # ── Free-weight isolation ─────────────────────────────────────────
     "Triceps OH Extension":         {DUMBBELLS},
@@ -213,6 +214,7 @@ _SUBSTITUTES = {
     "Cable Lateral Raise": ["Lateral Raise"],
     "Face Pull":           ["Rear Delt Fly"],
     "Low-to-High Cable Fly": ["Incline DB Press", "Incline Dumbbell Flyes"],
+    "Cable Fly":           ["DB Bench Press", "Push-ups"],
 
     # No dip station.
     "Weighted Dip": ["DB Bench Press", "Bench Press (Back-off Vol)"],

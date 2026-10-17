@@ -694,6 +694,7 @@ def main():
     # from the posterior the weekly run maintains.
     from engine.notes_parser import parse_workout_notes
     from engine.failure_reasons import parse_set_failures, format_sticking_summary
+    from engine.hypertrophy_block import load_active_block
     _notes = parse_workout_notes(workout_log_rows, today_iso=TODAY)
     _caution = _notes["caution"]
     _weakness = dict(_notes["weakness"])   # sticking points → aim assistance
@@ -822,6 +823,7 @@ def main():
         caution = _caution,
         weakness = _weakness,
         mechanism_flags = _mechanism_flags,
+        block = load_active_block(),
         blocked_exercises = _blocked_ex,
         preferred_exercises = _preferred_ex,
         split_override = _today_split,

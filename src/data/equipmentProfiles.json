@@ -153,6 +153,7 @@
     "cable crunch": "Cable Crunch",
     "cable deadlift": "Cable Deadlift",
     "cable deadlifts": "Cable Deadlift",
+    "cable fly": "Cable Fly",
     "cable hammer curls - rope attachment": "Cable Hammer Curls - Rope Attachment",
     "cable hip adduction": "Cable Hip Adduction",
     "cable incline pushdown": "Cable Incline Pushdown",
@@ -1185,6 +1186,10 @@
         "Low-To-High Cable Fly": [
           "Incline DB Press",
           "Incline Dumbbell Flyes"
+        ],
+        "Cable Fly": [
+          "DB Bench Press",
+          "Push-ups"
         ],
         "Overhead Press (Barbell)": [
           "Seated DB Overhead Press",
