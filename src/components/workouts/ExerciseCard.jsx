@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { Fragment, useState, useRef, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -358,8 +358,22 @@ export default function ExerciseCard({
   const [whyOpen, setWhyOpen] = useState(false);
   const handleSetCompleted = (setIndex, completed) => {
     const target = exercise.sets[setIndex];
+    // Completing a set without touching RIR means "it went as prescribed": record
+    // the prescribed RIR instead of making the athlete type it. Flagged
+    // rir_assumed so the log can tell a confirmed number from a defaulted one; any
+    // edit through handleRirChange clears the flag. A range ("1-2") takes its first
+    // value. With no prescription there is nothing to assume, so the top-set gate
+    // below still applies.
+    const assumedRir = completed && showRIR && target.rir == null && target.rpe == null
+      ? parseFloat(target.rir_target ?? exercise.prescribed?.rir ?? programExercise?.rir_target)
+      : NaN;
+    if (Number.isFinite(assumedRir)) {
+      onUpdateSet(exerciseIndex, setIndex, 'rir', assumedRir);
+      onUpdateSet(exerciseIndex, setIndex, 'rir_assumed', true);
+    }
     if (
       completed && showRIR && baseType(target) === 'top_set'
+      && !Number.isFinite(assumedRir)
       && target.rir == null && target.rpe == null
     ) {
       setRirRequiredIndex(setIndex);
@@ -406,7 +420,7 @@ export default function ExerciseCard({
     // Evaluate performance if RIR is logged
     if (completed) {
       const set = exercise.sets[setIndex];
-      const rir = set.rir ?? set.rpe;
+      const rir = set.rir ?? set.rpe ?? (Number.isFinite(assumedRir) ? assumedRir : undefined);
 
       // Program mode nudge
       if (rir != null && programExercise && progressionTargets) {
@@ -444,6 +458,7 @@ export default function ExerciseCard({
   const handleRirChange = (setIndex, rir) => {
     if (rir != null) setRirRequiredIndex((cur) => (cur === setIndex ? null : cur));
     onUpdateSet(exerciseIndex, setIndex, 'rir', rir);
+    if (exercise.sets[setIndex]?.rir_assumed) onUpdateSet(exerciseIndex, setIndex, 'rir_assumed', false);
 
     const set = exercise.sets[setIndex];
 
@@ -1167,7 +1182,7 @@ export default function ExerciseCard({
                   min="0"
                   max="10"
                   step="0.5"
-                  className={rirCell(set.rir != null ? set.rir : (set.rpe != null ? 10 - set.rpe : null))}
+                  className={`${rirCell(set.rir != null ? set.rir : (set.rpe != null ? 10 - set.rpe : null))}${set.rir_assumed ? ' opacity-60' : ''}`}
                 />
               )}
               <button
@@ -1243,11 +1258,16 @@ export default function ExerciseCard({
                   <AlertTriangle className="w-3 h-3" />
                   {tagField === 'failure_reason' ? 'Missed, why?' : 'Where did it stall?'}
                 </span>
-                {reasonKeys.map((rk) => {
+                {reasonKeys.map((rk, ri) => {
                   const sel = set[tagField] === rk;
+                  // Lift-specific keys (where on the bar path) come first; the first
+                  // universal key (how it failed) starts a second row.
+                  const startsHow = !FAILURE_REASONS[rk]?.lifts && ri > 0
+                    && !!FAILURE_REASONS[reasonKeys[ri - 1]]?.lifts;
                   return (
+                    <Fragment key={rk}>
+                    {startsHow && <span className="basis-full h-0" aria-hidden="true" />}
                     <button
-                      key={rk}
                       type="button"
                       onClick={() => onUpdateSet(exerciseIndex, setIndex, tagField, sel ? null : rk)}
                       className={`text-[11px] font-semibold rounded-full px-2.5 py-1 border transition-colors ${
@@ -1258,6 +1278,7 @@ export default function ExerciseCard({
                     >
                       {FAILURE_REASONS[rk]?.label || rk}
                     </button>
+                    </Fragment>
                   );
                 })}
                 {/* Free text on "Other": let the athlete type WHY when no bucket fits. */}
