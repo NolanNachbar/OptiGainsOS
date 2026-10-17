@@ -290,7 +290,15 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
   // prescription has no row for falls back to the plan's own rep/RIR targets
   // with no load. Today and the Train tab therefore render the same list the
   // moment a plan changes, not a compute cycle later.
-  const engineByName = new Map((p.strength_block || []).map((ex) => [ex.name, ex]));
+  // The daily engine finds today's plan by scheduled_date only. A cycle-template
+  // program day (day_index, no date) never reaches it, so its prescription is a
+  // session built without the plan: different lifts, unrelated loads. Same rule
+  // the logger applies (WorkoutDetail isTodaysProgramWorkout): only a dated plan
+  // row lets the engine layer touch the session; otherwise the plan is the day.
+  const engineOwnsDay = !programWorkout || !!programWorkout.scheduledDate;
+  const engineByName = engineOwnsDay
+    ? new Map((p.strength_block || []).map((ex) => [ex.name, ex]))
+    : new Map();
   // The join above only holds while the engine pinned today to the plan. When it
   // didn't — the plan was written for a full gym and today's equipment_profile
   // blocks part of it — the engine RE-PLANS the day and substitutes (Zercher
@@ -301,7 +309,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
   // it (session_generator.generate). Older rows predate the field and keep the
   // join, which is what they were computed for.
   const engineReplanned = p.plan_pinned === false && engineByName.size > 0;
-  const planned = (action === "REST" || engineReplanned ? [] : (programWorkout?.exercises || []))
+  const planned = (engineOwnsDay && (action === "REST" || engineReplanned) ? [] : (programWorkout?.exercises || []))
     .filter((e) => (e.sets || 0) > 0)
     .filter((e) => engineByName.size === 0 || engineByName.has(e.name));
   const strength = planned.length
@@ -334,12 +342,14 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
   const wPst = haveWeights ? Math.round(Number(prescription.w_pst) * 100) : null;
   const wStr = haveWeights ? 100 - wPst : null;
 
-  const titleText = action === "REST"
+  const titleText = !engineOwnsDay && planned.length
+    ? (programWorkout.name || "Workout")
+    : action === "REST"
     ? "Rest Day"
     : `${ACTION_LABEL[action] || titleCase(action)}${p.split ? `, ${titleCase(p.split)}` : ""}`;
 
   const calItems = Object.entries(cal).filter(([, v]) => v && (v.sets || v.reps_each));
-  const isRest = action === "REST";
+  const isRest = action === "REST" && !(planned.length && !engineOwnsDay);
 
   // Carry the engine's prescribed lifts (load/reps/RIR) into the logger.
   const prescribedExercises = strength.map((ex) => ({

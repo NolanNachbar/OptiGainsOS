@@ -313,7 +313,7 @@ export default function Today() {
       // falls back to "Workout" when it's missing, which is wrong whenever the
       // day's program workout actually has a title.
       ? { programWorkoutId: entry.programWorkoutId, enrollmentId: entry.enrollmentId,
-          name: entry.title, exercises: entry.exercises || [] }
+          name: entry.title, exercises: entry.exercises || [], scheduledDate: entry.scheduledDate }
       : null;
   }, [activeEnrollment, profile?.timezone]);
 
