@@ -1,0 +1,13 @@
+[
+  { "goto": "/create-workout" },
+  { "wait": 3500 },
+  { "tapText": "Workout Title *" },
+  { "wait": 500 },
+  { "type": "Edge Test A" },
+  { "hideKeyboard": true },
+  { "wait": 500 },
+  { "btn": "Toggle options#2" },
+  { "wait": 1000 },
+  { "shot": "exercise-picker-open" },
+  { "dump": "exercise-picker-open" }
+]

@@ -1,0 +1,20 @@
+[
+  {"goto": "/"},
+  {"wait": 2500},
+  {"login": true},
+  {"goto": "/fuel"},
+  {"wait": 3500},
+  {"btn": "Search food"},
+  {"wait": 1500},
+  {"done": 1},
+  {"scroll": "up"}, {"scroll": "up"}, {"scroll": "up"},
+  {"wait": 500},
+  {"tapText": "Can't find it? Describe it"},
+  {"typeSoft": "8 oz grilled chicken breast"},
+  {"shot": "describe-typed"},
+  {"done": 1},
+  {"btn": "Estimate"},
+  {"wait": 6000},
+  {"shot": "describe-result"},
+  {"dump": "describe-result"}
+]

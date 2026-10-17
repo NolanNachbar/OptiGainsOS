@@ -1,0 +1,2 @@
+[{"goto": "/"}, {"wait": 2500}, {"login": true}, {"goto": "/quick-workout"}, {"wait": 3500},
+ {"tapText": "Mark set 1 complete"}, {"wait": 700}, {"shot": "reps-guard-toast"}, {"dump": "reps-guard-toast"}]

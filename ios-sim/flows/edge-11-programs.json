@@ -1,0 +1,14 @@
+[
+  { "goto": "/train?tab=programs" },
+  { "wait": 3500 },
+  { "shot": "programs" },
+  { "dump": "programs" },
+  { "goto": "/train?tab=library" },
+  { "wait": 3000 },
+  { "shot": "library" },
+  { "dump": "library" },
+  { "goto": "/train?tab=activity-log" },
+  { "wait": 3000 },
+  { "shot": "activity" },
+  { "dump": "activity" }
+]

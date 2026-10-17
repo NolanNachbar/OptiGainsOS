@@ -1,0 +1,13 @@
+[
+  { "goto": "/fuel" },
+  { "wait": 4000 },
+  { "btn": "Log Chicken Breast again" },
+  { "wait": 1500 },
+  { "shot": "after-one-tap-log" },
+  { "dump": "after-one-tap-log" },
+  { "btn": "Log Chicken Breast again" },
+  { "btn": "Log Chicken Breast again" },
+  { "wait": 1500 },
+  { "shot": "after-rapid-triple" },
+  { "dump": "after-rapid-triple" }
+]

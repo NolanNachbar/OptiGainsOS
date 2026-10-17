@@ -1,0 +1,11 @@
+[
+  {"goto": "/"},
+  {"wait": 2000},
+  {"login": true},
+  {"wait": 2500},
+  {"shot": "today"},
+  {"goto": "/fuel"},
+  {"wait": 2500},
+  {"shot": "fuel"},
+  {"dump": "fuel"}
+]

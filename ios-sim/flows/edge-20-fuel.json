@@ -1,0 +1,10 @@
+[
+  { "goto": "/fuel" },
+  { "wait": 4000 },
+  { "shot": "fuel-top" },
+  { "dump": "fuel-top" },
+  { "goto": "/food-tracker" },
+  { "wait": 3500 },
+  { "shot": "food-tracker" },
+  { "dump": "food-tracker" }
+]

@@ -1,0 +1,10 @@
+[
+ {"goto": "/"}, {"wait": 2500}, {"login": true},
+ {"goto": "/fuel"}, {"wait": 3500},
+ {"tapText": "Copy a day"}, {"wait": 1500},
+ {"tapText": "Eggs breakfast"}, {"wait": 500},
+ {"tapText": "Nutricost Dextrose breakfast"}, {"wait": 500},
+ {"shot": "copy-selected"}, {"dump": "copy-selected"},
+ {"tapText": "Copy 2 to"}, {"wait": 2000},
+ {"shot": "copy-done"}, {"dump": "copy-done"}
+]

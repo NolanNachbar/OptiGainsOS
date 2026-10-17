@@ -1,0 +1,10 @@
+[
+ {"goto": "/"}, {"wait": 2500}, {"login": true},
+ {"goto": "/fuel"}, {"wait": 3500},
+ {"scroll": "up"}, {"wait": 400},
+ {"shot": "scrolled"}, {"dump": "scrolled"},
+ {"btn": "Delete entry"}, {"wait": 1500},
+ {"btn": "Delete entry"}, {"wait": 1500},
+ {"btn": "Delete entry"}, {"wait": 1500},
+ {"shot": "after-deletes"}, {"dump": "after-deletes"}
+]

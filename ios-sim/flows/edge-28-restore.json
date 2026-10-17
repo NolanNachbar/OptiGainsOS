@@ -1,0 +1,14 @@
+[
+  { "goto": "/train?tab=programs" },
+  { "wait": 3500 },
+  { "tapText": "Strength + BUD/S Conditioning" },
+  { "wait": 3000 },
+  { "btn": "Manage" },
+  { "wait": 800 },
+  { "btn": "Pause" },
+  { "wait": 1500 },
+  { "shot": "paused-again" },
+  { "goto": "/train?tab=programs" },
+  { "wait": 3500 },
+  { "dump": "programs-restored" }
+]

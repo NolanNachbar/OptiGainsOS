@@ -1,0 +1,7 @@
+[{"goto": "/"}, {"wait": 2500}, {"login": true}, {"goto": "/quick-workout"}, {"wait": 3500},
+ {"tapText": "Set 1 weight in lbs"}, {"wait": 800},
+ {"btn": "Backspace"}, {"btn": "Backspace"}, {"btn": "Backspace"}, {"btn": "Backspace"},
+ {"keys": "320"}, {"btn": "Next field"}, {"wait": 600}, {"keys": "5"}, {"btn": "Next field"}, {"wait": 600},
+ {"btn": "RIR 2"}, {"wait": 500}, {"shot": "rir-picked"},
+ {"btn": "Done, mark set complete"}, {"wait": 1200}, {"alert": 1}, {"wait": 1500},
+ {"shot": "after-done"}, {"dump": "after-done"}]

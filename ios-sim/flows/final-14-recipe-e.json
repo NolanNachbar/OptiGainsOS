@@ -1,0 +1,137 @@
+[
+ {
+  "goto": "/"
+ },
+ {
+  "wait": 2500
+ },
+ {
+  "login": true
+ },
+ {
+  "goto": "/fuel"
+ },
+ {
+  "wait": 3500
+ },
+ {
+  "scroll": "up"
+ },
+ {
+  "scroll": "up"
+ },
+ {
+  "tapText": "TEMPLATES, RECIPES & IDEAS"
+ },
+ {
+  "wait": 1500
+ },
+ {
+  "shot": "more-sheet"
+ },
+ {
+  "dump": "more-sheet"
+ },
+ {
+  "tapText": "NEW"
+ },
+ {
+  "wait": 1500
+ },
+ {
+  "wait": 1500
+ },
+ {
+  "tapText": "e.g., Chicken Stir Fry"
+ },
+ {
+  "wait": 800
+ },
+ {
+  "typeSoft": "Final Pass Bowl"
+ },
+ {
+  "done": 1
+ },
+ {
+  "wait": 700
+ },
+ {
+  "shot": "name-typed"
+ },
+ {
+  "dump": "name-typed"
+ },
+ {
+  "scroll": "up"
+ },
+ {
+  "wait": 500
+ },
+ {
+  "shot": "servings-area"
+ },
+ {
+  "dump": "servings-area"
+ },
+ {
+  "tapXY": [
+   391,
+   709
+  ]
+ },
+ {
+  "wait": 500
+ },
+ {
+  "shot": "servings-2"
+ },
+ {
+  "tapText": "Next: Add Ingredients"
+ },
+ {
+  "wait": 1500
+ },
+ {
+  "shot": "ingredients-step"
+ },
+ {
+  "dump": "ingredients-step"
+ },
+ {
+  "tapText": "MY FOODS 2"
+ },
+ {
+  "wait": 800
+ },
+ {
+  "shot": "my-foods"
+ },
+ {
+  "dump": "my-foods"
+ },
+ {
+  "tapText": "Kbd Test Bowl"
+ },
+ {
+  "wait": 1000
+ },
+ {
+  "shot": "ing1"
+ },
+ {
+  "dump": "ing1"
+ },
+ {
+  "tapText": "Save Recipe"
+ },
+ {
+  "wait": 2000
+ },
+ {
+  "shot": "saved"
+ },
+ {
+  "dump": "saved"
+ }
+]

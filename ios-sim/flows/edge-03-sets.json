@@ -1,0 +1,20 @@
+[
+  { "goto": "/quick-workout" },
+  { "wait": 2500 },
+  { "btn": "Add Set" },
+  { "wait": 800 },
+  { "shot": "set2-added" },
+  { "dump": "set2-added" },
+  { "tapText": "Set 2 weight in lbs" },
+  { "wait": 500 },
+  { "keys": "99999" },
+  { "shot": "weight-99999" },
+  { "btn": "Next field" },
+  { "keys": "5" },
+  { "btn": "Next field" },
+  { "btn": "RIR 5+" },
+  { "btn": "Done, mark set complete" },
+  { "wait": 1000 },
+  { "shot": "set2-absurd-weight-done" },
+  { "dump": "set2-absurd-weight-done" }
+]

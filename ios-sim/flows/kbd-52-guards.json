@@ -1,0 +1,19 @@
+[
+  {"goto": "/"},
+  {"wait": 2500},
+  {"login": true},
+  {"goto": "/quick-workout"},
+  {"wait": 3500},
+  {"tapText": "Skip, straight to the session", "optional": true},
+  {"wait": 1000},
+  {"btn": "Bench Press", "optional": true},
+  {"wait": 1800},
+  {"tapText": "Mark set 1 complete"},
+  {"wait": 900},
+  {"shot": "reps-zero-complete"},
+  {"dump": "reps-zero-complete"},
+  {"tapText": "Set 1 weight in lbs"},
+  {"wait": 900},
+  {"shot": "weight-keypad"},
+  {"dump": "weight-keypad"}
+]

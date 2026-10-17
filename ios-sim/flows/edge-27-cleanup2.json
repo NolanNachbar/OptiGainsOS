@@ -1,0 +1,17 @@
+[
+  { "goto": "/fuel" },
+  { "wait": 4000 },
+  { "eval": "const b=document.querySelector('[aria-label=\"Delete entry\"]'); if(b) b.click(); return 'd1'" },
+  { "wait": 1500 },
+  { "eval": "const b=document.querySelector('[aria-label=\"Delete entry\"]'); if(b) b.click(); return 'd2'" },
+  { "wait": 1500 },
+  { "eval": "return document.querySelectorAll('[aria-label=\"Delete entry\"]').length" },
+  { "goto": "/train?tab=programs" },
+  { "wait": 3500 },
+  { "tapText": "Strength + BUD/S Conditioning" },
+  { "wait": 3000 },
+  { "btn": "Manage" },
+  { "wait": 1000 },
+  { "shot": "manage-open" },
+  { "dump": "manage-open" }
+]

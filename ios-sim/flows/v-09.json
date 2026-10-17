@@ -1,0 +1,4 @@
+[{"goto":"/profile"},{"wait":4500},{"login":true},{"wait":2500},
+{"js":"window.__errs=[]; const o=console.error; console.error=function(){window.__errs.push(Array.from(arguments).map(a=>a&&a.message?a.message+' | '+(a.stack||'').slice(0,300):String(a)).join(' ')); return o.apply(console,arguments)}; const b=Array.from(document.querySelectorAll('button')).find(b=>/^Export All$/i.test(b.innerText.trim())); b.click(); return 'ok'"},
+{"wait":6000},
+{"js":"return window.__errs"}]

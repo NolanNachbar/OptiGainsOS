@@ -1,0 +1,9 @@
+[
+  {"goto": "/"},
+  {"wait": 2500},
+  {"login": true},
+  {"goto": "/train?tab=activity-log"},
+  {"wait": 3500},
+  {"shot": "activity"},
+  {"dump": "activity"}
+]

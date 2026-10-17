@@ -1,0 +1,8 @@
+[
+  { "goto": "/train?tab=programs" },
+  { "wait": 3500 },
+  { "tapText": "Strength + BUD/S Conditioning" },
+  { "wait": 3000 },
+  { "shot": "past-program-detail" },
+  { "dump": "past-program-detail" }
+]

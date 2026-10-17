@@ -1,0 +1,132 @@
+[
+ {
+  "goto": "/today"
+ },
+ {
+  "wait": 6000
+ },
+ {
+  "login": true,
+  "optional": true
+ },
+ {
+  "wait": 4000
+ },
+ {
+  "goto": "/today"
+ },
+ {
+  "wait": 4500
+ },
+ {
+  "measure": "today"
+ },
+ {
+  "goto": "/train"
+ },
+ {
+  "wait": 4500
+ },
+ {
+  "measure": "train-schedule"
+ },
+ {
+  "goto": "/train?tab=library"
+ },
+ {
+  "wait": 4500
+ },
+ {
+  "measure": "train-library"
+ },
+ {
+  "goto": "/train?tab=programs"
+ },
+ {
+  "wait": 4500
+ },
+ {
+  "measure": "train-programs"
+ },
+ {
+  "goto": "/train?tab=activity"
+ },
+ {
+  "wait": 4500
+ },
+ {
+  "measure": "train-activity"
+ },
+ {
+  "goto": "/fuel"
+ },
+ {
+  "wait": 4500
+ },
+ {
+  "measure": "fuel"
+ },
+ {
+  "goto": "/fuel?tab=body"
+ },
+ {
+  "wait": 4500
+ },
+ {
+  "measure": "fuel-body"
+ },
+ {
+  "goto": "/food-tracker"
+ },
+ {
+  "wait": 4500
+ },
+ {
+  "measure": "food-tracker"
+ },
+ {
+  "goto": "/insights"
+ },
+ {
+  "wait": 4500
+ },
+ {
+  "measure": "insights"
+ },
+ {
+  "goto": "/coach"
+ },
+ {
+  "wait": 4500
+ },
+ {
+  "measure": "coach"
+ },
+ {
+  "goto": "/athlete-state"
+ },
+ {
+  "wait": 4500
+ },
+ {
+  "measure": "athlete-state"
+ },
+ {
+  "goto": "/weekly-schedule"
+ },
+ {
+  "wait": 4500
+ },
+ {
+  "measure": "weekly-schedule"
+ },
+ {
+  "goto": "/profile"
+ },
+ {
+  "wait": 4500
+ },
+ {
+  "measure": "profile"
+ }
+]

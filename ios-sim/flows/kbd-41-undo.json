@@ -1,0 +1,12 @@
+[
+  {"goto": "/"},
+  {"wait": 2500},
+  {"login": true},
+  {"goto": "/fuel"},
+  {"wait": 3500},
+  {"eval": "const b=[...document.querySelectorAll('button')].find(x=>(x.getAttribute('aria-label')||'').startsWith('Log Pork Loin again')); b.click(); return 'clicked once'"},
+  {"btn": "Undo"},
+  {"wait": 1200},
+  {"shot": "after-undo"},
+  {"dump": "after-undo"}
+]

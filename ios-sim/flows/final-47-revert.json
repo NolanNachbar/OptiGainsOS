@@ -1,0 +1,81 @@
+[
+ {
+  "goto": "/"
+ },
+ {
+  "wait": 2500
+ },
+ {
+  "login": true
+ },
+ {
+  "goto": "/profile"
+ },
+ {
+  "wait": 3000
+ },
+ {
+  "tapText": "Identity"
+ },
+ {
+  "wait": 1200
+ },
+ {
+  "eval": "return document.querySelector('input[placeholder=\"Your name\"]') ? JSON.stringify(document.querySelector('input[placeholder=\"Your name\"]').value) : \"NO-FIELD\""
+ },
+ {
+  "tapText": "Display Name"
+ },
+ {
+  "wait": 600
+ },
+ {
+  "clear": 1
+ },
+ {
+  "wait": 500
+ },
+ {
+  "typeAdd": "TEST ACCOUNT (ios-sim clone)"
+ },
+ {
+  "wait": 600
+ },
+ {
+  "eval": "return document.querySelector('input[placeholder=\"Your name\"]') ? JSON.stringify(document.querySelector('input[placeholder=\"Your name\"]').value) : \"NO-FIELD\""
+ },
+ {
+  "shot": "typed-original"
+ },
+ {
+  "done": 1,
+  "optional": true
+ },
+ {
+  "wait": 500
+ },
+ {
+  "tapText": "Save Changes"
+ },
+ {
+  "wait": 2500
+ },
+ {
+  "goto": "/profile"
+ },
+ {
+  "wait": 3000
+ },
+ {
+  "tapText": "Identity"
+ },
+ {
+  "wait": 1200
+ },
+ {
+  "eval": "return document.querySelector('input[placeholder=\"Your name\"]') ? JSON.stringify(document.querySelector('input[placeholder=\"Your name\"]').value) : \"NO-FIELD\""
+ },
+ {
+  "shot": "reverted"
+ }
+]

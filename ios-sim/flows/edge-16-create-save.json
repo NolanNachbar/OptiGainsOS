@@ -1,0 +1,18 @@
+[
+  { "goto": "/create-workout" },
+  { "wait": 3500 },
+  { "tapText": "Workout Title *" },
+  { "wait": 500 },
+  { "type": "Edge Test A" },
+  { "hideKeyboard": true },
+  { "wait": 400 },
+  { "tapText": "e.g., Push-ups, Barbell Squat" },
+  { "wait": 500 },
+  { "type": "Barbell Ro" },
+  { "wait": 1200 },
+  { "shot": "exercise-name-suggestions" },
+  { "dump": "exercise-name-suggestions" },
+  { "hideKeyboard": true },
+  { "wait": 500 },
+  { "shot": "exercise-name-typed-no-pick" }
+]

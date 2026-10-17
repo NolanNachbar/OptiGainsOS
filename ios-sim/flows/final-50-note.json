@@ -1,0 +1,12 @@
+[
+ {"goto": "/"}, {"wait": 2500}, {"login": true},
+ {"goto": "/fuel"}, {"wait": 3500},
+ {"tapText": "Quick add"}, {"wait": 900},
+ {"tapText": "Stream Note"}, {"wait": 1200},
+ {"shot": "note-open"},
+ {"tapText": "What's on your mind?"}, {"wait": 600},
+ {"typeSoft": "Final pass note: 100% test, delete me"}, {"wait": 500},
+ {"shot": "note-typed"}, {"done": 1}, {"wait": 500},
+ {"tapText": "Capture"}, {"wait": 1800},
+ {"shot": "note-captured"}, {"dump": "note-captured"}
+]

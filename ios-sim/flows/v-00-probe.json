@@ -1,0 +1,8 @@
+[
+{"goto":"/today"},{"wait":5000},{"login":true},{"wait":3000},
+{"shot":"today"},
+{"js":"return {p:location.pathname, dock: !!document.querySelector('[data-mobile-dock]'), t: document.body.innerText.slice(0,300)}"},
+{"goto":"/quick-workout"},{"wait":4500},
+{"shot":"qw"},
+{"js":"return {t: document.body.innerText.slice(0,800), btns: Array.from(document.querySelectorAll('button')).map(b=>b.innerText.trim()||b.getAttribute('aria-label')).slice(0,40)}"}
+]

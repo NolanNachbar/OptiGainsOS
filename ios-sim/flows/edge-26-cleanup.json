@@ -1,0 +1,8 @@
+[
+  { "goto": "/fuel" },
+  { "wait": 4000 },
+  { "eval": "const b=document.querySelector('[aria-label=\"Delete entry\"]'); if(!b) return 'none'; b.scrollIntoView({block:'center'}); b.click(); return 'clicked'" },
+  { "wait": 1200 },
+  { "shot": "delete-first-click" },
+  { "dump": "delete-first-click" }
+]

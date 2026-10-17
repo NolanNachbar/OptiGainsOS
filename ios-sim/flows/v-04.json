@@ -1,0 +1,10 @@
+[{"goto":"/quick-workout"},{"wait":4500},{"login":true},{"wait":2500},
+{"shot":"before-final"},
+{"js":"const b=document.querySelector('[aria-label=\"Mark set 2 complete\"]'); if(!b) return 'missing'; b.click(); return 'clicked'"},
+{"wait":2000},
+{"shot":"prompt"},
+{"js":"const t=document.body.innerText; const i=t.indexOf('All sets done'); return {has:i>=0, ctx:t.slice(Math.max(0,i-50),i+500), btns:Array.from(document.querySelectorAll('button')).map(b=>(b.innerText.trim()||b.getAttribute('aria-label')||'').slice(0,30)).filter(Boolean)}"},
+{"js":"const b=Array.from(document.querySelectorAll('button,[role=button],summary')).find(x=>/^summary$/i.test(x.innerText.trim().split('\\n')[0])); if(!b) return 'no summary row'; b.click(); return {clicked:true, exp:b.getAttribute('aria-expanded')}"},
+{"wait":800},
+{"shot":"summary-expanded"},
+{"js":"const t=document.body.innerText; const i=t.indexOf('All sets done'); return t.slice(i,i+700)"}]

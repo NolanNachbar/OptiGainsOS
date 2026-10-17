@@ -1,0 +1,113 @@
+[
+ {
+  "goto": "/"
+ },
+ {
+  "wait": 2500
+ },
+ {
+  "login": true
+ },
+ {
+  "goto": "/profile"
+ },
+ {
+  "wait": 3000
+ },
+ {
+  "tapText": "Identity"
+ },
+ {
+  "wait": 1200
+ },
+ {
+  "eval": "return document.querySelector('input[placeholder=\"Your name\"]') ? document.querySelector('input[placeholder=\"Your name\"]').value : \"NO-FIELD\""
+ },
+ {
+  "tapText": "Display Name"
+ },
+ {
+  "wait": 400
+ },
+ {
+  "typeSoft": " Z9"
+ },
+ {
+  "done": 1
+ },
+ {
+  "wait": 500
+ },
+ {
+  "tapText": "Save Changes"
+ },
+ {
+  "wait": 2500
+ },
+ {
+  "shot": "after-save"
+ },
+ {
+  "eval": "return document.querySelector('input[placeholder=\"Your name\"]') ? document.querySelector('input[placeholder=\"Your name\"]').value : \"NO-FIELD\""
+ },
+ {
+  "goto": "/profile"
+ },
+ {
+  "wait": 3000
+ },
+ {
+  "tapText": "Identity"
+ },
+ {
+  "wait": 1200
+ },
+ {
+  "eval": "return document.querySelector('input[placeholder=\"Your name\"]') ? document.querySelector('input[placeholder=\"Your name\"]').value : \"NO-FIELD\""
+ },
+ {
+  "shot": "after-reload"
+ },
+ {
+  "tapText": "Display Name"
+ },
+ {
+  "wait": 400
+ },
+ {
+  "del": 3
+ },
+ {
+  "done": 1
+ },
+ {
+  "wait": 500
+ },
+ {
+  "eval": "return document.querySelector('input[placeholder=\"Your name\"]') ? document.querySelector('input[placeholder=\"Your name\"]').value : \"NO-FIELD\""
+ },
+ {
+  "tapText": "Save Changes"
+ },
+ {
+  "wait": 2500
+ },
+ {
+  "goto": "/profile"
+ },
+ {
+  "wait": 3000
+ },
+ {
+  "tapText": "Identity"
+ },
+ {
+  "wait": 1200
+ },
+ {
+  "eval": "return document.querySelector('input[placeholder=\"Your name\"]') ? document.querySelector('input[placeholder=\"Your name\"]').value : \"NO-FIELD\""
+ },
+ {
+  "shot": "reverted"
+ }
+]

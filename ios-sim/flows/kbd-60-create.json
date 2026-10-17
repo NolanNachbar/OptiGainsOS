@@ -1,0 +1,11 @@
+[
+  {"goto": "/"},
+  {"wait": 2500},
+  {"login": true},
+  {"goto": "/create-workout"},
+  {"wait": 3000},
+  {"btn": "Save Workout"},
+  {"wait": 1000},
+  {"shot": "empty-save"},
+  {"dump": "empty-save"}
+]

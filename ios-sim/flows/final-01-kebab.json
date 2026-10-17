@@ -1,0 +1,10 @@
+[
+ {"goto": "/"}, {"wait": 2500}, {"login": true},
+ {"goto": "/quick-workout"}, {"wait": 3500},
+ {"shot": "qw-start"}, {"dump": "qw-start"},
+ {"tapText": "Skip, straight to the session", "optional": true}, {"wait": 800},
+ {"btn": "Bench Press", "optional": true}, {"wait": 1800},
+ {"shot": "bench"}, {"dump": "bench"},
+ {"tapText": "Exercise options"}, {"wait": 900},
+ {"shot": "kebab-open"}, {"dump": "kebab-open"}
+]

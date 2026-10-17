@@ -1,0 +1,8 @@
+[
+  { "goto": "/today" },
+  { "wait": 5000 },
+  { "shot": "today" },
+  { "goto": "/quick-workout" },
+  { "wait": 5000 },
+  { "shot": "qw" }
+]

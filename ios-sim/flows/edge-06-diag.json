@@ -1,0 +1,5 @@
+[
+  { "goto": "/today" },
+  { "wait": 4000 },
+  { "eval": "return {href: location.href, body: document.body.innerHTML.slice(0,400), rootLen: (document.getElementById('root')||{innerHTML:''}).innerHTML.length, ls: Object.keys(localStorage).map(k=>k+':'+(localStorage.getItem(k)||'').length), scripts: [...document.scripts].map(s=>s.src)}" }
+]

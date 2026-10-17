@@ -1,0 +1,56 @@
+[
+ {
+  "goto": "/quick-workout"
+ },
+ {
+  "wait": 2500
+ },
+ {
+  "wait": 500
+ },
+ {
+  "wait": 800
+ },
+ {
+  "tapText": "Set 1 reps"
+ },
+ {
+  "wait": 600
+ },
+ {
+  "keys": "8"
+ },
+ {
+  "shot": "reps-8-buffer"
+ },
+ {
+  "btn": "Next field"
+ },
+ {
+  "wait": 600
+ },
+ {
+  "shot": "after-next-from-reps"
+ },
+ {
+  "btn": "RIR 2"
+ },
+ {
+  "wait": 400
+ },
+ {
+  "shot": "rir-2-picked"
+ },
+ {
+  "btn": "Done, mark set complete"
+ },
+ {
+  "wait": 1200
+ },
+ {
+  "shot": "set1-complete-rest-timer"
+ },
+ {
+  "dump": "set1-complete"
+ }
+]

@@ -1,0 +1,59 @@
+[
+ {
+  "goto": "/"
+ },
+ {
+  "wait": 2500
+ },
+ {
+  "login": true
+ },
+ {
+  "goto": "/profile"
+ },
+ {
+  "wait": 3500
+ },
+ {
+  "shot": "profile-top"
+ },
+ {
+  "dump": "profile-top"
+ },
+ {
+  "tapText": "Identity"
+ },
+ {
+  "wait": 1200
+ },
+ {
+  "shot": "identity"
+ },
+ {
+  "dump": "identity"
+ },
+ {
+  "tapXY": [
+   390,
+   310
+  ]
+ },
+ {
+  "wait": 500
+ },
+ {
+  "typeSoft": " Z9"
+ },
+ {
+  "done": 1
+ },
+ {
+  "wait": 700
+ },
+ {
+  "shot": "name-changed"
+ },
+ {
+  "dump": "name-changed"
+ }
+]

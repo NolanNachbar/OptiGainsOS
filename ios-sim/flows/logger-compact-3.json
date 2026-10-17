@@ -1,0 +1,59 @@
+[
+ {
+  "goto": "/today"
+ },
+ {
+  "wait": 6000
+ },
+ {
+  "login": true
+ },
+ {
+  "wait": 3000
+ },
+ {
+  "goto": "/quick-workout"
+ },
+ {
+  "wait": 5500
+ },
+ {
+  "js": "const cands=Array.from(document.querySelectorAll('button')).filter(x=>/close|dismiss/i.test(x.getAttribute('aria-label')||'')); const b=cands[0]; if(b){b.click(); return 'closed:'+b.getAttribute('aria-label');} return 'no close; buttons='+Array.from(document.querySelectorAll('button')).map(x=>(x.getAttribute('aria-label')||x.innerText.trim())).filter(Boolean).slice(0,25).join('|');"
+ },
+ {
+  "wait": 1500
+ },
+ {
+  "shot": "01-weighin-closed"
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.innerText.trim().startsWith('Bench Press')); if(b){b.click(); return 'added bench';} return 'no bench button';"
+ },
+ {
+  "wait": 2000
+ },
+ {
+  "shot": "02-bench-card"
+ },
+ {
+  "js": "const el=Array.from(document.querySelectorAll('input')).find(i=>/set 1 reps$/i.test(i.getAttribute('aria-label')||'')); if(!el) return 'no reps input: '+Array.from(document.querySelectorAll('input')).map(i=>i.getAttribute('aria-label')).join('|'); const s=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set; s.call(el,'8'); el.dispatchEvent(new Event('input',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true})); return 'reps set, value='+el.value;"
+ },
+ {
+  "wait": 800
+ },
+ {
+  "shot": "03-reps-set"
+ },
+ {
+  "js": "const c=document.querySelector('[aria-label=\"Mark set 1 complete\"]'); if(!c) return 'no check: '+Array.from(document.querySelectorAll('[aria-label^=\"Mark set\"]')).map(x=>x.getAttribute('aria-label')).join('|'); c.click(); return 'ticked';"
+ },
+ {
+  "wait": 1500
+ },
+ {
+  "shot": "04-after-tick"
+ },
+ {
+  "js": "const d=document.querySelector('[role=dialog]'); return {dialog: d?d.innerText.replace(/\\n+/g,' / ').slice(0,200):null, checks: Array.from(document.querySelectorAll('[aria-label^=\"Mark set\"]')).map(x=>x.getAttribute('aria-label')+'='+x.getAttribute('aria-checked')), toast: Array.from(document.querySelectorAll('[data-sonner-toast]')).map(t=>t.innerText.slice(0,80))};"
+ }
+]

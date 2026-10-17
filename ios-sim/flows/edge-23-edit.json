@@ -1,0 +1,8 @@
+[
+  { "goto": "/fuel" },
+  { "wait": 4000 },
+  { "eval": "const b=document.querySelector('[aria-label=\"Edit entry\"]'); if(!b) return 'none'; b.scrollIntoView({block:'center'}); b.click(); return 'clicked'" },
+  { "wait": 1500 },
+  { "shot": "edit-sheet" },
+  { "dump": "edit-sheet" }
+]

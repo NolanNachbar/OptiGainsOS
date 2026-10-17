@@ -1,0 +1,4 @@
+[{"goto": "/"}, {"wait": 2500}, {"login": true}, {"goto": "/quick-workout"}, {"wait": 3500},
+ {"btn": "Finish"}, {"wait": 900}, {"shot": "finish-tap"}, {"dump": "finish-tap"},
+ {"tapText": "Finish workout", "optional": true}, {"wait": 1200}, {"shot": "recap-1"}, {"dump": "recap-1"},
+ {"wait": 2000}, {"shot": "recap-2"}]

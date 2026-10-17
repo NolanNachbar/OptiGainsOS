@@ -1,0 +1,15 @@
+[
+  { "goto": "/quick-workout" },
+  { "wait": 3000 },
+  { "tapText": "Set 1 weight in lbs" },
+  { "wait": 1000 },
+  { "shot": "weight-keypad" },
+  { "dump": "weight-keypad" },
+  { "tapText": "Set 1 reps" },
+  { "wait": 1000 },
+  { "shot": "reps-keypad" },
+  { "tapText": "Set 1 reps in reserve" },
+  { "wait": 1000 },
+  { "shot": "rir-keypad" },
+  { "dump": "rir-keypad" }
+]

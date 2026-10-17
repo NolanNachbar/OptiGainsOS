@@ -1,0 +1,22 @@
+[
+{"goto":"/quick-workout"},{"wait":4500},{"login":true},{"wait":2500},
+{"js":"const i=document.querySelector('input[placeholder=\"Exercise name\"]'); if(!i) return 'no input'; const s=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set; s.call(i,'Squat'); i.dispatchEvent(new Event('input',{bubbles:true})); return 'typed'"},
+{"wait":800},
+{"js":"const b=Array.from(document.querySelectorAll('button')).find(x=>x.innerText.trim()==='Add'); b.click(); return 'added'"},
+{"wait":1500},
+{"shot":"added-squat"},
+{"js":"return {t: document.body.innerText.slice(0,600), n: document.querySelectorAll('[data-testid^=exercise-row]').length}"},
+{"js":"const b=document.querySelector('[aria-label*=\"Change set type\"]'); b.click(); return b.getAttribute('aria-label')"},
+{"wait":700},
+{"shot":"settype-row"},
+{"js":"const g=document.querySelector('[role=group][aria-label$=\" type\"]'); return g? Array.from(g.querySelectorAll('button')).map(b=>b.innerText.trim()):'no group'"},
+{"js":"const g=document.querySelector('[role=group][aria-label$=\" type\"]'); Array.from(g.querySelectorAll('button')).find(b=>b.innerText.trim()==='Warm-up').click(); return 'warmup'"},
+{"wait":1200},
+{"shot":"warmup-tag"},
+{"js":"return Array.from(document.querySelectorAll('[aria-label*=\"Change set type\"]')).map(b=>b.getAttribute('aria-label')+'|'+b.innerText)"},
+{"js":"return {flag: localStorage.getItem('optigains-workout-active')}"},
+{"js":"location.reload(); return 'reload'"},
+{"wait":6000},
+{"shot":"after-reload"},
+{"js":"return {p:location.pathname, tags:Array.from(document.querySelectorAll('[aria-label*=\"Change set type\"]')).map(b=>b.getAttribute('aria-label')+'|'+b.innerText), t:document.body.innerText.slice(0,300), dock: !!document.querySelector('[data-mobile-dock]') && getComputedStyle(document.querySelector('[data-mobile-dock]')).display}"}
+]

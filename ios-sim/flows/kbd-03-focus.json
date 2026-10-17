@@ -1,0 +1,1 @@
+[{"goto":"/"},{"wait":2000},{"tapText":"Email"},{"wait":600},{"probeKeys":1},{"key":"numbers"},{"wait":300},{"probeKeys":1}]

@@ -1,0 +1,16 @@
+[
+  {"goto": "/"},
+  {"wait": 2500},
+  {"login": true},
+  {"goto": "/fuel"},
+  {"wait": 3000},
+  {"btn": "Search food"},
+  {"wait": 1500},
+  {"tapText": "Search for a food..."},
+  {"wait": 800},
+  {"shot": "search-focused"},
+  {"typeSoft": "chicken breast"},
+  {"wait": 3500},
+  {"shot": "search-typed"},
+  {"dump": "search-typed"}
+]

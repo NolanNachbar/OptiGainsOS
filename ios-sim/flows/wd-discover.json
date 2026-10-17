@@ -1,0 +1,32 @@
+[
+ {
+  "goto": "/today"
+ },
+ {
+  "wait": 6000
+ },
+ {
+  "login": true
+ },
+ {
+  "wait": 3500
+ },
+ {
+  "shot": "today"
+ },
+ {
+  "js": "return {path: location.pathname, links: Array.from(document.querySelectorAll('a[href]')).map(a=>a.getAttribute('href')).filter(h=>/workout|program|quick/i.test(h)).slice(0,15), buttons: Array.from(document.querySelectorAll('button')).map(b=>b.innerText.trim()).filter(t=>/start|begin|log|resume|workout/i.test(t)).slice(0,15)};"
+ },
+ {
+  "goto": "/train"
+ },
+ {
+  "wait": 4000
+ },
+ {
+  "shot": "train"
+ },
+ {
+  "js": "return {path: location.pathname, links: Array.from(document.querySelectorAll('a[href]')).map(a=>a.getAttribute('href')).filter(h=>/workout|program|quick/i.test(h)).slice(0,15), buttons: Array.from(document.querySelectorAll('button')).map(b=>b.innerText.trim()).filter(t=>/start|begin|log|resume|workout/i.test(t)).slice(0,15)};"
+ }
+]

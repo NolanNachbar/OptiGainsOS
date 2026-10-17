@@ -1,0 +1,15 @@
+[
+  {"goto": "/"},
+  {"wait": 2500},
+  {"login": true},
+  {"wait": 2000},
+  {"goto": "/fuel"},
+  {"wait": 2500},
+  {"shot": "fuel-direct"},
+  {"tapText": "Try again", "optional": true},
+  {"wait": 2500},
+  {"shot": "after-try-again"},
+  {"goto": "/fuel"},
+  {"wait": 2500},
+  {"shot": "fuel-again"}
+]

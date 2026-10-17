@@ -1,0 +1,19 @@
+[
+  {"goto": "/"},
+  {"wait": 2500},
+  {"login": true},
+  {"goto": "/quick-workout"},
+  {"wait": 3500},
+  {"tapText": "Bodyweight in lbs"},
+  {"wait": 600},
+  {"del": 5},
+  {"typeSoft": "190.4"},
+  {"shot": "weight-typed"},
+  {"done": 1},
+  {"tapText": "Skip, straight to the session"},
+  {"wait": 1000},
+  {"btn": "Bench Press"},
+  {"wait": 1800},
+  {"shot": "bench-added"},
+  {"dump": "bench-added"}
+]

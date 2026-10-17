@@ -1,0 +1,10 @@
+[
+  { "goto": "/today" },
+  { "wait": 2500 },
+  { "login": true, "optional": true },
+  { "wait": 1500 },
+  { "goto": "/quick-workout" },
+  { "wait": 3000 },
+  { "shot": "qw-initial" },
+  { "dump": "qw-initial" }
+]

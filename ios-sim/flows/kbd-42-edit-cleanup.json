@@ -1,0 +1,21 @@
+[
+  {"goto": "/"},
+  {"wait": 2500},
+  {"login": true},
+  {"goto": "/fuel"},
+  {"wait": 3500},
+  {"eval": "const b=[...document.querySelectorAll('button')].filter(x=>x.getAttribute('aria-label')==='Edit entry')[0]; b.scrollIntoView({block:'center'}); b.click(); return 'edit opened'"},
+  {"wait": 1500},
+  {"shot": "edit-sheet"},
+  {"dump": "edit-sheet"},
+  {"tapText": "Close", "optional": true},
+  {"wait": 800},
+  {"eval": "const b=[...document.querySelectorAll('button')].find(x=>x.getAttribute('aria-label')==='Delete entry'); b&&b.click(); return !!b"},
+  {"wait": 1500},
+  {"eval": "const b=[...document.querySelectorAll('button')].find(x=>x.getAttribute('aria-label')==='Delete entry'); b&&b.click(); return !!b"},
+  {"wait": 1500},
+  {"eval": "const b=[...document.querySelectorAll('button')].find(x=>x.getAttribute('aria-label')==='Delete entry'); b&&b.click(); return !!b"},
+  {"wait": 2000},
+  {"shot": "after-cleanup"},
+  {"dump": "after-cleanup"}
+]

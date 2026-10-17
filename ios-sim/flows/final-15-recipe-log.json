@@ -1,0 +1,47 @@
+[
+ {
+  "goto": "/"
+ },
+ {
+  "wait": 2500
+ },
+ {
+  "login": true
+ },
+ {
+  "goto": "/fuel"
+ },
+ {
+  "wait": 3500
+ },
+ {
+  "scroll": "up"
+ },
+ {
+  "scroll": "up"
+ },
+ {
+  "tapText": "TEMPLATES, RECIPES & IDEAS"
+ },
+ {
+  "wait": 1500
+ },
+ {
+  "shot": "more-sheet"
+ },
+ {
+  "dump": "more-sheet"
+ },
+ {
+  "tapText": "Log"
+ },
+ {
+  "wait": 1500
+ },
+ {
+  "shot": "log-dialog"
+ },
+ {
+  "dump": "log-dialog"
+ }
+]

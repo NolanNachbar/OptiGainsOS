@@ -1,0 +1,10 @@
+[
+  { "goto": "/create-workout" },
+  { "wait": 3500 },
+  { "shot": "create-initial-dock-hidden" },
+  { "dump": "create-initial" },
+  { "btn": "Save Workout" },
+  { "wait": 1200 },
+  { "shot": "create-empty-save" },
+  { "dump": "create-empty-save" }
+]

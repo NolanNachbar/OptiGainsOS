@@ -1,0 +1,41 @@
+[
+ {
+  "goto": "/"
+ },
+ {
+  "wait": 2500
+ },
+ {
+  "login": true
+ },
+ {
+  "goto": "/train?tab=library"
+ },
+ {
+  "wait": 3000
+ },
+ {
+  "eval": "const card=[...document.querySelectorAll('*')].find(e=>e.children.length===0 && (e.textContent||'').trim().startsWith('Kbd Typed Workout')); return card? 'found':'no card'"
+ },
+ {
+  "btn": "Workout options#1"
+ },
+ {
+  "wait": 700
+ },
+ {
+  "eval": "const it=[...document.querySelectorAll('[role=menuitem],button')].filter(e=>(e.textContent||'').trim()==='Delete'); return it.map(e=>e.tagName+':'+(e.getBoundingClientRect().top|0))"
+ },
+ {
+  "eval": "const b=[...document.querySelectorAll('button')].find(e=>(e.textContent||'').trim()==='Delete'); b.click(); return 'clicked delete'"
+ },
+ {
+  "wait": 1200
+ },
+ {
+  "shot": "confirm"
+ },
+ {
+  "dump": "confirm"
+ }
+]

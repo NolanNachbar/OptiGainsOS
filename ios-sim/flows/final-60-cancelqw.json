@@ -1,0 +1,9 @@
+[
+ {"goto": "/"}, {"wait": 2500}, {"login": true},
+ {"goto": "/quick-workout"}, {"wait": 3500},
+ {"tapText": "Exercise options"}, {"wait": 900},
+ {"tapText": "Cancel entire workout"}, {"wait": 900},
+ {"shot": "confirm"}, {"dump": "confirm"},
+ {"tapText": "Cancel Workout"}, {"wait": 1800},
+ {"shot": "after-cancel"}, {"dump": "after-cancel"}
+]

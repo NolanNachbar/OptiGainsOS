@@ -1,0 +1,59 @@
+[
+ {
+  "goto": "/fuel"
+ },
+ {
+  "wait": 4500
+ },
+ {
+  "login": true
+ },
+ {
+  "wait": 2500
+ },
+ {
+  "js": "const t=document.body.innerText; return {quickRows:(t.match(/Quick add\\n/g)||[]).length, consumed:(t.match(/Kcal\\n[^\\n]*/)||[''])[0], t:t.slice(t.indexOf('Remaining'),t.indexOf('Remaining')+160)}"
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.innerText.trim()==='Add Food'); if(!b) return 'no add'; b.click(); return 'open'"
+ },
+ {
+  "wait": 1500
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>/manual entry/i.test(x.innerText)); if(!b) return 'no manual'; if(b.getAttribute('aria-expanded')!=='true') b.click(); return 'manual'"
+ },
+ {
+  "wait": 900
+ },
+ {
+  "js": "const i=document.getElementById('calories'); if(!i) return 'no cal'; const s=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set; s.call(i,'400'); i.dispatchEvent(new Event('input',{bubbles:true})); return {cal:i.value, name:(document.getElementById('food_name')||{}).value}"
+ },
+ {
+  "wait": 800
+ },
+ {
+  "js": "const bs=Array.from(document.querySelectorAll('button')).filter(b=>b.innerText.trim()==='Add Food'); const b=bs[bs.length-1]; b.click(); return bs.length"
+ },
+ {
+  "wait": 1200
+ },
+ {
+  "shot": "after-log"
+ },
+ {
+  "js": "const t=document.body.innerText; const i=t.indexOf('Remaining'); return {quickRows:(t.match(/Quick add\\n\\d/g)||[]).length, planned:/planned/i.test(t), ring:t.slice(i,i+120), undo:!!Array.from(document.querySelectorAll('button')).find(b=>b.innerText.trim()==='Undo'), toast:Array.from(document.querySelectorAll('[data-sonner-toast]')).map(x=>x.innerText)}"
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(b=>b.innerText.trim()==='Undo'); if(!b) return 'no undo'; b.click(); return 'undo'"
+ },
+ {
+  "wait": 2000
+ },
+ {
+  "shot": "after-undo"
+ },
+ {
+  "js": "const t=document.body.innerText; const i=t.indexOf('Remaining'); return {quickRows:(t.match(/Quick add\\n\\d/g)||[]).length, planned:/planned/i.test(t), ring:t.slice(i,i+120), undo:!!Array.from(document.querySelectorAll('button')).find(b=>b.innerText.trim()==='Undo'), toast:Array.from(document.querySelectorAll('[data-sonner-toast]')).map(x=>x.innerText)}"
+ }
+]

@@ -1,0 +1,5 @@
+[
+ {"goto": "/"}, {"wait": 2500}, {"login": true},
+ {"goto": "/profile"}, {"wait": 3500},
+ {"shot": "profile-top"}, {"dump": "profile-top"}
+]

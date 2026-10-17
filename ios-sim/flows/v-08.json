@@ -1,0 +1,9 @@
+[{"goto":"/profile"},{"wait":4500},{"login":true},{"wait":2500},
+{"js":"return Array.from(document.querySelectorAll('button')).map(b=>(b.innerText.trim()||b.getAttribute('aria-label')||'').slice(0,40)).filter(x=>/export|data/i.test(x))"},
+{"js":"const b=Array.from(document.querySelectorAll('button')).find(b=>/^Export All$/i.test(b.innerText.trim())); if(!b) return 'none'; b.scrollIntoView(); b.click(); return 'clicked'"},
+{"wait":2500},
+{"shot":"export-clicked"},
+{"js":"return {toasts:Array.from(document.querySelectorAll('[data-sonner-toast]')).map(x=>x.innerText), t:document.body.innerText.match(/export[^\\n]*/gi)}"},
+{"wait":4000},
+{"shot":"export-later"},
+{"js":"return {toasts:Array.from(document.querySelectorAll('[data-sonner-toast]')).map(x=>x.innerText), btn:(Array.from(document.querySelectorAll('button')).find(b=>/Export/i.test(b.innerText))||{}).innerText}"}]

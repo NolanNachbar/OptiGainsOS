@@ -1,0 +1,9 @@
+[
+  { "goto": "/train?tab=programs" },
+  { "wait": 3500 },
+  { "shot": "programs-after-switch" },
+  { "dump": "programs-after-switch" },
+  { "goto": "/today" },
+  { "wait": 3000 },
+  { "shot": "today-after-switch" }
+]

@@ -1,0 +1,5 @@
+[{"goto": "/"}, {"wait": 2500}, {"login": true}, {"goto": "/quick-workout"}, {"wait": 3500},
+ {"shot": "restored"}, {"dump": "restored"},
+ {"btn": "Mark set 1 complete", "optional": true}, {"wait": 900}, {"shot": "reps-guard"},
+ {"tapText": "Exercise options"}, {"wait": 800}, {"shot": "kebab"}, {"dump": "kebab"},
+ {"tapText": "Cancel entire workout"}, {"wait": 900}, {"shot": "cancel-confirm"}, {"dump": "cancel-confirm"}]

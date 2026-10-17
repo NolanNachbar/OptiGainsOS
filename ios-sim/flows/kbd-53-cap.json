@@ -1,0 +1,17 @@
+[
+  {"goto": "/"},
+  {"wait": 2500},
+  {"login": true},
+  {"goto": "/quick-workout"},
+  {"wait": 3500},
+  {"tapText": "Set 1 weight in lbs"},
+  {"wait": 900},
+  {"keys": "99999"},
+  {"wait": 500},
+  {"shot": "cap-typed"},
+  {"dump": "cap-typed"},
+  {"btn": "Next field"},
+  {"wait": 900},
+  {"shot": "after-next"},
+  {"dump": "after-next"}
+]

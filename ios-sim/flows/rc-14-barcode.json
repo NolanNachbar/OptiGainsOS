@@ -1,0 +1,4 @@
+[{"goto": "/"}, {"wait": 2500}, {"login": true}, {"goto": "/fuel"}, {"wait": 3500},
+ {"btn": "Scan barcode"}, {"wait": 2500}, {"shot": "scanner-error"}, {"dump": "scanner-error"},
+ {"tapText": "Type the barcode number"}, {"wait": 800}, {"typeSoft": "5449000000996"}, {"wait": 500},
+ {"shot": "typed"}, {"btn": "Look up"}, {"wait": 4000}, {"shot": "lookup-result"}, {"dump": "lookup-result"}]

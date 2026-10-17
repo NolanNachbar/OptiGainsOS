@@ -1,0 +1,50 @@
+[
+ {
+  "goto": "/"
+ },
+ {
+  "wait": 2500
+ },
+ {
+  "login": true
+ },
+ {
+  "goto": "/create-workout"
+ },
+ {
+  "wait": 3000
+ },
+ {
+  "btn": "Save Workout"
+ },
+ {
+  "wait": 1000
+ },
+ {
+  "shot": "empty-save"
+ },
+ {
+  "dump": "empty-save"
+ },
+ {
+  "typeSoft": "  Kbd Typed Workout  "
+ },
+ {
+  "done": 1
+ },
+ {
+  "focus": "e.g., Push-ups, Barbell Squat"
+ },
+ {
+  "typeSoft": "bench"
+ },
+ {
+  "wait": 900
+ },
+ {
+  "shot": "exercise-typed"
+ },
+ {
+  "dump": "exercise-typed"
+ }
+]

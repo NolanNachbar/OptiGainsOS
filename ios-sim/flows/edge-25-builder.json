@@ -1,0 +1,10 @@
+[
+  { "goto": "/program-builder" },
+  { "wait": 3500 },
+  { "shot": "builder-step1" },
+  { "dump": "builder-step1" },
+  { "btn": "Next" },
+  { "wait": 1200 },
+  { "shot": "builder-next-empty" },
+  { "dump": "builder-next-empty" }
+]

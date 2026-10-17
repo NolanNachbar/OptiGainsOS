@@ -1,0 +1,50 @@
+[
+ {
+  "goto": "/quick-workout"
+ },
+ {
+  "wait": 4500
+ },
+ {
+  "login": true
+ },
+ {
+  "wait": 2500
+ },
+ {
+  "js": "const i=document.querySelectorAll('input[aria-label=\"Set 1 weight in lbs\"]')[1]; if(!i) return 'missing'; const s=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set; s.call(i,'405'); i.dispatchEvent(new Event('input',{bubbles:true})); i.dispatchEvent(new Event('change',{bubbles:true})); return i.value"
+ },
+ {
+  "js": "const i=document.querySelectorAll('input[aria-label=\"Set 1 reps\"]')[1]; if(!i) return 'missing'; const s=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set; s.call(i,'10'); i.dispatchEvent(new Event('input',{bubbles:true})); i.dispatchEvent(new Event('change',{bubbles:true})); return i.value"
+ },
+ {
+  "js": "const i=document.querySelectorAll('input[aria-label=\"Set 2 weight in lbs\"]')[0]; if(!i) return 'missing'; const s=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set; s.call(i,'142.5'); i.dispatchEvent(new Event('input',{bubbles:true})); i.dispatchEvent(new Event('change',{bubbles:true})); return i.value"
+ },
+ {
+  "js": "const i=document.querySelectorAll('input[aria-label=\"Set 2 reps\"]')[0]; if(!i) return 'missing'; const s=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set; s.call(i,'12'); i.dispatchEvent(new Event('input',{bubbles:true})); i.dispatchEvent(new Event('change',{bubbles:true})); return i.value"
+ },
+ {
+  "wait": 600
+ },
+ {
+  "shot": "layout-both"
+ },
+ {
+  "js": "const de=document.documentElement; return {sw:de.scrollWidth,cw:de.clientWidth,rows:Array.from(document.querySelectorAll('input[aria-label*=\"weight\"],input[aria-label$=\"reps\"]')).map(i=>{const r=i.getBoundingClientRect(); return [i.getAttribute('aria-label'),i.value,Math.round(r.left),Math.round(r.right),i.scrollWidth>i.clientWidth]}), grid:Array.from(document.querySelectorAll('[class*=gridCols],[class*=grid-cols]')).map(g=>g.scrollWidth>g.clientWidth).slice(0,6)}"
+ },
+ {
+  "js": "document.activeElement&&document.activeElement.blur(); return 'blur'"
+ },
+ {
+  "js": "const b=document.querySelectorAll('[aria-label=\"Mark set 1 complete\"]')[0]; if(!b) return 'missing Mark set 1 complete'; b.click(); return 'clicked'"
+ },
+ {
+  "wait": 1500
+ },
+ {
+  "js": "return {alerts:Array.from(document.querySelectorAll('[role=alert]')).map(a=>a.innerText), t:document.body.innerText.slice(0,200)}"
+ },
+ {
+  "shot": "squat-set1-done"
+ }
+]

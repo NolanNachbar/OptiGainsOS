@@ -1,0 +1,18 @@
+[
+  {"goto": "/"},
+  {"wait": 2500},
+  {"login": true},
+  {"goto": "/train?tab=programs"},
+  {"wait": 3000},
+  {"tapText": "Strength + BUD/S Conditioning"},
+  {"wait": 2500},
+  {"btn": "Resume"},
+  {"wait": 900},
+  {"shot": "resume-toast"},
+  {"dump": "resume-toast"},
+  {"wait": 1500},
+  {"goto": "/train?tab=programs"},
+  {"wait": 3000},
+  {"shot": "programs-after"},
+  {"dump": "programs-after"}
+]

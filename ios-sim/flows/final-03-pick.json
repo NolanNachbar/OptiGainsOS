@@ -1,0 +1,11 @@
+[
+ {"goto": "/"}, {"wait": 2500}, {"login": true},
+ {"goto": "/fuel"}, {"wait": 3000},
+ {"btn": "Search food"}, {"wait": 1500},
+ {"tapText": "Search for a food..."}, {"wait": 700},
+ {"typeSoft": "banana"}, {"wait": 3500},
+ {"shot": "before-pick"},
+ {"tapText": "Bananas, raw"}, {"wait": 2500},
+ {"shot": "after-pick"}, {"dump": "after-pick"},
+ {"eval": "const i=document.getElementById('serving_amount'); const n=document.getElementById('food_name'); const r=i?i.getBoundingClientRect():null; return {amountRect:r&&{top:r.top,bottom:r.bottom}, vvH: window.visualViewport.height, vvTop: window.visualViewport.offsetTop, name:n&&n.value, active: document.activeElement&&document.activeElement.id, label:[...document.querySelectorAll('p')].map(p=>p.textContent).filter(t=>/total for|base values|rescale/i.test(t))}"}
+]

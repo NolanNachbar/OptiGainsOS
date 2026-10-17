@@ -1,0 +1,5 @@
+[{"goto":"/quick-workout"},{"wait":4500},{"login":true},{"wait":2500},
+{"js":"document.querySelector('[aria-label=\"Exercise options\"]').click(); return 'kebab'"},{"wait":700},
+{"js":"const b=Array.from(document.querySelectorAll('button')).find(x=>x.innerText.trim()==='Cancel workout'); if(!b) return 'no cancel'; b.click(); return 'cancel'"},{"wait":900},
+{"shot":"cancel-confirm"},
+{"js":"return Array.from(document.querySelectorAll('[role=dialog] button,[role=alertdialog] button')).map(b=>b.innerText.trim())"}]

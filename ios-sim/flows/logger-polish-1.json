@@ -1,0 +1,80 @@
+[
+ {
+  "goto": "/today"
+ },
+ {
+  "wait": 6000
+ },
+ {
+  "login": true
+ },
+ {
+  "wait": 3000
+ },
+ {
+  "goto": "/quick-workout"
+ },
+ {
+  "wait": 5500
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>/close|dismiss/i.test(x.getAttribute('aria-label')||'')); if(b){b.click(); return 'closed';} return 'no sheet';"
+ },
+ {
+  "wait": 1500
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.innerText.trim().startsWith('Bench Press')); if(b){b.click(); return 'added bench';} return 'no bench button';"
+ },
+ {
+  "wait": 2000
+ },
+ {
+  "js": "const q=s=>document.querySelector(s); const chk=q('[aria-label^=\"Mark set 1\"]'); const reps=Array.from(document.querySelectorAll('input')).find(i=>/set 1 reps$/i.test(i.getAttribute('aria-label')||'')); const dock=q('[data-mobile-dock]'); const hdr=q('[data-mobile-header]'); const txt=document.body.innerText; return {setRowTop: chk?Math.round(chk.getBoundingClientRect().top):null, reps: reps?reps.value:null, dockDisplay: dock?getComputedStyle(dock).display:'absent', layoutHeaderDisplay: hdr?getComputedStyle(hdr).display:'absent', hasVolumeBlock: /VOLUME/i.test(txt) && /BEST SET/i.test(txt), volumeTop: (()=>{const e=Array.from(document.querySelectorAll('div')).find(d=>d.children.length===0&&/^volume$/i.test(d.textContent.trim())); return e?Math.round(e.getBoundingClientRect().top):null})(), addSetTop: (()=>{const b=Array.from(document.querySelectorAll('button')).find(x=>x.innerText.trim()==='Add Set'); return b?Math.round(b.getBoundingClientRect().top):null})()};"
+ },
+ {
+  "shot": "A-before-tick"
+ },
+ {
+  "js": "const c=document.querySelector('[aria-label=\"Mark set 1 complete\"]'); if(!c) return 'no check'; c.click(); return 'ticked';"
+ },
+ {
+  "wait": 1500
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.innerText.trim()==='Not yet'); if(!b) return 'no prompt'; b.click(); return 'not yet';"
+ },
+ {
+  "wait": 1000
+ },
+ {
+  "js": "const q=s=>document.querySelector(s); const chk=q('[aria-label^=\"Mark set 1\"]'); const reps=Array.from(document.querySelectorAll('input')).find(i=>/set 1 reps$/i.test(i.getAttribute('aria-label')||'')); const dock=q('[data-mobile-dock]'); const hdr=q('[data-mobile-header]'); const txt=document.body.innerText; return {setRowTop: chk?Math.round(chk.getBoundingClientRect().top):null, reps: reps?reps.value:null, dockDisplay: dock?getComputedStyle(dock).display:'absent', layoutHeaderDisplay: hdr?getComputedStyle(hdr).display:'absent', hasVolumeBlock: /VOLUME/i.test(txt) && /BEST SET/i.test(txt), volumeTop: (()=>{const e=Array.from(document.querySelectorAll('div')).find(d=>d.children.length===0&&/^volume$/i.test(d.textContent.trim())); return e?Math.round(e.getBoundingClientRect().top):null})(), addSetTop: (()=>{const b=Array.from(document.querySelectorAll('button')).find(x=>x.innerText.trim()==='Add Set'); return b?Math.round(b.getBoundingClientRect().top):null})()};"
+ },
+ {
+  "shot": "B-after-tick"
+ },
+ {
+  "js": "const k=document.querySelector('[aria-label=\"Exercise options\"]'); if(!k) return 'no kebab'; k.click(); return 'kebab';"
+ },
+ {
+  "wait": 800
+ },
+ {
+  "shot": "C-kebab"
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>/^cancel workout$/i.test(x.innerText.trim())); if(!b) return 'no cancel item'; b.click(); return 'cancel item';"
+ },
+ {
+  "wait": 800
+ },
+ {
+  "js": "const bs=Array.from(document.querySelectorAll('button')).filter(x=>/^cancel workout$/i.test(x.innerText.trim())); const b=bs[bs.length-1]; if(!b) return 'no confirm'; b.click(); return 'cancelled test session';"
+ },
+ {
+  "wait": 2500
+ },
+ {
+  "js": "return location.pathname;"
+ }
+]

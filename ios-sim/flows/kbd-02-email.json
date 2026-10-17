@@ -1,0 +1,11 @@
+[
+  {"goto": "/"},
+  {"wait": 2000},
+  {"tapText": "Email"},
+  {"wait": 600},
+  {"typeSoft": "Test.User 42+a@x.io Mixed_Case-ok"},
+  {"wait": 400},
+  {"shot": "soft-typed"},
+  {"dump": "after"},
+  {"eval": "return document.activeElement ? {tag: document.activeElement.tagName, val: document.activeElement.value} : null"}
+]

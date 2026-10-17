@@ -1,0 +1,8 @@
+[{"goto":"/quick-workout"},{"wait":4500},{"login":true},{"wait":2500},
+{"js":"const b=document.querySelector('[aria-label=\"Mark set 2 incomplete\"]'); b.click(); return 'uncompleted'"},{"wait":1000},
+{"js":"const b=document.querySelector('[aria-label=\"Mark set 2 complete\"]'); b.click(); return 'completed'"},{"wait":1800},
+{"js":"return {prompt:/All sets done\\. Finish workout\\?/.test(document.body.innerText)}"},
+{"js":"const b=Array.from(document.querySelectorAll('button')).find(x=>x.innerText.trim()==='Not yet'); if(!b) return 'no Not yet'; b.click(); return 'not yet'"},{"wait":1200},
+{"shot":"not-yet"},
+{"js":"return {prompt:/All sets done/.test(document.body.innerText), flag:localStorage.getItem('optigains-workout-active'), t:document.body.innerText.slice(0,160)}"},
+{"js":"return Array.from(document.querySelectorAll('header button, [aria-label]')).slice(0,14).map(b=>b.getAttribute('aria-label')||b.innerText.trim())"}]

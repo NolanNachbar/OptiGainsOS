@@ -1,0 +1,92 @@
+[
+ {
+  "goto": "/"
+ },
+ {
+  "wait": 2500
+ },
+ {
+  "login": true
+ },
+ {
+  "goto": "/program-builder"
+ },
+ {
+  "wait": 3000
+ },
+ {
+  "shot": "step1"
+ },
+ {
+  "dump": "step1"
+ },
+ {
+  "tapText": "e.g., Push Pull Legs Hypertrophy"
+ },
+ {
+  "wait": 500
+ },
+ {
+  "typeSoft": "Final Pass Program"
+ },
+ {
+  "done": 1
+ },
+ {
+  "wait": 600
+ },
+ {
+  "shot": "step1-typed"
+ },
+ {
+  "tapText": "Next"
+ },
+ {
+  "wait": 1500
+ },
+ {
+  "shot": "step2"
+ },
+ {
+  "dump": "step2"
+ },
+ {
+  "tapText": "Click or drop to add"
+ },
+ {
+  "wait": 1200
+ },
+ {
+  "shot": "day1-editor"
+ },
+ {
+  "dump": "day1-editor"
+ },
+ {
+  "scroll": "up"
+ },
+ {
+  "scroll": "up"
+ },
+ {
+  "wait": 600
+ },
+ {
+  "shot": "after-scroll"
+ },
+ {
+  "dump": "after-scroll"
+ },
+ {
+  "tapText": "Add Exercise"
+ },
+ {
+  "wait": 1200
+ },
+ {
+  "shot": "exercise-row"
+ },
+ {
+  "dump": "exercise-row"
+ }
+]

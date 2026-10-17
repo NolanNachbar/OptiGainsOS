@@ -1,0 +1,17 @@
+[
+  {"goto": "/"},
+  {"wait": 2500},
+  {"login": true},
+  {"goto": "/fuel"},
+  {"wait": 3500},
+  {"shot": "before-triple"},
+  {"eval": "const b=[...document.querySelectorAll('button')].find(x=>(x.getAttribute('aria-label')||'').startsWith('Log Chicken Breast again')); if(!b) return 'no chip'; b.click(); b.click(); b.click(); return 'clicked x3'"},
+  {"wait": 1200},
+  {"shot": "after-triple"},
+  {"dump": "after-triple"},
+  {"eval": "return [...document.querySelectorAll('[data-sonner-toast],[role=status],li[data-sonner-toast]')].map(e=>e.innerText)"},
+  {"tapText": "Undo", "optional": true},
+  {"wait": 1000},
+  {"shot": "after-undo"},
+  {"dump": "after-undo"}
+]

@@ -1,0 +1,11 @@
+[{"goto": "/"}, {"wait": 2500}, {"login": true},
+ {"goto": "/today"}, {"wait": 2500}, {"shot": "today"},
+ {"goto": "/train"}, {"wait": 2500}, {"shot": "train"},
+ {"goto": "/fuel"}, {"wait": 2500}, {"shot": "fuel"},
+ {"goto": "/athlete-state"}, {"wait": 2500}, {"shot": "body"},
+ {"goto": "/profile"}, {"wait": 2500}, {"shot": "profile"},
+ {"goto": "/train?tab=programs"}, {"wait": 2500}, {"shot": "programs"}, {"dump": "programs"},
+ {"goto": "/quick-workout"}, {"wait": 3000},
+ {"tapText": "Skip, straight to the session", "optional": true}, {"wait": 800},
+ {"btn": "Squat", "optional": true}, {"wait": 1500}, {"shot": "qw-before-reload"},
+ {"reload": 1}, {"wait": 3500}, {"shot": "qw-after-reload"}, {"dump": "qw-after-reload"}]

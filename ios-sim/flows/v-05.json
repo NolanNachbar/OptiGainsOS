@@ -1,0 +1,9 @@
+[{"goto":"/quick-workout"},{"wait":4500},{"login":true},{"wait":2500},
+{"js":"return {promptOnReload: /All sets done/.test(document.body.innerText), t:document.body.innerText.slice(0,80)}"},
+{"js":"const b=Array.from(document.querySelectorAll('button')).find(x=>x.innerText.trim()==='Not yet'); if(!b) return 'no Not yet'; b.click(); return 'not yet'"},
+{"wait":1000},
+{"shot":"after-not-yet"},
+{"js":"return {prompt:/All sets done/.test(document.body.innerText), flag:localStorage.getItem('optigains-workout-active'), t:document.body.innerText.slice(0,120)}"},
+{"goto":"/fuel"},{"wait":4500},
+{"shot":"fuel"},
+{"js":"return {t:document.body.innerText.slice(0,900), btns:Array.from(document.querySelectorAll('button')).map(b=>(b.innerText.trim()||b.getAttribute('aria-label')||'').slice(0,40)).filter(Boolean).slice(0,50)}"}]

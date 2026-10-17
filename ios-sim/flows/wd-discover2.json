@@ -1,0 +1,35 @@
+[
+ {
+  "goto": "/today"
+ },
+ {
+  "wait": 6000
+ },
+ {
+  "login": true
+ },
+ {
+  "wait": 3000
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.innerText.trim()==='Start'); if(!b) return 'no Start'; b.click(); return 'clicked Start';"
+ },
+ {
+  "wait": 4500
+ },
+ {
+  "shot": "after-start"
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>/close|dismiss/i.test(x.getAttribute('aria-label')||'')); if(b){b.click(); return 'closed sheet';} return 'no sheet';"
+ },
+ {
+  "wait": 1500
+ },
+ {
+  "js": "const checks=Array.from(document.querySelectorAll('[role=checkbox]')); return {path: location.pathname+location.search, checks: checks.length, unchecked: checks.filter(c=>c.getAttribute('aria-checked')!=='true').length, labels: checks.slice(0,6).map(c=>c.getAttribute('aria-label')), buttons: Array.from(document.querySelectorAll('button')).map(b=>(b.getAttribute('aria-label')||b.innerText).trim()).filter(Boolean).slice(0,25)};"
+ },
+ {
+  "shot": "session"
+ }
+]

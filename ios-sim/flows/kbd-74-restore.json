@@ -1,0 +1,15 @@
+[
+  {"goto": "/"},
+  {"wait": 2500},
+  {"login": true},
+  {"goto": "/train?tab=programs"},
+  {"wait": 3000},
+  {"tapText": "Powerlifting HF", "optional": true},
+  {"wait": 2500},
+  {"btn": "Resume"},
+  {"wait": 1500},
+  {"goto": "/train?tab=programs"},
+  {"wait": 3000},
+  {"shot": "restored"},
+  {"dump": "restored"}
+]

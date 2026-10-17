@@ -1,0 +1,41 @@
+[
+ {
+  "goto": "/"
+ },
+ {
+  "wait": 2500
+ },
+ {
+  "login": true
+ },
+ {
+  "goto": "/train?tab=library"
+ },
+ {
+  "wait": 3000
+ },
+ {
+  "btn": "Workout options#1"
+ },
+ {
+  "wait": 900
+ },
+ {
+  "shot": "menu"
+ },
+ {
+  "dump": "menu"
+ },
+ {
+  "btn": "Delete"
+ },
+ {
+  "wait": 900
+ },
+ {
+  "shot": "confirm"
+ },
+ {
+  "dump": "confirm"
+ }
+]

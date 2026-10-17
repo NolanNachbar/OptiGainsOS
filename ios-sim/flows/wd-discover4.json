@@ -1,0 +1,50 @@
+[
+ {
+  "goto": "/today"
+ },
+ {
+  "wait": 6000
+ },
+ {
+  "login": true
+ },
+ {
+  "wait": 2500
+ },
+ {
+  "goto": "/train"
+ },
+ {
+  "wait": 4500
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.innerText.trim()==='Start Session'); if(!b) return 'no Start Session'; b.click(); return 'clicked Start Session';"
+ },
+ {
+  "wait": 5000
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.innerText.trim()==='Start Logging Workout'); if(!b) return 'no Start Logging'; b.click(); return 'clicked Start Logging Workout';"
+ },
+ {
+  "wait": 4500
+ },
+ {
+  "shot": "after-start-logging"
+ },
+ {
+  "js": "const checks=Array.from(document.querySelectorAll('[role=checkbox]')); return {path: location.pathname, checks: checks.length, unchecked: checks.filter(c=>c.getAttribute('aria-checked')!=='true').length, labels: checks.map(c=>c.getAttribute('aria-label')).slice(0,40), buttons: Array.from(document.querySelectorAll('button')).map(b=>(b.getAttribute('aria-label')||b.innerText).trim()).filter(Boolean).slice(0,30)};"
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>/close|dismiss/i.test(x.getAttribute('aria-label')||'')); if(b){b.click(); return 'closed sheet';} return 'no sheet';"
+ },
+ {
+  "wait": 1500
+ },
+ {
+  "js": "const checks=Array.from(document.querySelectorAll('[role=checkbox]')); return {path: location.pathname, checks: checks.length, unchecked: checks.filter(c=>c.getAttribute('aria-checked')!=='true').length, labels: checks.map(c=>c.getAttribute('aria-label')).slice(0,40), buttons: Array.from(document.querySelectorAll('button')).map(b=>(b.getAttribute('aria-label')||b.innerText).trim()).filter(Boolean).slice(0,30)};"
+ },
+ {
+  "shot": "after-close"
+ }
+]

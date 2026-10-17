@@ -1,0 +1,14 @@
+[
+  {"goto": "/"},
+  {"wait": 2000},
+  {"tapText": "Email"},
+  {"wait": 700},
+  {"key": "numbers"},
+  {"wait": 400},
+  {"dump": "numbers-page"},
+  {"shot": "numbers-page"},
+  {"key": "symbols"},
+  {"wait": 400},
+  {"dump": "symbols-page"},
+  {"shot": "symbols-page"}
+]

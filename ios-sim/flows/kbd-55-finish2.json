@@ -1,0 +1,14 @@
+[
+  {"goto": "/"},
+  {"wait": 2500},
+  {"login": true},
+  {"goto": "/quick-workout"},
+  {"wait": 3500},
+  {"btn": "Finish"},
+  {"wait": 1200},
+  {"shot": "finish-a"},
+  {"dump": "finish-a"},
+  {"wait": 2500},
+  {"shot": "finish-b"},
+  {"dump": "finish-b"}
+]

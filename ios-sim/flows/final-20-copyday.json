@@ -1,0 +1,6 @@
+[
+ {"goto": "/"}, {"wait": 2500}, {"login": true},
+ {"goto": "/fuel"}, {"wait": 3500},
+ {"tapText": "Copy a day"}, {"wait": 1500},
+ {"shot": "copy-dialog"}, {"dump": "copy-dialog"}
+]

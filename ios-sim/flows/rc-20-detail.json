@@ -1,0 +1,4 @@
+[{"goto": "/"}, {"wait": 2500}, {"login": true}, {"goto": "/train?tab=programs"}, {"wait": 3000},
+ {"eval": "const c=[...document.querySelectorAll('a,button,[role=button]')].find(e=>(e.textContent||'').includes('Powerlifting HF')&&(e.textContent||'').includes('/ 84')); if(!c) return 'no card'; c.click(); return 'clicked'"},
+ {"wait": 3500}, {"shot": "detail"}, {"dump": "detail"},
+ {"btn": "Manage", "optional": true}, {"wait": 700}, {"shot": "manage"}]

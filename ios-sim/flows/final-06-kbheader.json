@@ -1,0 +1,11 @@
+[
+ {"goto": "/"}, {"wait": 2500}, {"login": true},
+ {"goto": "/fuel"}, {"wait": 3000},
+ {"btn": "Search food"}, {"wait": 1500},
+ {"tapText": "Search for a food..."}, {"wait": 900},
+ {"eval": "const h=[...document.querySelectorAll('h2,h1,[role=heading],div')].find(e=>e.children.length===0&&/^Add Food Entry$/.test((e.textContent||'').trim())); const r=h&&h.getBoundingClientRect(); const x=document.querySelector('button[aria-label=Close]'); const xr=x&&x.getBoundingClientRect(); const vv=window.visualViewport; return {phase:'empty-query-kb-up', headerTop:r&&r.top, closeTop:xr&&xr.top, vvTop:vv.offsetTop, vvH:vv.height, innerH:window.innerHeight, scrollY:window.scrollY, kbInset:getComputedStyle(document.documentElement).getPropertyValue('--keyboard-inset')}"},
+ {"shot": "kb-up-empty"},
+ {"typeSoft": "tuna"}, {"wait": 3500},
+ {"eval": "const x=document.querySelector('button[aria-label=Close]'); const xr=x&&x.getBoundingClientRect(); const vv=window.visualViewport; return {phase:'typed', closeTop:xr&&xr.top, vvTop:vv.offsetTop, vvH:vv.height, innerH:window.innerHeight, scrollY:window.scrollY, kbInset:getComputedStyle(document.documentElement).getPropertyValue('--keyboard-inset')}"},
+ {"shot": "kb-up-typed"}
+]

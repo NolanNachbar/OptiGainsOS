@@ -1,0 +1,13 @@
+[
+  {"goto": "/"},
+  {"wait": 2500},
+  {"shot": "login-page"},
+  {"tapText": "Email"},
+  {"wait": 900},
+  {"shot": "email-focused"},
+  {"dump": "kb-dump"},
+  {"typeSoft": "Test.User 42@x.io"},
+  {"wait": 500},
+  {"shot": "soft-typed"},
+  {"eval": "return document.activeElement ? {tag: document.activeElement.tagName, val: document.activeElement.value} : null"}
+]

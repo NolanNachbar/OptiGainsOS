@@ -1,0 +1,347 @@
+[
+ {
+  "goto": "/today"
+ },
+ {
+  "wait": 6000
+ },
+ {
+  "login": true
+ },
+ {
+  "wait": 2500
+ },
+ {
+  "goto": "/train"
+ },
+ {
+  "wait": 4500
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.innerText.trim()==='Start Session'); if(!b) return 'no Start Session'; b.click(); return 'start session';"
+ },
+ {
+  "wait": 5000
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.innerText.trim()==='Start Logging Workout'); if(!b) return 'no Start Logging'; b.click(); return 'start logging';"
+ },
+ {
+  "wait": 4500
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>/close|dismiss/i.test(x.getAttribute('aria-label')||'')); if(b){b.click(); return 'closed sheet';} return 'no sheet';"
+ },
+ {
+  "wait": 1500
+ },
+ {
+  "js": "const cs=Array.from(document.querySelectorAll('[role=checkbox]')); const chips=document.querySelectorAll('[data-testid^=\"exercise-chip-\"]').length; return {exercises: chips, checks: cs.length, checked: cs.filter(c=>c.getAttribute('aria-checked')==='true').length, promptVisible: /All sets done\\. Finish workout\\?/.test(document.body.innerText), rirPad: !!Array.from(document.querySelectorAll('button')).find(b=>b.getAttribute('aria-label')==='RIR 2')};"
+ },
+ {
+  "js": "const k=document.querySelector('[aria-label=\"Exercise options\"]'); if(!k) return 'no kebab'; k.click(); return 'kebab';"
+ },
+ {
+  "wait": 600
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.innerText.trim()==='Remove exercise'); if(!b) return 'no remove item'; b.click(); return 'remove clicked';"
+ },
+ {
+  "wait": 700
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>/^(remove|delete|yes, remove)$/i.test(x.innerText.trim())); if(b){b.click(); return 'confirmed';} return 'no confirm needed';"
+ },
+ {
+  "wait": 900
+ },
+ {
+  "js": "const k=document.querySelector('[aria-label=\"Exercise options\"]'); if(!k) return 'no kebab'; k.click(); return 'kebab';"
+ },
+ {
+  "wait": 600
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.innerText.trim()==='Remove exercise'); if(!b) return 'no remove item'; b.click(); return 'remove clicked';"
+ },
+ {
+  "wait": 700
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>/^(remove|delete|yes, remove)$/i.test(x.innerText.trim())); if(b){b.click(); return 'confirmed';} return 'no confirm needed';"
+ },
+ {
+  "wait": 900
+ },
+ {
+  "js": "const k=document.querySelector('[aria-label=\"Exercise options\"]'); if(!k) return 'no kebab'; k.click(); return 'kebab';"
+ },
+ {
+  "wait": 600
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.innerText.trim()==='Remove exercise'); if(!b) return 'no remove item'; b.click(); return 'remove clicked';"
+ },
+ {
+  "wait": 700
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>/^(remove|delete|yes, remove)$/i.test(x.innerText.trim())); if(b){b.click(); return 'confirmed';} return 'no confirm needed';"
+ },
+ {
+  "wait": 900
+ },
+ {
+  "js": "const k=document.querySelector('[aria-label=\"Exercise options\"]'); if(!k) return 'no kebab'; k.click(); return 'kebab';"
+ },
+ {
+  "wait": 600
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.innerText.trim()==='Remove exercise'); if(!b) return 'no remove item'; b.click(); return 'remove clicked';"
+ },
+ {
+  "wait": 700
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>/^(remove|delete|yes, remove)$/i.test(x.innerText.trim())); if(b){b.click(); return 'confirmed';} return 'no confirm needed';"
+ },
+ {
+  "wait": 900
+ },
+ {
+  "js": "const k=document.querySelector('[aria-label=\"Exercise options\"]'); if(!k) return 'no kebab'; k.click(); return 'kebab';"
+ },
+ {
+  "wait": 600
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.innerText.trim()==='Remove exercise'); if(!b) return 'no remove item'; b.click(); return 'remove clicked';"
+ },
+ {
+  "wait": 700
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>/^(remove|delete|yes, remove)$/i.test(x.innerText.trim())); if(b){b.click(); return 'confirmed';} return 'no confirm needed';"
+ },
+ {
+  "wait": 900
+ },
+ {
+  "js": "const k=document.querySelector('[aria-label=\"Exercise options\"]'); if(!k) return 'no kebab'; k.click(); return 'kebab';"
+ },
+ {
+  "wait": 600
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.innerText.trim()==='Remove exercise'); if(!b) return 'no remove item'; b.click(); return 'remove clicked';"
+ },
+ {
+  "wait": 700
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>/^(remove|delete|yes, remove)$/i.test(x.innerText.trim())); if(b){b.click(); return 'confirmed';} return 'no confirm needed';"
+ },
+ {
+  "wait": 900
+ },
+ {
+  "js": "const k=document.querySelector('[aria-label=\"Exercise options\"]'); if(!k) return 'no kebab'; k.click(); return 'kebab';"
+ },
+ {
+  "wait": 600
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.innerText.trim()==='Remove exercise'); if(!b) return 'no remove item'; b.click(); return 'remove clicked';"
+ },
+ {
+  "wait": 700
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>/^(remove|delete|yes, remove)$/i.test(x.innerText.trim())); if(b){b.click(); return 'confirmed';} return 'no confirm needed';"
+ },
+ {
+  "wait": 900
+ },
+ {
+  "js": "const k=document.querySelector('[aria-label=\"Exercise options\"]'); if(!k) return 'no kebab'; k.click(); return 'kebab';"
+ },
+ {
+  "wait": 600
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.innerText.trim()==='Remove exercise'); if(!b) return 'no remove item'; b.click(); return 'remove clicked';"
+ },
+ {
+  "wait": 700
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>/^(remove|delete|yes, remove)$/i.test(x.innerText.trim())); if(b){b.click(); return 'confirmed';} return 'no confirm needed';"
+ },
+ {
+  "wait": 900
+ },
+ {
+  "js": "const cs=Array.from(document.querySelectorAll('[role=checkbox]')); const chips=document.querySelectorAll('[data-testid^=\"exercise-chip-\"]').length; return {exercises: chips, checks: cs.length, checked: cs.filter(c=>c.getAttribute('aria-checked')==='true').length, promptVisible: /All sets done\\. Finish workout\\?/.test(document.body.innerText), rirPad: !!Array.from(document.querySelectorAll('button')).find(b=>b.getAttribute('aria-label')==='RIR 2')};"
+ },
+ {
+  "shot": "A-reduced-session"
+ },
+ {
+  "js": "const c=Array.from(document.querySelectorAll('[role=checkbox]')).find(x=>x.getAttribute('aria-checked')!=='true'); if(!c) return 'nothing left to tick'; c.click(); return 'ticked '+c.getAttribute('aria-label');"
+ },
+ {
+  "wait": 700
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.getAttribute('aria-label')==='RIR 2'); if(!b) return 'no rir pad'; b.click(); return 'rir 2';"
+ },
+ {
+  "wait": 600
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.getAttribute('aria-label')==='Done, mark set complete'); if(!b) return 'no done btn'; b.click(); return 'done pressed';"
+ },
+ {
+  "wait": 900
+ },
+ {
+  "js": "const cs=Array.from(document.querySelectorAll('[role=checkbox]')); const chips=document.querySelectorAll('[data-testid^=\"exercise-chip-\"]').length; return {exercises: chips, checks: cs.length, checked: cs.filter(c=>c.getAttribute('aria-checked')==='true').length, promptVisible: /All sets done\\. Finish workout\\?/.test(document.body.innerText), rirPad: !!Array.from(document.querySelectorAll('button')).find(b=>b.getAttribute('aria-label')==='RIR 2')};"
+ },
+ {
+  "js": "const c=Array.from(document.querySelectorAll('[role=checkbox]')).find(x=>x.getAttribute('aria-checked')!=='true'); if(!c) return 'nothing left to tick'; c.click(); return 'ticked '+c.getAttribute('aria-label');"
+ },
+ {
+  "wait": 700
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.getAttribute('aria-label')==='RIR 2'); if(!b) return 'no rir pad'; b.click(); return 'rir 2';"
+ },
+ {
+  "wait": 600
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.getAttribute('aria-label')==='Done, mark set complete'); if(!b) return 'no done btn'; b.click(); return 'done pressed';"
+ },
+ {
+  "wait": 900
+ },
+ {
+  "js": "const cs=Array.from(document.querySelectorAll('[role=checkbox]')); const chips=document.querySelectorAll('[data-testid^=\"exercise-chip-\"]').length; return {exercises: chips, checks: cs.length, checked: cs.filter(c=>c.getAttribute('aria-checked')==='true').length, promptVisible: /All sets done\\. Finish workout\\?/.test(document.body.innerText), rirPad: !!Array.from(document.querySelectorAll('button')).find(b=>b.getAttribute('aria-label')==='RIR 2')};"
+ },
+ {
+  "js": "const c=Array.from(document.querySelectorAll('[role=checkbox]')).find(x=>x.getAttribute('aria-checked')!=='true'); if(!c) return 'nothing left to tick'; c.click(); return 'ticked '+c.getAttribute('aria-label');"
+ },
+ {
+  "wait": 700
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.getAttribute('aria-label')==='RIR 2'); if(!b) return 'no rir pad'; b.click(); return 'rir 2';"
+ },
+ {
+  "wait": 600
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.getAttribute('aria-label')==='Done, mark set complete'); if(!b) return 'no done btn'; b.click(); return 'done pressed';"
+ },
+ {
+  "wait": 900
+ },
+ {
+  "js": "const cs=Array.from(document.querySelectorAll('[role=checkbox]')); const chips=document.querySelectorAll('[data-testid^=\"exercise-chip-\"]').length; return {exercises: chips, checks: cs.length, checked: cs.filter(c=>c.getAttribute('aria-checked')==='true').length, promptVisible: /All sets done\\. Finish workout\\?/.test(document.body.innerText), rirPad: !!Array.from(document.querySelectorAll('button')).find(b=>b.getAttribute('aria-label')==='RIR 2')};"
+ },
+ {
+  "js": "const c=Array.from(document.querySelectorAll('[role=checkbox]')).find(x=>x.getAttribute('aria-checked')!=='true'); if(!c) return 'nothing left to tick'; c.click(); return 'ticked '+c.getAttribute('aria-label');"
+ },
+ {
+  "wait": 700
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.getAttribute('aria-label')==='RIR 2'); if(!b) return 'no rir pad'; b.click(); return 'rir 2';"
+ },
+ {
+  "wait": 600
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.getAttribute('aria-label')==='Done, mark set complete'); if(!b) return 'no done btn'; b.click(); return 'done pressed';"
+ },
+ {
+  "wait": 900
+ },
+ {
+  "js": "const cs=Array.from(document.querySelectorAll('[role=checkbox]')); const chips=document.querySelectorAll('[data-testid^=\"exercise-chip-\"]').length; return {exercises: chips, checks: cs.length, checked: cs.filter(c=>c.getAttribute('aria-checked')==='true').length, promptVisible: /All sets done\\. Finish workout\\?/.test(document.body.innerText), rirPad: !!Array.from(document.querySelectorAll('button')).find(b=>b.getAttribute('aria-label')==='RIR 2')};"
+ },
+ {
+  "js": "const c=Array.from(document.querySelectorAll('[role=checkbox]')).find(x=>x.getAttribute('aria-checked')!=='true'); if(!c) return 'nothing left to tick'; c.click(); return 'ticked '+c.getAttribute('aria-label');"
+ },
+ {
+  "wait": 700
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.getAttribute('aria-label')==='RIR 2'); if(!b) return 'no rir pad'; b.click(); return 'rir 2';"
+ },
+ {
+  "wait": 600
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.getAttribute('aria-label')==='Done, mark set complete'); if(!b) return 'no done btn'; b.click(); return 'done pressed';"
+ },
+ {
+  "wait": 900
+ },
+ {
+  "js": "const cs=Array.from(document.querySelectorAll('[role=checkbox]')); const chips=document.querySelectorAll('[data-testid^=\"exercise-chip-\"]').length; return {exercises: chips, checks: cs.length, checked: cs.filter(c=>c.getAttribute('aria-checked')==='true').length, promptVisible: /All sets done\\. Finish workout\\?/.test(document.body.innerText), rirPad: !!Array.from(document.querySelectorAll('button')).find(b=>b.getAttribute('aria-label')==='RIR 2')};"
+ },
+ {
+  "js": "const c=Array.from(document.querySelectorAll('[role=checkbox]')).find(x=>x.getAttribute('aria-checked')!=='true'); if(!c) return 'nothing left to tick'; c.click(); return 'ticked '+c.getAttribute('aria-label');"
+ },
+ {
+  "wait": 700
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.getAttribute('aria-label')==='RIR 2'); if(!b) return 'no rir pad'; b.click(); return 'rir 2';"
+ },
+ {
+  "wait": 600
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.getAttribute('aria-label')==='Done, mark set complete'); if(!b) return 'no done btn'; b.click(); return 'done pressed';"
+ },
+ {
+  "wait": 900
+ },
+ {
+  "js": "const cs=Array.from(document.querySelectorAll('[role=checkbox]')); const chips=document.querySelectorAll('[data-testid^=\"exercise-chip-\"]').length; return {exercises: chips, checks: cs.length, checked: cs.filter(c=>c.getAttribute('aria-checked')==='true').length, promptVisible: /All sets done\\. Finish workout\\?/.test(document.body.innerText), rirPad: !!Array.from(document.querySelectorAll('button')).find(b=>b.getAttribute('aria-label')==='RIR 2')};"
+ },
+ {
+  "shot": "B-after-ticks"
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>x.innerText.trim()==='Not yet'); if(!b) return 'no prompt'; b.click(); return 'not yet';"
+ },
+ {
+  "wait": 900
+ },
+ {
+  "js": "const k=document.querySelector('[aria-label=\"Exercise options\"]'); if(!k) return 'no kebab'; k.click(); return 'kebab';"
+ },
+ {
+  "wait": 700
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).find(x=>/^cancel workout$/i.test(x.innerText.trim())); if(!b) return 'no cancel item'; b.click(); return 'cancel item';"
+ },
+ {
+  "wait": 800
+ },
+ {
+  "js": "const bs=Array.from(document.querySelectorAll('button')).filter(x=>/^cancel workout$/i.test(x.innerText.trim())); const b=bs[bs.length-1]; if(!b) return 'no confirm'; b.click(); return 'cancelled test session';"
+ },
+ {
+  "wait": 2500
+ },
+ {
+  "js": "return location.pathname;"
+ }
+]

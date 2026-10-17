@@ -1,0 +1,53 @@
+[
+ {
+  "goto": "/"
+ },
+ {
+  "wait": 2500
+ },
+ {
+  "login": true
+ },
+ {
+  "goto": "/fuel"
+ },
+ {
+  "wait": 3000
+ },
+ {
+  "btn": "Search food"
+ },
+ {
+  "wait": 1200
+ },
+ {
+  "tapText": "Search for a food..."
+ },
+ {
+  "typeSoft": "chicken breast"
+ },
+ {
+  "wait": 3000
+ },
+ {
+  "done": 1
+ },
+ {
+  "wait": 1200
+ },
+ {
+  "shot": "after-return"
+ },
+ {
+  "tapText": "Chicken, breast, boneless, skinless, raw"
+ },
+ {
+  "wait": 1500
+ },
+ {
+  "shot": "item-detail"
+ },
+ {
+  "dump": "item-detail"
+ }
+]

@@ -1,0 +1,16 @@
+[
+  {"goto": "/"},
+  {"wait": 2500},
+  {"login": true},
+  {"goto": "/fuel"},
+  {"wait": 3500},
+  {"btn": "Scan barcode"},
+  {"wait": 2500},
+  {"tapText": "Enter manually"},
+  {"wait": 1000},
+  {"shot": "manual-barcode"},
+  {"dump": "manual-barcode"},
+  {"typeSoft": "012345678905"},
+  {"shot": "barcode-typed"},
+  {"dump": "barcode-typed"}
+]

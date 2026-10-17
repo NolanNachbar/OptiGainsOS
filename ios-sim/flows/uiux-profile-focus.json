@@ -1,0 +1,10 @@
+[
+  { "goto": "/profile" },
+  { "wait": 2500 },
+  { "shot": "a-profile-top" },
+  { "dump": "a-profile-top" },
+  { "tapText": "Training Focus" },
+  { "wait": 1200 },
+  { "shot": "b-training-focus-open" },
+  { "dump": "b-training-focus-open" }
+]

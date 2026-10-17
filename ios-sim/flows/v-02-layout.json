@@ -1,0 +1,47 @@
+[
+ {
+  "goto": "/quick-workout"
+ },
+ {
+  "wait": 4500
+ },
+ {
+  "login": true
+ },
+ {
+  "wait": 2500
+ },
+ {
+  "js": "const b=Array.from(document.querySelectorAll('button')).filter(x=>x.innerText.trim()==='Add Set'); b[1].click(); return b.length"
+ },
+ {
+  "wait": 800
+ },
+ {
+  "js": "const i=document.querySelector('input[aria-label=\"Set 1 weight in lbs\"]'); if(!i) return 'missing Set 1 weight in lbs'; const s=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set; i.focus(); s.call(i,'405'); i.dispatchEvent(new Event('input',{bubbles:true})); i.dispatchEvent(new Event('change',{bubbles:true})); return i.value"
+ },
+ {
+  "js": "const i=document.querySelector('input[aria-label=\"Set 1 reps\"]'); if(!i) return 'missing Set 1 reps'; const s=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set; i.focus(); s.call(i,'10'); i.dispatchEvent(new Event('input',{bubbles:true})); i.dispatchEvent(new Event('change',{bubbles:true})); return i.value"
+ },
+ {
+  "wait": 500
+ },
+ {
+  "shot": "layout-405"
+ },
+ {
+  "js": "const de=document.documentElement; const rows=Array.from(document.querySelectorAll('input[aria-label*=\"weight\"]')).map(i=>{const r=i.getBoundingClientRect(); return [i.value, Math.round(r.left), Math.round(r.right), i.scrollWidth>i.clientWidth]}); return {sw:de.scrollWidth,cw:de.clientWidth,bodysw:document.body.scrollWidth,iw:innerWidth,rows, dock: (()=>{const d=document.querySelector('[data-mobile-dock]'); if(!d) return 'none'; const r=d.getBoundingClientRect(); return {disp:getComputedStyle(d).display,top:r.top,h:r.height,vh:innerHeight}})()}"
+ },
+ {
+  "js": "const b=document.querySelector('[aria-label=\"Mark set 1 complete\"]'); if(!b) return 'missing Mark set 1 complete'; b.click(); return 'clicked'"
+ },
+ {
+  "wait": 1500
+ },
+ {
+  "shot": "after-complete-1"
+ },
+ {
+  "js": "return {t:document.body.innerText.slice(0,500), alerts:Array.from(document.querySelectorAll('[role=alert]')).map(a=>a.innerText), labels:Array.from(document.querySelectorAll('[aria-label]')).map(a=>a.getAttribute('aria-label')).filter(l=>/Mark set|RIR|weight|reps/.test(l))}"
+ }
+]

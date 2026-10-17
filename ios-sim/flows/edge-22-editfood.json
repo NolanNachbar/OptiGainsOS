@@ -1,0 +1,8 @@
+[
+  { "goto": "/fuel" },
+  { "wait": 4000 },
+  { "eval": "window.scrollBy(0, 1100); return window.scrollY" },
+  { "wait": 800 },
+  { "shot": "scrolled-entries" },
+  { "dump": "scrolled-entries" }
+]

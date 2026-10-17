@@ -1,0 +1,6 @@
+[{"goto": "/"}, {"wait": 2500}, {"login": true}, {"goto": "/quick-workout"}, {"wait": 3500},
+ {"tapText": "Skip, straight to the session", "optional": true}, {"wait": 1000},
+ {"btn": "Bench Press", "optional": true}, {"wait": 1800},
+ {"shot": "bench-added"}, {"dump": "bench-added"},
+ {"tapText": "Set 1 weight in lbs"}, {"wait": 900}, {"keys": "99999"}, {"wait": 500},
+ {"shot": "cap-typed"}, {"dump": "cap-typed"}]

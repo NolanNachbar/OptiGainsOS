@@ -1,0 +1,143 @@
+[
+ {
+  "goto": "/"
+ },
+ {
+  "wait": 2500
+ },
+ {
+  "login": true
+ },
+ {
+  "goto": "/fuel"
+ },
+ {
+  "wait": 3000
+ },
+ {
+  "btn": "Search food"
+ },
+ {
+  "wait": 1500
+ },
+ {
+  "done": 1
+ },
+ {
+  "scroll": "up"
+ },
+ {
+  "scroll": "up"
+ },
+ {
+  "scroll": "up"
+ },
+ {
+  "wait": 500
+ },
+ {
+  "shot": "scrolled-to-manual"
+ },
+ {
+  "tapText": "MANUAL ENTRY"
+ },
+ {
+  "wait": 800
+ },
+ {
+  "shot": "manual-open"
+ },
+ {
+  "tapText": "Food Name *"
+ },
+ {
+  "wait": 600
+ },
+ {
+  "typeSoft": "  Kbd Test Bowl  "
+ },
+ {
+  "shot": "name-typed"
+ },
+ {
+  "done": 1
+ },
+ {
+  "scroll": "up"
+ },
+ {
+  "wait": 600
+ },
+ {
+  "shot": "form-scrolled"
+ },
+ {
+  "dump": "form-scrolled"
+ },
+ {
+  "focus": "Calories"
+ },
+ {
+  "del": 1
+ },
+ {
+  "typeSoft": "450.5"
+ },
+ {
+  "done": 1
+ },
+ {
+  "focus": "Protein (g)"
+ },
+ {
+  "del": 1
+ },
+ {
+  "typeSoft": "30.5"
+ },
+ {
+  "done": 1
+ },
+ {
+  "focus": "Carbs (g)"
+ },
+ {
+  "del": 1
+ },
+ {
+  "typeSoft": "55"
+ },
+ {
+  "done": 1
+ },
+ {
+  "focus": "Fats (g)"
+ },
+ {
+  "del": 1
+ },
+ {
+  "typeSoft": "12.25"
+ },
+ {
+  "done": 1
+ },
+ {
+  "shot": "macros-typed"
+ },
+ {
+  "dump": "macros-typed"
+ },
+ {
+  "btn": "Add Food"
+ },
+ {
+  "wait": 2500
+ },
+ {
+  "shot": "after-add"
+ },
+ {
+  "dump": "after-add"
+ }
+]

@@ -1,0 +1,7 @@
+[
+ {"goto": "/"}, {"wait": 2500}, {"login": true},
+ {"goto": "/fuel"}, {"wait": 3500},
+ {"btn": "Scan barcode"}, {"wait": 3500},
+ {"shot": "scanner-open"}, {"dump": "scanner-open"},
+ {"eval": "return {active: document.activeElement&&document.activeElement.tagName, vvH: window.visualViewport.height, innerH: window.innerHeight, kbInset: getComputedStyle(document.documentElement).getPropertyValue('--keyboard-inset')}"}
+]

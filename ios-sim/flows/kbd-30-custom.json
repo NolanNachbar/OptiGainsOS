@@ -1,0 +1,80 @@
+[
+ {
+  "goto": "/"
+ },
+ {
+  "wait": 2500
+ },
+ {
+  "login": true
+ },
+ {
+  "goto": "/fuel"
+ },
+ {
+  "wait": 3000
+ },
+ {
+  "btn": "Search food"
+ },
+ {
+  "wait": 1500
+ },
+ {
+  "done": 1
+ },
+ {
+  "scroll": "up"
+ },
+ {
+  "scroll": "up"
+ },
+ {
+  "scroll": "up"
+ },
+ {
+  "wait": 500
+ },
+ {
+  "shot": "scrolled-to-manual"
+ },
+ {
+  "dump": "scrolled-to-manual"
+ },
+ {
+  "tapText": "MANUAL ENTRY"
+ },
+ {
+  "wait": 800
+ },
+ {
+  "shot": "manual-open"
+ },
+ {
+  "tapText": "Food Name *"
+ },
+ {
+  "wait": 600
+ },
+ {
+  "typeSoft": "  Kbd Test Bowl  "
+ },
+ {
+  "shot": "name-typed"
+ },
+ {
+  "done": 1
+ },
+ {
+  "scroll": "up"
+ },
+ {
+  "wait": 600
+ },
+ {
+  "shot": "form-scrolled"
+ },
+ {
+  "dump": "form-scrolled"
+ }
+]
