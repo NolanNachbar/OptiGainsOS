@@ -41,6 +41,11 @@ test.describe('weight typo guard', () => {
 
     // Seed a prior logged workout so getLastExercisePerformance resolves
     // lastWeight=80 for this uniquely-named exercise.
+    // A run that died before its cleanup leaves this exact seed behind, and the
+    // no-exact-dupes constraint would then reject the insert.
+    const { data: stale } = await db.from('workout_logs').select('id, exercises').eq('created_by', uid).eq('log_date', '2026-09-01');
+    const staleIds = (stale || []).filter((l) => (l.exercises || []).some((e) => e?.name === EXERCISE)).map((l) => l.id);
+    if (staleIds.length) await db.from('workout_logs').delete().in('id', staleIds);
     const priorLog = await db.from('workout_logs').insert({
       created_by: uid,
       log_date: '2026-09-01',

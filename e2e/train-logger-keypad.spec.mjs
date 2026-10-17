@@ -119,6 +119,9 @@ test('a full set logged entirely through the keypad sheet saves weight, reps and
     expect(set1.completed).toBe(true);
     expect(logs[0].exercises[0].sets[1].weight).toBe(135);
   } finally {
+    // Close first: an open logger autosaves the session back after cleanup deletes it,
+    // leaving an in_progress orphan that breaks every later Today/auto-finish spec.
+    await page.close().catch(() => {});
     await cleanup(workoutId);
     await removeSeededWeighIn();
   }

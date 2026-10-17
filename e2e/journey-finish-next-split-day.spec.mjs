@@ -109,6 +109,8 @@ test('finishing today\'s program workout: the next day shows the next day of the
     await p1.getByLabel(/Set 1 reps$/).first().fill('5');
     await p1.getByRole('checkbox', { name: /Mark set 1/ }).click();
     await expect(p1.getByRole('checkbox', { name: 'Mark set 1 incomplete' })).toBeVisible();
+    // Completing the last set asks "Finish workout?"; decline it and take the header Finish path.
+    await p1.getByRole('button', { name: 'Not yet' }).click();
     await p1.getByRole('button', { name: 'Finish', exact: true }).click();
     await p1.getByRole('button', { name: 'Log Workout' }).click();
 
