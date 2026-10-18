@@ -1622,6 +1622,9 @@ const handleSaveMealTemplate = () => {
   const swapDates = useMemo(() => [selectedDate], [selectedDate]);
   const { dayContext, isTrainingDay } = useDayPlanContext(swapDates, { enabled: !!targets.calories });
   const [swapEntry, setSwapEntry] = useState(null);
+  // Phone rows: swap/edit/delete open as a strip under the row on tap instead of
+  // three permanent 44px buttons that squeezed the food name to nothing.
+  const [openActionsId, setOpenActionsId] = useState(null);
   const eatenTotals = useMemo(() => ({
     calories: eatenEntries.reduce((s, e) => s + (e.calories || 0), 0),
     protein: eatenEntries.reduce((s, e) => s + (e.protein_grams || 0), 0),
@@ -2403,22 +2406,31 @@ const handleSaveMealTemplate = () => {
                               <span className="w-5 h-5 rounded-full border-[1.5px] border-track flex items-center justify-center hover:bg-brand/[0.18] hover:border-brand/60 transition-colors duration-200 [transition-timing-function:var(--ease)]" />
                             </button>
                           )}
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <span className={`text-[14px] font-bold tracking-tight truncate ${entry.planned ? 'text-ink-muted' : 'text-ink'}`}>{entry.food_name}</span>
-                              {entry.tag && (
-                                <span className="section-label shrink-0 glass-inset px-1.5 py-0.5">
-                                  {entry.tag === 'pre' ? 'Pre-WO' : 'Post-WO'}
-                                </span>
-                              )}
-                            </div>
+                          {/* Tapping the name block opens the action strip on phones
+                              (the strip is sm:hidden, so this is a no-op on desktop,
+                              where the hover buttons stay). */}
+                          <div
+                            className="min-w-0 flex-1 cursor-pointer sm:cursor-auto"
+                            onClick={() => setOpenActionsId((id) => (id === entry.id ? null : entry.id))}
+                          >
+                            {/* The name gets the whole line, wrapping to two lines
+                                on phones. The Pre/Post-WO tag moved down beside the
+                                quantity so it can't crowd the name out. */}
+                            <span className={`block text-[14px] font-bold tracking-tight leading-snug line-clamp-2 sm:line-clamp-1 ${entry.planned ? 'text-ink-muted' : 'text-ink'}`}>{entry.food_name}</span>
                             {/* Muted quantity line under the name. Gated on
-                                serving OR cost so an entry with a cost but no
-                                parseable serving still shows its $ amount. */}
-                            {(formatEntryServing(entry) || entry.cost_usd != null) && (
-                              <span className="block text-[11px] font-technical mt-0.5 font-semibold text-ink-muted truncate">
-                                {formatEntryServing(entry)}{entry.planned ? ' · planned' : ''}
-                                {entry.cost_usd != null && ` · $${entry.cost_usd.toFixed(2)}`}
+                                serving OR cost OR tag so an entry with a cost but
+                                no parseable serving still shows its $ amount. */}
+                            {(formatEntryServing(entry) || entry.cost_usd != null || entry.tag) && (
+                              <span className="flex items-center gap-1.5 text-[11px] font-technical mt-0.5 font-semibold text-ink-muted min-w-0">
+                                {entry.tag && (
+                                  <span className="section-label shrink-0 glass-inset px-1.5 py-0.5">
+                                    {entry.tag === 'pre' ? 'Pre-WO' : 'Post-WO'}
+                                  </span>
+                                )}
+                                <span className="truncate">
+                                  {formatEntryServing(entry)}{entry.planned ? ' · planned' : ''}
+                                  {entry.cost_usd != null && ` · $${entry.cost_usd.toFixed(2)}`}
+                                </span>
                               </span>
                             )}
                           </div>
@@ -2426,7 +2438,7 @@ const handleSaveMealTemplate = () => {
                               before, just compacted to sit beside the numeric
                               columns instead of the FAB-clearance gutter. Every
                               row keeps a real 44px tap target on mobile. */}
-                          <div className="shrink-0 flex items-center gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200 [transition-timing-function:var(--ease)]">
+                          <div className="shrink-0 hidden sm:flex items-center gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200 [transition-timing-function:var(--ease)]">
                             {entry.planned && (
                               <button
                                 onClick={() => setSwapEntry(entry)}
@@ -2449,6 +2461,35 @@ const handleSaveMealTemplate = () => {
                         <span data-field="protein" className={`font-technical text-[14px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{entry.protein_grams ?? 0}</span>
                         <span data-field="carbs" className={`font-technical text-[14px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{entry.carbs_grams ?? 0}</span>
                         <span data-field="fats" className={`font-technical text-[14px] font-semibold text-ink text-right tabular-nums ${entry.planned ? 'opacity-45' : ''}`}>{entry.fats_grams ?? 0}</span>
+                        {/* Phone action strip: same handlers as the desktop hover
+                            buttons, full-width 44px targets, one row under the food. */}
+                        {openActionsId === entry.id && (
+                          <div className="col-span-5 flex gap-2 pt-2 pb-1 sm:hidden">
+                            {entry.planned && (
+                              <button
+                                onClick={() => { setOpenActionsId(null); setSwapEntry(entry); }}
+                                aria-label={`Swap out ${entry.food_name}`}
+                                className="flex-1 min-h-[44px] flex items-center justify-center gap-1.5 rounded-lg glass-inset text-[13px] font-bold text-ink-secondary active:scale-95 transition-transform duration-200 [transition-timing-function:var(--ease)]"
+                              >
+                                <ArrowLeftRight className="w-4 h-4" /> Swap
+                              </button>
+                            )}
+                            <button
+                              onClick={() => { setOpenActionsId(null); startEditEntry(entry); }}
+                              aria-label="Edit entry"
+                              className="flex-1 min-h-[44px] flex items-center justify-center gap-1.5 rounded-lg glass-inset text-[13px] font-bold text-ink-secondary active:scale-95 transition-transform duration-200 [transition-timing-function:var(--ease)]"
+                            >
+                              <Pencil className="w-4 h-4" /> Edit
+                            </button>
+                            <button
+                              onClick={() => { setOpenActionsId(null); deleteFoodMutation.mutate(entry); }}
+                              aria-label="Delete entry"
+                              className="flex-1 min-h-[44px] flex items-center justify-center gap-1.5 rounded-lg glass-inset text-[13px] font-bold text-bad active:scale-95 transition-transform duration-200 [transition-timing-function:var(--ease)]"
+                            >
+                              <Trash2 className="w-4 h-4" /> Delete
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))}
 
