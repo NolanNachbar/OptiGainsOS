@@ -36,6 +36,7 @@ import { buildLoadWhy } from "@/utils/loadRationale";
 import { currentE1rm, loadForTarget } from "@/utils/e1rm";
 import { blockProgressionWeight, exerciseProgressionWeight, doubleSeed } from "@/utils/progressionRules";
 import { applyEquipmentProfile, applyEquipmentProfileToWorkout, substituteFor } from "@/utils/equipmentProfile";
+import { orderExercisesForFatigue } from "@/utils/exerciseOrder";
 import EquipmentProfileToggle from "@/components/workouts/EquipmentProfileToggle";
 import OverrideProgramWorkout from "@/components/workouts/OverrideProgramWorkout";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
@@ -234,7 +235,10 @@ export default function WorkoutDetail() {
   // Fetch program workout data (program mode only)
   const { data: programWorkout, isError: programWorkoutError, refetch: refetchProgramWorkout } = useQuery({
     queryKey: ['programWorkout', programWorkoutId],
-    queryFn: () => db.entities.ProgramWorkout.get(programWorkoutId),
+    queryFn: async () => {
+      const pw = await db.entities.ProgramWorkout.get(programWorkoutId);
+      return pw ? { ...pw, exercises: orderExercisesForFatigue(pw.exercises) } : pw;
+    },
     enabled: isProgramSource && !!programWorkoutId,
   });
 
@@ -661,7 +665,7 @@ export default function WorkoutDetail() {
         // A no-op when the engine already re-planned around the profile, since
         // what it picked is by definition something the profile can run.
         const engineFiltered = applyEquipmentProfile(engineSelected, equipmentProfile).exercises;
-        initialLogs = engineFiltered.filter(ex => !isRunEx(ex)).map((ex, index) => {
+        initialLogs = orderExercisesForFatigue(engineFiltered.filter(ex => !isRunEx(ex))).map((ex, index) => {
           // The plan's set_scheme carries no load_lbs — it's the static weekly
           // shape, not the day's autoregulated numbers. Match today's engine row
           // (training_prescription.strength_block) by set_type so real e1RM-based
