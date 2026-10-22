@@ -30,6 +30,7 @@ import { getCoachingPhase, getPreSessionInsight } from "@/utils/coachingEngine";
 import PreSessionInsightCard from "@/components/workouts/PreSessionInsightCard";
 import { STALE_SESSION_MS, AUTO_FINISH_STALE_MS, AUTO_FINISH_MAX_AGE_MS } from "@/lib/workoutSessionFlag";
 import { sessionSilenceMs } from "@/lib/buildWorkoutLogFromSession";
+import { orderExercisesForFatigue } from "@/utils/exerciseOrder";
 
 const formatTimeAgo = (startTimeStr) => {
   if (!startTimeStr) return "recently";
@@ -64,7 +65,7 @@ export default function QuickWorkout() {
       const m = String(r ?? "").match(/\d+/);
       return m ? parseInt(m[0], 10) : 0;
     };
-    return prescribed.exercises.map((ex, i) => ({
+    return orderExercisesForFatigue(prescribed.exercises).map((ex, i) => ({
       name: ex.name,
       exercise_index: i,
       prescribed: { reps: ex.reps, rir: ex.rir, targetWeight: ex.targetWeight },
