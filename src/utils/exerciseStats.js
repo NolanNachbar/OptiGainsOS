@@ -328,6 +328,12 @@ export const estimateOneRepMax = (weight, reps) => {
 // most isolation/burnout work) from reporting a fabricated e1RM at all.
 const MAX_E1RM_REPS = 12;
 
+// Comparison windows whose heaviest working weight differs by more than this
+// fraction are treated as a different load basis (unit, per-side vs total,
+// different machine), not as progress or regression. 2.2x (lb/kg) and 2x
+// (per-side/total) are far past it; normal week-to-week loading is well under.
+const LOAD_BASIS_BREAK = 0.25;
+
 // Exported so per-row UI (the logger's e1RM column) can reuse the exact same
 // eligibility rule instead of re-deriving a second copy of it.
 export const isE1rmEligibleSet = (s) =>
@@ -437,9 +443,11 @@ export const getLoggedExerciseSummaries = (logs) => {
           if (eligible.length === 0) return null;
           const best = Math.max(...eligible.map(x => estimateOneRepMax(x.weight, x.reps)));
           if (!best) return null;
-          return { date: s.date, e1rm: Math.round(best * 10) / 10 };
+          const topWeight = Math.max(...eligible.map(x => Number(x.weight)));
+          return { date: s.date, e1rm: Math.round(best * 10) / 10, raw: best, topWeight };
         })
         .filter(Boolean);
+
 
       if (eligibleHistory.length === 0) {
         // Never trained ≤12 reps — no honest e1RM to show. Best weight ×
@@ -495,19 +503,30 @@ export const getLoggedExerciseSummaries = (logs) => {
       const currentWindow = eligibleHistory.filter(h => h.date >= currentFloor && h.date <= anchor);
       const priorWindow = eligibleHistory.filter(h => h.date >= priorFloor && h.date <= priorCeil);
 
-      const currentBest = Math.max(...currentWindow.map(h => h.e1rm));
-      const priorBest = priorWindow.length ? Math.max(...priorWindow.map(h => h.e1rm)) : null;
+      const currentRaw = Math.max(...currentWindow.map(h => h.raw));
+      const currentBest = Math.round(currentRaw * 10) / 10;
+      // Like for like: workout_logs carries no unit, side or machine tag, so a
+      // switch (lb to kg, per-side to total, a different machine or gym)
+      // shows up only as a step change in working load. When the heaviest
+      // working weight in the two windows differs by more than
+      // LOAD_BASIS_BREAK, the windows are on different load bases and the
+      // e1RM gap between them is not progress or regression: no delta.
+      const currentTop = Math.max(...currentWindow.map(h => h.topWeight));
+      const priorTop = priorWindow.length ? Math.max(...priorWindow.map(h => h.topWeight)) : null;
+      const sameBasis = priorTop != null &&
+        Math.abs(currentTop - priorTop) / Math.max(currentTop, priorTop) <= LOAD_BASIS_BREAK;
+      const priorRaw = sameBasis ? Math.max(...priorWindow.map(h => h.raw)) : null;
 
       return {
         name: displayName,
-        history: eligibleHistory,
+        history: eligibleHistory.map(({ date, e1rm }) => ({ date, e1rm })),
         lastDate,
         count,
         currentE1rm: currentBest,
         bestWeight: null,
         bestReps: null,
         bodyweightReps: null,
-        change4w: priorBest != null ? Math.round((currentBest - priorBest) * 10) / 10 : null,
+        change4w: priorRaw != null ? Math.round((currentRaw - priorRaw) * 10) / 10 : null,
       };
     })
     .sort((a, b) => {
