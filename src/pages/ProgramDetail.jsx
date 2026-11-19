@@ -12,8 +12,7 @@ import {
 import { calculateDailyTargets } from "@/utils/programProgression";
 import { exportProgramAsJson } from "@/utils/programIO";
 import CycleDayGrid from "@/components/programs/CycleDayGrid";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LoadingState, ErrorState, ReasonLine } from "@/components/ui";
+import { Card, CardContent, CardHeader, CardTitle, PageHeader, LoadingState, ErrorState, ListRow, Stat, cn } from "@/components/ui";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -35,11 +34,7 @@ import {
   Edit,
   Share2,
   Download,
-  Dumbbell,
-  Calendar,
   AlertTriangle,
-  Repeat,
-  Activity,
   ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -149,14 +144,14 @@ export default function ProgramDetail() {
   const handlePause = () => {
     statusMutation.mutate(
       { id: enrollment.id, status: "paused" },
-      { onSuccess: () => toast.success("Program paused") }
+      { onSuccess: () => toast.success("Program paused.") }
     );
   };
 
   const handleResume = () => {
     statusMutation.mutate(
       { id: enrollment.id, status: "active" },
-      { onSuccess: () => toast.success("Program resumed") }
+      { onSuccess: () => toast.success("Program resumed.") }
     );
   };
 
@@ -185,7 +180,7 @@ export default function ProgramDetail() {
     deleteMutation.mutate(program.id, {
       onSuccess: () => {
         setShowDeleteDialog(false);
-        toast.success("Program deleted");
+        toast.success("Program deleted.");
         navigate("/workouts");
       },
       onError: () => {
@@ -224,18 +219,14 @@ export default function ProgramDetail() {
     ? { label: "Resume", onClick: handleResume }
     : null;
 
+  const trainingDays = workouts.filter((w) => w.exercises?.length > 0).length;
+  const goal = program.focus || program.goal;
+
   return (
-    <div className="p-4 md:p-6 transition-colors duration-300">
-      {/* Sticky thumb-zone CTA — the header action scrolls off on a tall mobile
-          page, so mirror it as a fixed bottom-edge button (mobile only) clearing
-          the dock + safe-area inset. The dock is fixed at z-[9999] over this
-          same bottom strip (Layout.jsx), so the bar's padding must reserve the
-          dock's own height (--dock-total-height, same token CreateWorkout.jsx
-          uses for its sticky action row) or a real tap here is swallowed by
-          the dock instead of opening the dialog. */}
+    <div>
       {primaryAction && (
         <div
-          className="md:hidden fixed inset-x-0 bottom-0 z-30 px-4 pt-3 glass-elevated"
+          className="md:hidden fixed inset-x-0 bottom-0 z-30 px-gutter pt-3 bg-charcoal-surface border-t border-charcoal-border shadow-elev-2"
           style={{ paddingBottom: 'calc(var(--dock-total-height) + 16px + env(safe-area-inset-bottom))' }}
         >
           <Button variant="primary" size="lg" className="w-full" onClick={primaryAction.onClick}>
@@ -244,118 +235,72 @@ export default function ProgramDetail() {
           </Button>
         </div>
       )}
-      <div className="max-w-4xl mx-auto pb-[calc(6rem+var(--dock-total-height))] md:pb-0">
-        {/* Back button */}
-        <button
-          onClick={() => navigate("/workouts")}
-          className="flex items-center gap-2 text-ink-muted hover:text-ink mb-4 text-body transition-colors min-h-[44px] -my-2.5 py-2.5"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Workouts
-        </button>
+      <div className="max-w-2xl mx-auto pb-[calc(6rem+var(--dock-total-height))] md:pb-[var(--dock-clearance)]">
+        <PageHeader
+          back={
+            <button
+              onClick={() => navigate("/workouts")}
+              className="flex items-center gap-1 -ml-1 mb-1 min-h-tap text-caption text-ink-muted hover:text-ink transition-colors duration-base"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Workouts
+            </button>
+          }
+          eyebrow={goal ? (GOAL_LABELS[goal] || goal) : undefined}
+          title={program.title || program.name}
+          meta={enrollment && positionLabel ? positionLabel : `${durationLabel} · ${frequencyLabel}`}
+        />
 
-        {/* Header */}
-        <Card className="mb-6 overflow-hidden rise-in">
-          <CardContent className="pt-5 pb-5">
-            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {(program.focus || program.goal) && (
-                    <Badge variant="outline">
-                      {GOAL_LABELS[program.focus || program.goal] || program.focus || program.goal}
-                    </Badge>
-                  )}
-                  {/* 'active' is the common case and is already implied by the
-                      coral Start CTA + position line; only surface the status
-                      badge when it is an exception (paused/completed). */}
-                  {enrollment?.status && enrollment.status !== "active" && (
-                    <Badge variant="outline" className="text-ink-muted capitalize">
-                      {enrollment.status}
-                    </Badge>
-                  )}
+        <div className="flex flex-col gap-stack">
+        <Card>
+          <CardContent className="pt-4 flex flex-col gap-3">
+            {enrollment?.status && enrollment.status !== "active" && (
+              <div>
+                <Badge variant="outline" className="capitalize">{enrollment.status}</Badge>
+              </div>
+            )}
+            {enrollment && positionLabel && (
+              <div className="flex flex-col gap-2">
+                <Stat
+                  size="sm"
+                  label="Progress"
+                  value={`${completedCount} / ${totalWorkouts}`}
+                  unit="workouts"
+                  reason={`${progressPercent}% of ${numCycles} cycle${numCycles !== 1 ? "s" : ""} complete`}
+                />
+                <div className="h-1.5 bg-track rounded-pill overflow-hidden">
+                  <div
+                    className="h-full bg-brand rounded-pill transition-[width] duration-slow ease-out"
+                    style={{ width: `${progressPercent}%` }}
+                  />
                 </div>
-                <h1 className="type-display text-display mb-1">
-                  {program.title || program.name}
-                </h1>
-                {/* Position + progress — the single most important status for an
-                    enrolled athlete. Promoted directly under the title with
-                    tabular numerals so it is read before any secondary metadata. */}
-                {enrollment && positionLabel && (
-                  <>
-                    <div className="flex items-baseline gap-2 mb-1">
-                      <span className="font-numeral tabular-nums text-body font-bold text-ink">
-                        {positionLabel}
-                      </span>
-                      <span className="font-numeral tabular-nums text-body text-ink-muted">
-                        {completedCount}/{totalWorkouts} workouts &middot; {progressPercent}%
-                      </span>
-                    </div>
-                    {/* Progress track sits directly under the position/count line —
-                        no border-t divider, keeping the completion datum with its
-                        numbers. Fill uses bg-brand (the action hue); leaf is
-                        reserved for biometric readiness, not a completion metric. */}
-                    <div className="h-1.5 bg-track rounded-pill overflow-hidden mb-2">
-                      <div
-                        className="h-full bg-brand rounded-pill transition-all duration-500"
-                        style={{ width: `${progressPercent}%` }}
-                      />
-                    </div>
-                  </>
-                )}
-                {program.description && (
-                  <>
-                    <p className={`text-ink-muted text-body ${showDescription ? "" : "line-clamp-2"}`}>
-                      {program.description}
-                    </p>
-                    {program.description.length > 90 && (
-                      <button
-                        onClick={() => setShowDescription((v) => !v)}
-                        className="mt-0.5 min-h-[44px] -my-2.5 inline-flex items-center text-caption font-medium text-ink-muted hover:text-ink transition-colors"
-                        aria-expanded={showDescription}
-                      >
-                        {showDescription ? "Less" : "More"}
-                      </button>
-                    )}
-                  </>
-                )}
-
-                {/* Meta row. When enrolled, the promoted position line above already
-                    states the cycle/day cadence, so the duration/frequency chips are
-                    suppressed to keep Schedule near the first fold; only the unique
-                    training-day count remains. Unenrolled visitors still get the full
-                    cadence summary. */}
-                <div className="flex flex-wrap gap-4 mt-3 text-body text-ink-muted">
-                  {!enrollment && (
-                    <>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4 text-ink-muted" />
-                        {durationLabel}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Repeat className="w-4 h-4 text-ink-muted" />
-                        {frequencyLabel}
-                      </div>
-                    </>
-                  )}
-                  <div className="flex items-center gap-1">
-                    <Dumbbell className="w-4 h-4 text-ink-muted" />
-                    {workouts.filter((w) => w.exercises?.length > 0).length} training days
-                  </div>
-                </div>
-
-                {program.tags?.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {program.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-caption">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
+              </div>
+            )}
+            {program.description && (
+              <div>
+                <p className={cn("text-body text-ink-muted", !showDescription && "line-clamp-2")}>
+                  {program.description}
+                </p>
+                {program.description.length > 90 && (
+                  <button
+                    onClick={() => setShowDescription((v) => !v)}
+                    className="min-h-tap inline-flex items-center text-caption text-ink-muted hover:text-ink transition-colors duration-base"
+                    aria-expanded={showDescription}
+                  >
+                    {showDescription ? "Less" : "More"}
+                  </button>
                 )}
               </div>
-
-              {/* Action buttons */}
-              <div className="flex flex-col gap-2 min-w-[160px]">
+            )}
+            <p className="text-caption text-ink-muted tabular-nums">{trainingDays} training days</p>
+            {program.tags?.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {program.tags.map((tag) => (
+                  <Badge key={tag} variant="outline">{tag}</Badge>
+                ))}
+              </div>
+            )}
+              <div className="flex flex-col gap-2">
                 {!enrollment && (
                   <>
                     <Button
@@ -373,7 +318,7 @@ export default function ProgramDetail() {
                         <Link
                           to="/signup"
                           state={{ returnTo: location.pathname }}
-                          className="text-brand hover:text-brand font-medium"
+                          className="text-ink underline"
                         >
                           Sign up
                         </Link>
@@ -407,27 +352,25 @@ export default function ProgramDetail() {
                 {(isEnrolled || enrollment?.status === "paused" || isOwner) && (
                   <div className="flex flex-col gap-2">
                     <Button
-                      variant="outline"
-                      size="lg"
+                      variant="secondary"
                       className="w-full"
                       onClick={() => setShowManageActions((v) => !v)}
                       aria-expanded={showManageActions}
                     >
                       Manage
-                      <ChevronDown className={`w-4 h-4 ml-1.5 transition-transform ${showManageActions ? "rotate-180" : ""}`} />
+                      <ChevronDown className={`w-4 h-4 ml-1.5 transition-transform duration-base ${showManageActions ? "rotate-180" : ""}`} />
                     </Button>
                     {showManageActions && (
                       <div className="grid grid-cols-2 gap-2">
                         {isEnrolled && (
-                          <Button variant="outline" size="lg" className="w-full min-w-0" onClick={handlePause}>
+                          <Button variant="secondary" className="w-full min-w-0" onClick={handlePause}>
                             <Pause className="w-4 h-4 mr-1.5" />
                             Pause
                           </Button>
                         )}
                         {(isEnrolled || enrollment?.status === "paused") && (
                           <Button
-                            variant="outline"
-                            size="lg"
+                            variant="secondary"
                             className="w-full min-w-0"
                             onClick={handleRestart}
                           >
@@ -437,8 +380,7 @@ export default function ProgramDetail() {
                         )}
                         {isOwner && (
                           <Button
-                            variant="outline"
-                            size="lg"
+                            variant="secondary"
                             className="w-full min-w-0"
                             onClick={() => navigate(`/program-builder?edit=${program.id}`)}
                           >
@@ -448,12 +390,11 @@ export default function ProgramDetail() {
                         )}
                         {isOwner && (
                           <Button
-                            variant="outline"
-                            size="lg"
+                            variant="secondary"
                             className="w-full min-w-0"
                             onClick={() => {
                               exportProgramAsJson(program);
-                              toast.success("Program exported");
+                              toast.success("Program exported.");
                             }}
                           >
                             <Download className="w-4 h-4 mr-1.5" />
@@ -463,7 +404,6 @@ export default function ProgramDetail() {
                         {isOwner && (
                           <Button
                             variant="destructive"
-                            size="lg"
                             className="w-full min-w-0"
                             onClick={handleDelete}
                           >
@@ -476,14 +416,13 @@ export default function ProgramDetail() {
                   </div>
                 )}
               </div>
-            </div>
           </CardContent>
         </Card>
 
         {/* Schedule Grid */}
-        <Card className="mb-6 rise-in-2">
+        <Card>
           <CardHeader>
-            <CardTitle className="text-title text-ink">Schedule</CardTitle>
+            <CardTitle>Schedule</CardTitle>
           </CardHeader>
           <CardContent>
             {/* Collapsed default: window to the single current cycle so the fold
@@ -502,10 +441,10 @@ export default function ProgramDetail() {
             {numCycles > 1 && (
               <button
                 onClick={() => setShowAllCycles((v) => !v)}
-                className="mt-4 w-full flex items-center justify-center gap-1.5 min-h-[44px] text-body font-medium text-ink-muted hover:text-ink transition-colors"
+                className="mt-4 w-full flex items-center justify-center gap-1.5 min-h-tap text-body text-ink-muted hover:text-ink transition-colors duration-base"
               >
                 {showAllCycles ? "Show current cycle only" : `Show all ${numCycles} cycles`}
-                <ChevronDown className={`w-4 h-4 transition-transform ${showAllCycles ? "rotate-180" : ""}`} />
+                <ChevronDown className={`w-4 h-4 transition-transform duration-base ${showAllCycles ? "rotate-180" : ""}`} />
               </button>
             )}
           </CardContent>
@@ -513,9 +452,9 @@ export default function ProgramDetail() {
 
         {/* Exercise progression state */}
         {enrollment?.progression_state && Object.keys(enrollment.progression_state).filter(k => !k.startsWith('_')).length > 0 && (
-          <Card className="rise-in-3">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-title text-ink">Progression</CardTitle>
+              <CardTitle>Progression</CardTitle>
             </CardHeader>
             <CardContent>
               {(() => {
@@ -541,54 +480,43 @@ export default function ProgramDetail() {
               return (
               <div className="space-y-2">
                 {sharedSuggestions.map((text) => (
-                  <div key={text} className="glass-inset p-3 flex items-start gap-1.5">
+                  <Card key={text} variant="inset" className="p-3 flex items-start gap-2">
                     <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-warn" />
-                    <p className="font-numeral tabular-nums text-caption text-warn">{text}</p>
-                  </div>
+                    <p className="text-caption text-warn tabular-nums">{text}</p>
+                  </Card>
                 ))}
                 {visibleEntries
                   .map(([name, state]) => {
                     const effortVal = state.last_session_rir_avg ?? state.last_session_rpe_avg;
+                    const sessions = state.sessions_at_current_weight || 0;
                     return (
-                    <div key={name} className="glass-inset p-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-body text-ink">{name}</p>
-                        <ReasonLine>
-                          {state.sessions_at_current_weight || 0} session{(state.sessions_at_current_weight || 0) === 1 ? "" : "s"} at current weight
-                          {effortVal != null && (
-                            <> &middot; avg {effortVal.toFixed(1)} RIR</>
-                          )}
-                        </ReasonLine>
-                      </div>
-                      <div className="text-right">
-                        <p className="pill-value inline-block text-ink">
-                          {state.working_weight ?? '--'} <small className="text-caption font-semibold text-ink-muted">lb</small>
+                    <Card key={name} variant="inset" className="overflow-hidden">
+                      <ListRow
+                        title={name}
+                        detail={`${sessions} session${sessions === 1 ? "" : "s"} at current weight${effortVal != null ? ` · avg ${effortVal.toFixed(1)} RIR` : ""}`}
+                        value={state.working_weight ?? "--"}
+                        unit="lb"
+                        trailing={
+                          state.stalled ? (
+                            <Badge variant="amber">Stalled</Badge>
+                          ) : state.ready_to_progress ? (
+                            <Badge variant="outline">Ready to progress</Badge>
+                          ) : null
+                        }
+                      />
+                      {state.stalled && state.stall_suggestion && !sharedSet.has(state.stall_suggestion) && (
+                        <p className="px-gutter pb-3 text-caption text-warn tabular-nums flex items-start gap-2">
+                          <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                          <span>{state.stall_suggestion}</span>
                         </p>
-                        {state.stalled ? (
-                          <Badge variant="outline" className="text-caption mt-1 bg-warn/10 text-warn border-warn/25">
-                            Stalled
-                          </Badge>
-                        ) : state.ready_to_progress && (
-                          <Badge variant="outline" className="text-caption mt-1 text-ink-muted">
-                            Ready to progress
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    {state.stalled && state.stall_suggestion && !sharedSet.has(state.stall_suggestion) && (
-                      <p className="font-numeral tabular-nums text-caption text-warn mt-2 flex items-start gap-1.5">
-                        <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                        <span>{state.stall_suggestion}</span>
-                      </p>
-                    )}
-                    </div>
+                      )}
+                    </Card>
                   );
                   })}
                 {!showAllProgression && hiddenCount > 0 && (
                   <button
                     onClick={() => setShowAllProgression(true)}
-                    className="mt-1 w-full flex items-center justify-center gap-1.5 min-h-[44px] text-body font-medium text-ink-muted hover:text-ink transition-colors"
+                    className="mt-1 w-full flex items-center justify-center gap-1.5 min-h-tap text-body text-ink-muted hover:text-ink transition-colors duration-base"
                   >
                     Show all {allEntries.length} exercises
                     <ChevronDown className="w-4 h-4" />
@@ -597,7 +525,7 @@ export default function ProgramDetail() {
                 {showAllProgression && allEntries.length > DEFAULT_VISIBLE && (
                   <button
                     onClick={() => setShowAllProgression(false)}
-                    className="mt-1 w-full flex items-center justify-center gap-1.5 min-h-[44px] text-body font-medium text-ink-muted hover:text-ink transition-colors"
+                    className="mt-1 w-full flex items-center justify-center gap-1.5 min-h-tap text-body text-ink-muted hover:text-ink transition-colors duration-base"
                   >
                     Show fewer
                     <ChevronDown className="w-4 h-4 rotate-180" />
@@ -609,6 +537,8 @@ export default function ProgramDetail() {
             </CardContent>
           </Card>
         )}
+
+        </div>
 
         {/* Workout detail dialog */}
         <Dialog open={!!showWorkoutDetail} onOpenChange={() => setShowWorkoutDetail(null)}>
@@ -626,7 +556,7 @@ export default function ProgramDetail() {
                   {showWorkoutDetail.type && (
                     <>
                       <span>&middot;</span>
-                      <Badge variant="outline" className="capitalize text-caption">
+                      <Badge variant="outline" className="capitalize">
                         {showWorkoutDetail.type}
                       </Badge>
                     </>
@@ -643,46 +573,25 @@ export default function ProgramDetail() {
                         : null;
 
                     return (
-                      <div
-                        key={i}
-                        className="flex items-center justify-between glass-inset p-3"
-                      >
-                        <div>
-                          <p className="font-medium text-body text-ink">{ex.name}</p>
-                          <p className="font-numeral tabular-nums text-caption text-ink-muted">
-                            {ex.sets} sets &times; {ex.rep_target || "?"} reps
-                            {ex.rir_target != null && ` @ RIR ${ex.rir_target}`}
-                          </p>
-                        </div>
-                        {targets?.workingWeight && (
-                          <div className="text-right">
-                            <p className="pill-value inline-block text-ink">{targets.workingWeight} <small className="text-caption font-semibold text-ink-muted">lb</small></p>
-                            <p className="font-numeral tabular-nums text-caption text-ink-muted mt-0.5">
-                              Min: {targets.dailyMin} lb
-                            </p>
-                          </div>
-                        )}
-                      </div>
+                      <Card key={i} variant="inset" className="overflow-hidden">
+                        <ListRow
+                          title={ex.name}
+                          detail={`${ex.sets} sets × ${ex.rep_target || "?"} reps${ex.rir_target != null ? ` @ RIR ${ex.rir_target}` : ""}`}
+                          value={targets?.workingWeight || undefined}
+                          unit={targets?.workingWeight ? "lb" : undefined}
+                          trailing={targets?.workingWeight ? <span className="text-caption text-ink-muted tabular-nums">Min {targets.dailyMin} lb</span> : null}
+                        />
+                      </Card>
                     );
                   })}
                   {(showWorkoutDetail.cardio_sessions || []).map((c, i) => (
-                    <div
-                      key={`cardio-${i}`}
-                      className="flex items-center justify-between glass-inset p-3"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Activity className="w-4 h-4 text-carb" />
-                        <div>
-                          <p className="font-medium text-body text-ink">{c.title}</p>
-                          <p className="font-numeral tabular-nums text-caption text-ink-muted">
-                            {c.duration_minutes} min{c.time_of_day && c.time_of_day !== "anytime" ? ` · ${c.time_of_day.toUpperCase()}` : ""}
-                          </p>
-                        </div>
-                      </div>
-                      <span className="rounded-pill px-2 py-1 text-caption font-bold uppercase tracking-wide bg-carb/[0.14] text-carb whitespace-nowrap">
-                        Cardio
-                      </span>
-                    </div>
+                    <Card key={`cardio-${i}`} variant="inset" className="overflow-hidden">
+                      <ListRow
+                        title={c.title}
+                        detail={`${c.duration_minutes} min${c.time_of_day && c.time_of_day !== "anytime" ? ` · ${c.time_of_day.toUpperCase()}` : ""}`}
+                        trailing={<Badge variant="outline">Cardio</Badge>}
+                      />
+                    </Card>
                   ))}
                 </div>
               </div>
@@ -710,7 +619,7 @@ export default function ProgramDetail() {
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="mt-1 glass glass-interactive text-ink [color-scheme:dark]"
+                  className="mt-1 [color-scheme:dark]"
                 />
               </div>
 
@@ -721,8 +630,8 @@ export default function ProgramDetail() {
                   <div className="flex items-center gap-1">
                     <Input
                       type="number" inputMode="decimal"
-                      placeholder="lbs"
-                      className="w-24 glass glass-interactive placeholder:text-ink-muted"
+                      placeholder="lb"
+                      className="w-24"
                       value={startingWeights[ex.name] || ""}
                       onChange={(e) =>
                         setStartingWeights((prev) => ({
@@ -731,7 +640,7 @@ export default function ProgramDetail() {
                         }))
                       }
                     />
-                    <span className="text-caption text-ink-muted">lbs</span>
+                    <span className="text-caption text-ink-muted">lb</span>
                   </div>
                 </div>
               ))}

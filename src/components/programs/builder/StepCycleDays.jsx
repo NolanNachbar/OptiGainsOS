@@ -49,7 +49,7 @@ export default function StepCycleDays({
             onClearDay={onClearDay}
           />
 
-          <div className="mt-4 pt-4 border-t hairline">
+          <div className="mt-4 pt-4 border-t border-charcoal-borderSoft">
             {/* Mobile: keep the cycle grid focal — collapse the library behind a toggle.
                 Desktop always shows it. Sidebar stays mounted so DnD drag source persists. */}
             <Button

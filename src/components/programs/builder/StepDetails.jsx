@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, Stat } from "@/components/ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronDown, Calendar } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import NumberStepper from "./NumberStepper";
 import { GOALS } from "./constants";
 
@@ -31,7 +31,7 @@ export default function StepDetails({ program, setProgram, tagInput, setTagInput
     <Card>
       <CardContent className="space-y-3 pt-5">
         <div>
-          <Label className="form-label">Program Name *</Label>
+          <Label className="text-micro">Program Name *</Label>
           <Input
             value={program.name}
             onChange={(e) => update("name", e.target.value)}
@@ -54,7 +54,7 @@ export default function StepDetails({ program, setProgram, tagInput, setTagInput
             keeps its own full-width row; all three rejoin 3-up on desktop. */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
           <div>
-            <Label className="form-label">Cycle Length *</Label>
+            <Label className="text-micro">Cycle Length *</Label>
             <NumberStepper
               value={program.cycle_length}
               onChange={(v) => update("cycle_length", v)}
@@ -65,7 +65,7 @@ export default function StepDetails({ program, setProgram, tagInput, setTagInput
             <p className="text-caption text-ink-muted mt-0.5">Days per cycle · rest days included</p>
           </div>
           <div>
-            <Label className="form-label">Cycles *</Label>
+            <Label className="text-micro">Cycles *</Label>
             <NumberStepper
               value={program.num_cycles}
               onChange={(v) => update("num_cycles", v)}
@@ -78,7 +78,7 @@ export default function StepDetails({ program, setProgram, tagInput, setTagInput
           {/* Goal spans both columns (own row) then rejoins the desktop
               three-up row. */}
           <div className="sm:col-span-2 md:col-span-1">
-            <Label className="form-label">Goal</Label>
+            <Label className="text-micro">Goal</Label>
             <Select
               value={program.goal}
               onValueChange={(v) => update("goal", v)}
@@ -101,47 +101,43 @@ export default function StepDetails({ program, setProgram, tagInput, setTagInput
 
         {/* Total training days — the derived datum, promoted to the ONE
             dominant display figure on Step 1 (program-builder-2,3). The total
-            renders as a hero-metric far larger than any label (.form-label,
+            renders as a Stat far larger than any label (.form-label,
             12px) or stepper value (~14px) so Step 1 lands a single focal number.
             The whole derived line is wrapped in font-numeral tabular-nums (tabular
             numerals) so every figure aligns; the supporting prose stays muted
             below the hero figure (program-builder-3 / program-duration-modal-6). */}
-        <div className="flex items-center gap-3 glass-inset p-4 font-numeral tabular-nums">
-          <Calendar className="w-5 h-5 flex-shrink-0 text-ink-muted" />
-          <div className="min-w-0">
-            <div className="flex items-baseline gap-2">
-              <span className="hero-metric text-display text-ink">{program.cycle_length * program.num_cycles}</span>
-              <span className="section-label">total training days</span>
-            </div>
-            <p className="text-body text-ink-secondary mt-0.5">
-              {program.cycle_length}-day cycle repeated {program.num_cycles} time{program.num_cycles !== 1 ? "s" : ""}
-            </p>
-          </div>
-        </div>
+        <Card variant="inset" className="p-4">
+          <Stat
+            label="Total training days"
+            value={program.cycle_length * program.num_cycles}
+            unit="days"
+            reason={`${program.cycle_length}-day cycle repeated ${program.num_cycles} time${program.num_cycles !== 1 ? "s" : ""}`}
+          />
+        </Card>
 
         {/* Optional details — Description + Tags are deferred behind a
             disclosure so the duration controls + Next land within ~1.5 phone
             viewports. The toggle is a full-width 44px control; chevron rotates
             on the single system easing. */}
-        <div className="border-t hairline pt-3">
+        <div className="border-t border-charcoal-borderSoft pt-3">
           <button
             type="button"
             onClick={() => setShowOptional((v) => !v)}
             aria-expanded={showOptional}
             className="w-full min-h-[44px] flex items-center justify-between text-left"
           >
-            <span className="section-label">Optional details</span>
+            <span className="text-micro text-ink-muted">Optional details</span>
             <ChevronDown
-              className={`w-4 h-4 text-ink-muted transition-transform duration-200 ease-[var(--ease)] ${
+              className={`w-4 h-4 text-ink-muted transition-transform duration-base ease-out ${
                 showOptional ? "rotate-180" : ""
               }`}
             />
           </button>
 
           {showOptional && (
-            <div className="space-y-3 mt-2 rise-in">
+            <div className="space-y-3 mt-2">
               <div>
-                <Label className="form-label">Description</Label>
+                <Label className="text-micro">Description</Label>
                 <Textarea
                   value={program.description}
                   onChange={(e) => update("description", e.target.value)}
@@ -152,7 +148,7 @@ export default function StepDetails({ program, setProgram, tagInput, setTagInput
               </div>
 
               <div>
-                <Label className="form-label">Tags</Label>
+                <Label className="text-micro">Tags</Label>
                 <div className="flex gap-2 mt-1">
                   <Input
                     value={tagInput}
@@ -165,7 +161,7 @@ export default function StepDetails({ program, setProgram, tagInput, setTagInput
                       }
                     }}
                   />
-                  <Button type="button" variant="outline" onClick={addTag} className="min-h-[44px]">
+                  <Button type="button" variant="outline" onClick={addTag} >
                     Add
                   </Button>
                 </div>
@@ -181,7 +177,7 @@ export default function StepDetails({ program, setProgram, tagInput, setTagInput
                         onClick={() => update("tags", program.tags.filter((t) => t !== tag))}
                         className="min-h-[44px] flex items-center"
                       >
-                        <Badge variant="secondary" className="cursor-pointer">
+                        <Badge variant="outline" className="cursor-pointer">
                           {tag} &times;
                         </Badge>
                       </button>
