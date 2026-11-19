@@ -75,7 +75,7 @@ export default function ExerciseEditor({
             </div>
           )}
           <div>
-            <Label className="text-caption text-ink-muted">{isCardio ? "Intensity (RIR)" : "RIR Target"}</Label>
+            <Label className="text-caption text-ink-muted">{isCardio ? "Intensity (RIR)" : "RIR target"}</Label>
             <Input
               type="number" inputMode="decimal"
               value={exercise.rir_target}
@@ -90,7 +90,7 @@ export default function ExerciseEditor({
             />
           </div>
           <div>
-            <Label className="text-caption text-ink-muted">{isCardio ? "Rounds/Intervals" : "Sets"}</Label>
+            <Label className="text-caption text-ink-muted">{isCardio ? "Rounds or intervals" : "Sets"}</Label>
             <Input
               type="number" inputMode="numeric"
               value={typeof exercise.sets === "number" ? exercise.sets : Array.isArray(exercise.sets) ? exercise.sets.length : 3}
@@ -100,7 +100,7 @@ export default function ExerciseEditor({
             />
           </div>
           <div>
-            <Label className="text-caption text-ink-muted">{isCardio ? "Duration/Distance" : "Rep Target"}</Label>
+            <Label className="text-caption text-ink-muted">{isCardio ? "Duration or distance" : "Rep target"}</Label>
             <Input
               value={exercise.rep_target}
               onChange={(e) => update("rep_target", e.target.value)}

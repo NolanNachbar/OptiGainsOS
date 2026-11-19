@@ -25,7 +25,6 @@ import {
 } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import {
-  ArrowLeft,
   Play,
   Pause,
   RotateCcw,
@@ -237,15 +236,6 @@ export default function ProgramDetail() {
       )}
       <div className="max-w-2xl mx-auto pb-[calc(6rem+var(--dock-total-height))] md:pb-[var(--dock-clearance)]">
         <PageHeader
-          back={
-            <button
-              onClick={() => navigate("/workouts")}
-              className="flex items-center gap-1 -ml-1 mb-1 min-h-tap text-caption text-ink-muted hover:text-ink transition-colors duration-base"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Workouts
-            </button>
-          }
           eyebrow={goal ? (GOAL_LABELS[goal] || goal) : undefined}
           title={program.title || program.name}
           meta={enrollment && positionLabel ? positionLabel : `${durationLabel} · ${frequencyLabel}`}
@@ -462,7 +452,7 @@ export default function ProgramDetail() {
               const allEntries = Object.entries(enrollment.progression_state).filter(([key]) => !key.startsWith('_'));
               // Prioritize stalled exercises ahead of ready-to-progress so the cap keeps the most urgent.
               const actionableEntries = allEntries
-                .filter(([, state]) => state.stalled || state.ready_to_progress)
+                .filter(([, state]) => (state.stalled && Number(state.working_weight) > 0) || state.ready_to_progress)
                 .sort(([, a], [, b]) => (b.stalled ? 1 : 0) - (a.stalled ? 1 : 0));
               const baseEntries = actionableEntries.length === 0 ? allEntries : actionableEntries;
               // Collapsed by default: lead with a small capped list, route the rest behind "Show all".
@@ -470,13 +460,22 @@ export default function ProgramDetail() {
               const hiddenCount = allEntries.length - visibleEntries.length;
               // Surface any stall suggestion that repeats verbatim on 2+ visible cards once as a
               // banner instead of having the user re-read identical boilerplate per card.
+              // Bodyweight lifts have no load, so a weight-based stall verdict is meaningless for them.
+              const isBodyweight = (s) => !(Number(s.working_weight) > 0);
+              const isStalled = (s) => s.stalled && !isBodyweight(s);
+              // Near-identical advice (differing only by digits/case/spacing) collapses to one banner.
+              const adviceKey = (t) => t.toLowerCase().replace(/[\d.]+/g, "#").replace(/\s+/g, " ").trim();
               const suggestionCounts = visibleEntries
-                .filter(([, s]) => s.stalled && s.stall_suggestion)
-                .reduce((acc, [, s]) => acc.set(s.stall_suggestion, (acc.get(s.stall_suggestion) || 0) + 1), new Map());
-              const sharedSuggestions = [...suggestionCounts.entries()]
-                .filter(([, count]) => count >= 2)
-                .map(([text]) => text);
-              const sharedSet = new Set(sharedSuggestions);
+                .filter(([, s]) => isStalled(s) && s.stall_suggestion)
+                .reduce((acc, [, s]) => {
+                  const k = adviceKey(s.stall_suggestion);
+                  const cur = acc.get(k);
+                  return acc.set(k, { text: cur?.text ?? s.stall_suggestion, count: (cur?.count || 0) + 1 });
+                }, new Map());
+              const sharedSuggestions = [...suggestionCounts.values()]
+                .filter(({ count }) => count >= 2)
+                .map(({ text }) => text);
+              const sharedKeys = new Set([...suggestionCounts.entries()].filter(([, v]) => v.count >= 2).map(([k]) => k));
               return (
               <div className="space-y-2">
                 {sharedSuggestions.map((text) => (
@@ -489,22 +488,23 @@ export default function ProgramDetail() {
                   .map(([name, state]) => {
                     const effortVal = state.last_session_rir_avg ?? state.last_session_rpe_avg;
                     const sessions = state.sessions_at_current_weight || 0;
+                    const bodyweight = isBodyweight(state);
                     return (
                     <Card key={name} variant="inset" className="overflow-hidden">
                       <ListRow
                         title={name}
-                        detail={`${sessions} session${sessions === 1 ? "" : "s"} at current weight${effortVal != null ? ` · avg ${effortVal.toFixed(1)} RIR` : ""}`}
-                        value={state.working_weight ?? "--"}
-                        unit="lb"
+                        detail={`${sessions} session${sessions === 1 ? "" : "s"}${bodyweight ? "" : " at current weight"}${effortVal != null ? ` · avg ${effortVal.toFixed(1)} RIR` : ""}`}
+                        value={bodyweight ? "Bodyweight" : state.working_weight}
+                        unit={bodyweight ? undefined : "lb"}
                         trailing={
-                          state.stalled ? (
+                          isStalled(state) ? (
                             <Badge variant="amber">Stalled</Badge>
                           ) : state.ready_to_progress ? (
                             <Badge variant="outline">Ready to progress</Badge>
                           ) : null
                         }
                       />
-                      {state.stalled && state.stall_suggestion && !sharedSet.has(state.stall_suggestion) && (
+                      {isStalled(state) && state.stall_suggestion && !sharedKeys.has(adviceKey(state.stall_suggestion)) && (
                         <p className="px-gutter pb-3 text-caption text-warn tabular-nums flex items-start gap-2">
                           <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
                           <span>{state.stall_suggestion}</span>
