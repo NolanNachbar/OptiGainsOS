@@ -22,13 +22,13 @@ const PST_TARGETS = {
 };
 
 // Shared section-header pattern (mirrors the SectionHeader in AthleteState):
-// hue-coded icon + section-label heading. Kept local since the AthleteState
+// hue-coded icon + text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted heading. Kept local since the AthleteState
 // copy is not exported; markup is intentionally identical so siblings match.
 function SectionHeader({ icon: Icon, title, color = "text-teal" }) {
   return (
     <div className="flex items-center gap-2">
       <Icon className={`w-3.5 h-3.5 ${color}`} />
-      <h2 className="section-label !text-ink">{title}</h2>
+      <h2 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink">{title}</h2>
     </div>
   );
 }
@@ -139,7 +139,7 @@ function TimeField({ unit, value, onChange, disabled, max, placeholder = "0" }) 
         </span>
       </div>
       {clamped && cap != null && (
-        <p className="mt-1 text-[11px] font-semibold text-muted-2 tabular-nums">Max {cap}</p>
+        <p className="mt-1 text-caption font-semibold text-muted-2 tabular-nums">Max {cap}</p>
       )}
     </div>
   );
@@ -210,10 +210,10 @@ export default function PSTTracker() {
   ].some(v => String(v).trim() !== "");
 
   return (
-    <Card className="glass glass-interactive">
+    <Card className="bg-charcoal-surface border border-charcoal-border transition-colors duration-base hover:bg-charcoal-surface2">
       <CardHeader className="pb-2 pt-4 px-5">
         <div className="flex items-center justify-between gap-2">
-          {/* Shared SectionHeader pattern (icon + section-label !text-ink),
+          {/* Shared SectionHeader pattern (icon + text-micro font-semibold uppercase tracking-[0.08em] text-ink),
               matching the AthleteState sibling cards, with Log Test kept as a
               trailing action. Waves carries the endurance hue (teal). */}
           <SectionHeader icon={Waves} title="PST Performance" />
@@ -222,7 +222,7 @@ export default function PSTTracker() {
           </Button>
         </div>
         {latest?.test_date && (
-          <p className="font-technical text-[11px] font-semibold text-muted-2 mt-1">Last tested: {format(parseISO(latest.test_date), "MMM d, yyyy")}</p>
+          <p className="font-technical text-caption font-semibold text-muted-2 mt-1">Last tested: {format(parseISO(latest.test_date), "MMM d, yyyy")}</p>
         )}
       </CardHeader>
       <CardContent className="px-5 pb-4">
@@ -245,8 +245,8 @@ export default function PSTTracker() {
             {/* Comparison with previous */}
             {prev && (
               <div className="mt-3 pt-3 border-t hairline">
-                <p className="section-label mb-2">vs previous ({format(parseISO(prev.test_date), "MMM d, yyyy")})</p>
-                <div className="grid grid-cols-5 gap-1 text-center text-[11px]">
+                <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-2">vs previous ({format(parseISO(prev.test_date), "MMM d, yyyy")})</p>
+                <div className="grid grid-cols-5 gap-1 text-center text-caption">
                   {[
                     { label: "Swim", cur: latest.swim_seconds, prv: prev.swim_seconds, lower: true },
                     { label: "Push", cur: latest.pushups,      prv: prev.pushups,      lower: false },
@@ -355,11 +355,11 @@ export default function PSTTracker() {
                 content px-6 so the bar spans the sheet edge to edge. Sits OUTSIDE
                 the padded fields div (pst-5) so the Notes box clears it on scroll. */}
             <div
-              className="sticky bottom-0 -mx-6 flex gap-3 border-t hairline px-6 pt-3 glass-sheet"
+              className="sticky bottom-0 -mx-6 flex gap-3 border-t hairline px-6 pt-3 bg-charcoal-surface2"
               style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
             >
               <Button variant="ghost" size="lg" className="flex-1" disabled={saveMutation.isPending} onClick={() => setShowForm(false)}>Cancel</Button>
-              <Button variant="volt" size="lg" className="flex-1" disabled={saveMutation.isPending || !hasAnyScore} onClick={() => saveMutation.mutate()}>
+              <Button variant="primary" size="lg" className="flex-1" disabled={saveMutation.isPending || !hasAnyScore} onClick={() => saveMutation.mutate()}>
                 {saveMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 spin-loop" /> Saving…

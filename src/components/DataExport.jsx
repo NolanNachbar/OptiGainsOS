@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button, IconButton, Card } from "@/components/ui";
 import { Download, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/api/supabaseClient";
 import { buildLiftingCsvRows, fetchAllPages as fetchAllQueryPages } from "@/utils/workoutCsv";
@@ -134,10 +134,10 @@ export default function DataExport({ weightEntries = [], foodEntries = [] }) {
     setLoading(exp.id);
     try {
       await exp.fn(user, { weightEntries, foodEntries, emit: downloadCSV });
-      toast.success(`${exp.label} downloaded`);
+      toast.success(`Downloaded ${exp.label}.`);
     } catch (err) {
       console.error(err);
-      toast.error("Export failed");
+      toast.error("Could not export. Retry.");
     } finally {
       setLoading(null);
     }
@@ -154,49 +154,54 @@ export default function DataExport({ weightEntries = [], foodEntries = [] }) {
         count++;
       } catch (err) {
         console.error(err);
-        toast.error(`${exp.label} export failed`);
+        toast.error(`Could not export ${exp.label}.`);
       }
     }
     for (const [filename, rows] of files) {
       downloadCSV(filename, rows);
       await new Promise((r) => setTimeout(r, 400));
     }
-    toast.success(`${count} of ${EXPORTS.length} files downloaded`);
+    toast.success(`Downloaded ${count} of ${EXPORTS.length} files.`);
     setLoading(null);
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <p className="font-medium text-ink">Export Your Data</p>
-          <p className="text-sm text-ink-muted">{EXPORTS.length} datasets available as CSV</p>
+    <div className="flex flex-col gap-stack">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-emph font-semibold text-ink">Export your data</p>
+          <p className="text-caption text-ink-muted">{EXPORTS.length} datasets as CSV</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={runAll} disabled={!!loading} className="shrink-0">
+          <Button variant="secondary" size="sm" onClick={runAll} disabled={!!loading} className="shrink-0">
             <Download className="w-4 h-4 mr-1.5" />
-            {loading === "all" ? "Exporting…" : "Export All"}
+            {loading === "all" ? "Exporting…" : "Export all"}
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => setExpanded(v => !v)} className="shrink-0 px-2">
-            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </Button>
+          <IconButton
+            icon={expanded ? ChevronUp : ChevronDown}
+            label={expanded ? "Hide datasets" : "Show datasets"}
+            onClick={() => setExpanded(v => !v)}
+          />
         </div>
       </div>
 
       {expanded && (
-        <div className="space-y-2 mt-3 pt-3 border-t border-charcoal-border">
+        <Card variant="inset">
           {EXPORTS.map((exp) => (
-            <div key={exp.id} className="flex items-center justify-between py-2 px-3 rounded-lg bg-charcoal border border-charcoal-border">
-              <div>
-                <p className="text-sm text-ink font-medium">{exp.label}</p>
-                <p className="text-xs text-ink-muted">{exp.description}</p>
+            <div key={exp.id} className="flex min-h-[56px] items-center justify-between gap-3 px-gutter py-row border-b border-charcoal-borderSoft last:border-b-0">
+              <div className="min-w-0">
+                <p className="text-emph font-semibold text-ink">{exp.label}</p>
+                <p className="text-caption text-ink-muted">{exp.description}</p>
               </div>
-              <Button variant="ghost" size="sm" className="h-7 px-3 text-xs shrink-0" disabled={!!loading} onClick={() => run(exp)}>
-                {loading === exp.id ? "…" : <Download className="w-3.5 h-3.5" />}
-              </Button>
+              <IconButton
+                icon={Download}
+                label={`Download ${exp.label}`}
+                disabled={!!loading}
+                onClick={() => run(exp)}
+              />
             </div>
           ))}
-        </div>
+        </Card>
       )}
     </div>
   );

@@ -97,13 +97,13 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
       {result && (
         <Card className="surface border-none rise-in">
           <CardContent className="pt-6 space-y-4">
-            <p className="section-label">Plates Per Side</p>
+            <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Plates Per Side</p>
             {result.platesNeeded.length > 0 ? (
               <div className="space-y-3">
                 {result.platesNeeded.map((plate, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 glass-inset">
+                  <div key={index} className="flex items-center justify-between p-3 bg-charcoal-surface2 rounded-control">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 glass-inset rounded-full flex items-center justify-center text-ink font-bold font-technical">
+                      <div className="w-12 h-12 bg-charcoal-surface2 rounded-control rounded-full flex items-center justify-center text-ink font-bold font-technical">
                         {plate.count}×
                       </div>
                       <div>
@@ -122,14 +122,14 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
                 ))}
 
                 {!result.exact && result.remainder > 0.1 && (
-                  <div className="p-3 glass-inset text-sm text-ink-muted">
+                  <div className="p-3 bg-charcoal-surface2 rounded-control text-sm text-ink-muted">
                     <strong className="text-ink">Note:</strong> Can't load exactly. Missing {result.remainder.toFixed(1)} {weightUnit} per side.
                   </div>
                 )}
 
                 <div className="pt-3 border-t hairline">
                   <div className="text-sm text-ink-muted mb-1">Total loaded:</div>
-                  <div className="hero-metric text-4xl text-ink">
+                  <div className="text-display font-numeral tabular-nums text-ink">
                     {parseFloat(barWeight) + (result.platesNeeded.reduce((sum, p) => sum + (p.weight * p.count), 0) * 2)} {weightUnit}
                   </div>
                 </div>
@@ -193,7 +193,7 @@ function WorkingWeightCalculator({ weightUnit = 'lbs' }) {
     <div className="space-y-5">
       {/* Known performance */}
       <div>
-        <p className="section-label mb-3">What you know</p>
+        <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3">What you know</p>
         <div className="grid grid-cols-3 gap-3">
           <div>
             <Label className="mb-1.5 block">
@@ -217,7 +217,7 @@ function WorkingWeightCalculator({ weightUnit = 'lbs' }) {
 
       {/* Target */}
       <div>
-        <p className="section-label mb-3">What you want to do</p>
+        <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3">What you want to do</p>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label className="mb-1.5 block">Target reps</Label>
@@ -241,7 +241,7 @@ function WorkingWeightCalculator({ weightUnit = 'lbs' }) {
           <CardContent className="pt-6 space-y-4">
             <div className="text-center">
               <div className="text-sm text-ink-muted mb-1">Working Weight</div>
-              <div className="hero-metric text-4xl text-ink">
+              <div className="text-display font-numeral tabular-nums text-ink">
                 {result.rounded} <span className="text-2xl text-ink-muted">{weightUnit}</span>
               </div>
               <div className="text-sm text-ink-muted mt-1">
@@ -281,7 +281,7 @@ export default function CalculatorsModal({ isOpen, onClose, weightUnit = 'lbs' }
           </DialogTitle>
         </DialogHeader>
         <Tabs defaultValue="1rm" className="w-full">
-          <TabsList className="w-full h-auto mb-4 gap-1 rounded-xl border-b-0 glass-inset p-1">
+          <TabsList className="w-full h-auto mb-4 gap-1 rounded-xl border-b-0 bg-charcoal-surface2 rounded-control p-1">
             <TabsTrigger variant="segment" value="1rm" className="flex-1">
               <Scale className="w-4 h-4 mr-2" />
               1RM

@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
-import { AuthShell, AuthHeader } from '@/pages/Login';
+import { AuthShell, AuthHeader, AuthPanel } from '@/pages/Login';
 import { toast } from 'sonner';
 
 export default function ForgotPassword() {
@@ -42,24 +42,22 @@ export default function ForgotPassword() {
 
   return (
     <AuthShell>
-      <AuthHeader subtitle="Reset your password" />
+      <AuthHeader title="Reset password" meta="We email a reset link" />
 
-      <div className="glass w-full max-w-sm mt-6 sm:mt-9 px-4 pt-5 pb-4 rise-in-2">
+      <AuthPanel>
         {emailSent ? (
           <div key="sent" className="text-center space-y-4 rise-in">
-            <div className="glass-inset mx-auto flex h-12 w-12 items-center justify-center text-ink">
-              <CheckCircle className="w-5 h-5" />
-            </div>
-            <p className="text-ink text-sm font-semibold">Check your email</p>
-            <p className="text-secondary text-xs">
-              We've sent a password reset link to <span className="font-semibold text-ink">{email}</span>
+            <CheckCircle aria-hidden="true" className="mx-auto h-5 w-5 text-leaf" />
+            <p className="text-emph font-semibold text-ink">Check your email</p>
+            <p className="text-caption text-ink-muted">
+              Reset link sent to <span className="font-semibold text-ink">{email}</span>
             </p>
-            <p className="text-secondary text-xs">
-              Didn't receive the email? Check your spam folder or try again.
+            <p className="text-caption text-ink-muted">
+              Not there? Check spam or try another address.
             </p>
             <Button
               onClick={() => setEmailSent(false)}
-              variant="dark"
+              variant="primary"
               size="lg"
               className="w-full"
             >
@@ -68,9 +66,9 @@ export default function ForgotPassword() {
           </div>
         ) : (
           <form key="form" onSubmit={handleSubmit} className="space-y-4 rise-in" noValidate>
-            <p className="text-secondary text-sm text-center">Enter the email tied to your account and we'll send a reset link.</p>
+            <p className="text-body text-ink-muted text-center">Enter the email on your account. The link arrives by email.</p>
             <div>
-              <Label htmlFor="email" className="text-ink mb-1 block">Email</Label>
+              <Label htmlFor="email" className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-1 block">Email</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                 <Input
@@ -86,12 +84,12 @@ export default function ForgotPassword() {
                   aria-describedby={errorMsg ? 'email-error' : undefined}
                 />
               </div>
-              {errorMsg && <p id="email-error" role="alert" className="text-ink text-[14px] mt-1.5">{errorMsg}</p>}
+              {errorMsg && <p id="email-error" role="alert" className="text-body text-bad mt-1">{errorMsg}</p>}
             </div>
 
             <Button
               type="submit"
-              variant="volt"
+              variant="primary"
               size="lg"
               className="w-full"
               disabled={loading}
@@ -108,16 +106,16 @@ export default function ForgotPassword() {
           </form>
         )}
 
-        <div className="flex items-center justify-center mt-3 pt-2 border-t border-charcoal-borderSoft px-0.5">
+        <div className="flex items-center justify-center mt-4 pt-2 border-t border-charcoal-borderSoft px-0.5">
           <Link
             to="/login"
-            className="text-sm font-semibold text-secondary hover:text-ink active:text-ink transition-colors duration-200 ease-[var(--ease)] inline-flex items-center justify-center gap-2 min-h-[44px] px-2"
+            className="text-body font-semibold text-ink-muted hover:text-ink active:text-ink transition-colors duration-base ease-out inline-flex items-center justify-center gap-2 min-h-[44px] px-2"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to sign in
           </Link>
         </div>
-      </div>
+      </AuthPanel>
     </AuthShell>
   );
 }

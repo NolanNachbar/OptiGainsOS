@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import QuickCapture from "@/components/QuickCapture";
-import { Button } from "@/components/ui/button";
+import { Button, PageHeader } from "@/components/ui";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -186,7 +186,7 @@ function ReadingTab() {
         {/* While empty, the ghost "Add your first book" CTA owns the single coral
             primary, suppress the header button so we don't show two add actions. */}
         {books.length > 0 && (
-          <Button variant="volt" size="sm" onClick={() => { resetForm(); setEditing(null); setShowAdd(true); }} className="gap-1.5">
+          <Button variant="primary" size="sm" onClick={() => { resetForm(); setEditing(null); setShowAdd(true); }} className="gap-1.5">
             <Plus className="w-3.5 h-3.5" /> Add Book
           </Button>
         )}
@@ -196,7 +196,7 @@ function ReadingTab() {
 
       {currentlyReading.length > 0 && (
         <div>
-          <h3 className="section-label !text-violet mb-3">Currently Reading</h3>
+          <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3">Currently Reading</h3>
           <div className="space-y-3">
             {currentlyReading.map(book => <BookCard key={book.id} book={book} onEdit={openEdit} onDelete={setConfirmDelete} onStatusChange={updateStatus.mutate} />)}
           </div>
@@ -208,7 +208,7 @@ function ReadingTab() {
         const visibleRest = showAllRest ? sortedRest : sortedRest.slice(0, 6);
         return (
           <div>
-            <h3 className="section-label mb-3">All Books</h3>
+            <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3">All Books</h3>
             <div className="space-y-3">
               {visibleRest.map(book => (
                 <BookCard key={book.id} book={book} onEdit={openEdit} onDelete={setConfirmDelete} onStatusChange={updateStatus.mutate} />
@@ -227,7 +227,7 @@ function ReadingTab() {
         <div className="surface p-8 text-center flex flex-col items-center">
           <BookOpen className="w-8 h-8 text-faint mb-2" />
           <p className="text-sm font-semibold text-muted-2 mb-3">No books logged yet. Add one to record takeaways and a rating.</p>
-          <Button variant="volt" size="lg" onClick={() => { resetForm(); setEditing(null); setShowAdd(true); }}>Add your first book</Button>
+          <Button variant="primary" size="lg" onClick={() => { resetForm(); setEditing(null); setShowAdd(true); }}>Add your first book</Button>
         </div>
       )}
 
@@ -290,7 +290,7 @@ function ReadingTab() {
             </div>
             <div className="flex gap-2 pt-1">
               <Button variant="ghost" size="lg" className="basis-1/3 shrink-0" onClick={() => { setShowAdd(false); resetForm(); }}>Cancel</Button>
-              <Button variant="volt" size="lg" className="flex-1" disabled={!form.title.trim() || save.isPending} onClick={() => save.mutate()}>Save</Button>
+              <Button variant="primary" size="lg" className="flex-1" disabled={!form.title.trim() || save.isPending} onClick={() => save.mutate()}>Save</Button>
             </div>
           </div>
         </DialogContent>
@@ -302,7 +302,7 @@ function ReadingTab() {
 function BookCard({ book, onEdit, onDelete, onStatusChange }) {
   const STATUS_NEXT = { "want-to-read": "reading", reading: "finished", finished: "finished", paused: "reading" };
   return (
-    <div className="glass glass-interactive p-4 group">
+    <div className="bg-charcoal-surface border border-charcoal-border transition-colors duration-base hover:bg-charcoal-surface2 p-4 group">
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex-1 min-w-0">
           <p className="text-sm font-extrabold text-ink truncate">{book.title}</p>
@@ -320,12 +320,12 @@ function BookCard({ book, onEdit, onDelete, onStatusChange }) {
       <div className="flex items-center gap-2 flex-wrap">
         <button
           onClick={() => onStatusChange({ book, status: STATUS_NEXT[book.status] })}
-          className={`text-[11px] font-bold px-2 py-0.5 rounded-full border-[0.5px] transition-colors ${STATUS_COLORS[book.status]}`}
+          className={`text-caption font-bold px-2 py-0.5 rounded-full border-[0.5px] transition-colors ${STATUS_COLORS[book.status]}`}
         >
           {STATUS_LABELS[book.status]}
         </button>
         {book.category && (
-          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border-[0.5px] ${CHIP_NEUTRAL}`}>
+          <span className={`text-caption font-bold px-2 py-0.5 rounded-full border-[0.5px] ${CHIP_NEUTRAL}`}>
             {book.category}
           </span>
         )}
@@ -403,8 +403,8 @@ function StudyTab() {
 
   return (
     <div className="space-y-6">
-      <div className="glass glass-interactive p-5">
-        <h3 className="section-label mb-4 flex items-center gap-2">
+      <div className="bg-charcoal-surface border border-charcoal-border transition-colors duration-base hover:bg-charcoal-surface2 p-5">
+        <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-4 flex items-center gap-2">
           <Zap className="w-3 h-3 text-violet" /> Log Study Session
         </h3>
         <div className="space-y-3">
@@ -422,7 +422,7 @@ function StudyTab() {
             </div>
             <Input value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Notes (optional)" />
             <Button
-              variant="volt"
+              variant="primary"
               size="lg"
               className="w-full"
               disabled={!form.topic.trim() || !form.duration_min || save.isPending}
@@ -437,18 +437,18 @@ function StudyTab() {
           sessions sits beside it as a quiet supporting figure (smaller, muted ink),
           so the tab reads with one hero stat rather than two equal-weight numbers. */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="glass-inset p-4 text-center">
-          <p className="hero-metric text-3xl text-ink">{weekMinutesError ? "—" : weeklyHours.toFixed(1)}</p>
-          <p className="text-[11px] font-bold text-muted-2 uppercase tracking-[0.08em] mt-0.5">hrs this week</p>
+        <div className="bg-charcoal-surface2 rounded-control p-4 text-center">
+          <p className="text-display font-numeral tabular-nums text-ink">{weekMinutesError ? "—" : weeklyHours.toFixed(1)}</p>
+          <p className="text-caption font-bold text-muted-2 uppercase tracking-[0.08em] mt-0.5">hrs this week</p>
         </div>
-        <div className="glass-inset p-4 text-center">
+        <div className="bg-charcoal-surface2 rounded-control p-4 text-center">
           <p className="font-technical text-base font-bold text-muted-2">{totalSessionsError ? "—" : (totalSessions ?? logs.length)}</p>
-          <p className="text-[11px] font-bold text-muted-2 uppercase tracking-[0.08em] mt-0.5">total sessions</p>
+          <p className="text-caption font-bold text-muted-2 uppercase tracking-[0.08em] mt-0.5">total sessions</p>
         </div>
       </div>
 
       <div>
-        <h3 className="section-label mb-3 flex items-center gap-2">
+        <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3 flex items-center gap-2">
           <History className="w-3 h-3" /> Recent Sessions
         </h3>
         <div className="space-y-2">
@@ -460,17 +460,17 @@ function StudyTab() {
             </div>
           )}
           {logs.map(log => (
-            <div key={log.id} className="flex items-center gap-3 px-4 py-3 glass-inset group">
+            <div key={log.id} className="flex items-center gap-3 px-4 py-3 bg-charcoal-surface2 rounded-control group">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
                   <span className="text-sm font-bold text-ink truncate">{log.topic}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 font-technical text-[11px] font-semibold text-muted-2">
+                  <div className="flex items-center gap-1 font-technical text-caption font-semibold text-muted-2">
                     <Timer className="w-3 h-3" />{log.duration_min} min
                   </div>
-                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border-[0.5px] ${CHIP_NEUTRAL}`}>{log.medium}</span>
-                  <span className="font-technical text-[11px] font-semibold text-muted-2">{format(parseISO(log.logged_at), "MMM d")}</span>
+                  <span className={`text-caption font-bold px-2 py-0.5 rounded-full border-[0.5px] ${CHIP_NEUTRAL}`}>{log.medium}</span>
+                  <span className="font-technical text-caption font-semibold text-muted-2">{format(parseISO(log.logged_at), "MMM d")}</span>
                 </div>
               </div>
               <button onClick={() => setConfirmDelete(log.id)} className="min-w-11 min-h-11 -m-1.5 inline-flex items-center justify-center opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad transition-all shrink-0">
@@ -570,7 +570,7 @@ function SkillsTab() {
           </div>
         )}
         <div className="ml-auto">
-          <Button variant="volt" size="sm" onClick={() => setShowAdd(true)} className="gap-1.5">
+          <Button variant="primary" size="sm" onClick={() => setShowAdd(true)} className="gap-1.5">
             <Plus className="w-3.5 h-3.5" /> Add Skill
           </Button>
         </div>
@@ -583,11 +583,11 @@ function SkillsTab() {
           const daysSince = skill.last_practiced_at ? differenceInDays(new Date(), parseISO(skill.last_practiced_at)) : null;
           const isStale = daysSince === null || daysSince > 14;
           return (
-            <div key={skill.id} className={`glass p-4 group ${isStale ? "rounded-2xl border-violet/15 bg-violet/[0.04]" : "glass-interactive"}`}>
+            <div key={skill.id} className={`bg-charcoal-surface border border-charcoal-border p-4 group ${isStale ? "border-charcoal-borderSoft" : "transition-colors duration-base hover:bg-charcoal-surface2"}`}>
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <p className="text-sm font-extrabold text-ink">{skill.name}</p>
-                  {skill.category && <p className="text-[11px] font-semibold text-muted-2">{skill.category}</p>}
+                  {skill.category && <p className="text-caption font-semibold text-muted-2">{skill.category}</p>}
                 </div>
                 <button onClick={() => setConfirmDelete(skill.id)} className="opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad transition-all min-w-11 min-h-11 -m-1.5 inline-flex items-center justify-center">
                   <X className="w-3.5 h-3.5" />
@@ -603,21 +603,21 @@ function SkillsTab() {
                     <span className={`block w-2.5 h-2.5 rounded-full transition-colors ${n <= (skill.level || 0) ? "bg-violet" : "bg-charcoal-surface2"}`} />
                   </button>
                 ))}
-                <span className="font-technical text-[11px] font-semibold text-muted-2 ml-1">Level {skill.level || 0}/5</span>
+                <span className="font-technical text-caption font-semibold text-muted-2 ml-1">Level {skill.level || 0}/5</span>
               </div>
               <div className="flex items-center justify-between">
                 {isStale ? (
-                  <span className="text-[11px] font-bold text-violet flex items-center gap-1">
+                  <span className="text-caption font-bold text-violet flex items-center gap-1">
                     <AlertTriangle className="w-3 h-3" />
                     {daysSince === null ? "Never practiced" : `${daysSince}d ago`}
                   </span>
                 ) : (
-                  <span className="font-technical text-[11px] font-semibold text-muted-2">{daysSince}d ago</span>
+                  <span className="font-technical text-caption font-semibold text-muted-2">{daysSince}d ago</span>
                 )}
                 {/* Neutral ghost so the only solid/tinted teal in the Skills
                     viewport is the header Add action — a per-card teal-tinted
                     "Practiced" was a second action accent (drift). */}
-                <Button size="sm" variant="ghost" className="min-h-[44px] text-[11px] px-3" onClick={() => practiced.mutate(skill.id)}>
+                <Button size="sm" variant="ghost" className="min-h-[44px] text-caption px-3" onClick={() => practiced.mutate(skill.id)}>
                   {practiced.isPaused && practiced.variables === skill.id ? (
                     // React Query's default networkMode pauses (not fails) a
                     // mutation while offline — it resumes on its own on
@@ -683,7 +683,7 @@ function SkillsTab() {
             </div>
             <div className="flex gap-2 pt-1">
               <Button variant="ghost" size="lg" className="basis-1/3 shrink-0" onClick={() => setShowAdd(false)}>Cancel</Button>
-              <Button variant="volt" size="lg" className="flex-1" disabled={!form.name.trim() || save.isPending} onClick={() => save.mutate()}>Save</Button>
+              <Button variant="primary" size="lg" className="flex-1" disabled={!form.name.trim() || save.isPending} onClick={() => save.mutate()}>Save</Button>
             </div>
           </div>
         </DialogContent>
@@ -723,19 +723,19 @@ function CaptureTab() {
     // only instruction, so we don't repeat "drop a note" in a separate empty box.
     <div className="space-y-6">
       <div>
-        <h3 className="section-label mb-3 flex items-center gap-2">
+        <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3 flex items-center gap-2">
           <BookOpen className="w-3 h-3 text-violet" /> New Learning Log
         </h3>
         <QuickCapture domain="mind" focusHue="violet" placeholder="What did you learn today? Notes on books, courses, or technical concepts..." />
       </div>
       {isEmpty && (
         <div>
-          <h3 className="section-label mb-3 flex items-center gap-2">
+          <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3 flex items-center gap-2">
             <Zap className="w-3 h-3 text-violet" /> Ideas to Capture
           </h3>
           <div className="space-y-2">
             {PROMPTS.map(({ icon: Icon, label }) => (
-              <div key={label} className="flex items-center gap-3 px-4 py-3 glass-inset">
+              <div key={label} className="flex items-center gap-3 px-4 py-3 bg-charcoal-surface2 rounded-control">
                 <div className="w-7 h-7 rounded-[9px] flex items-center justify-center shrink-0 bg-violet/[0.13]">
                   <Icon className="w-3.5 h-3.5 text-violet" />
                 </div>
@@ -748,19 +748,19 @@ function CaptureTab() {
       )}
       {!isEmpty && (
         <div>
-          <h3 className="section-label mb-3 flex items-center gap-2">
+          <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3 flex items-center gap-2">
             <History className="w-3 h-3 text-violet" /> Recent Streams
           </h3>
           <div className="space-y-3">
             <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
             {recentLogs.map(log => (
-              <div key={log.id} className="glass p-4">
+              <div key={log.id} className="bg-charcoal-surface border border-charcoal-border p-4">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="font-technical text-[11px] font-semibold text-muted-2 tabular-nums">
+                  <span className="font-technical text-caption font-semibold text-muted-2 tabular-nums">
                     {format(parseISO(log.created_at), "MMM d, h:mm a")}
                   </span>
                   {log.processed && (
-                    <span className="font-technical text-[11px] font-semibold text-muted-2">Synced</span>
+                    <span className="font-technical text-caption font-semibold text-muted-2">Synced</span>
                   )}
                 </div>
                 <p className="text-sm font-semibold text-muted-2 whitespace-pre-wrap leading-relaxed">{log.content}</p>
@@ -796,17 +796,7 @@ export default function Mind({ hideHeader }) {
       `}</style>
       <div className="max-w-3xl mx-auto">
         {!hideHeader && (
-          <header className="mb-6 rise-in hidden lg:block">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0 bg-violet/[0.13]">
-                <Brain className="w-[15px] h-[15px] text-violet" />
-              </div>
-              {/* Surface title reconciled with the mobile Layout header, which
-                  prints "Mind" — both breakpoints now name the surface identically
-                  beside its violet identity glyph. */}
-              <h1 className="type-display text-2xl">Mind</h1>
-            </div>
-          </header>
+          <PageHeader className="px-0 rise-in" eyebrow="Notes, reading, study" title="Mind" />
         )}
 
         <SubTabs

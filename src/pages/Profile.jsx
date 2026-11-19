@@ -6,7 +6,7 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useProfile, useAllFoodEntries, useBodyWeightEntries } from "@/hooks/useUserQueries";
 import { useLogWeight } from "@/hooks/useWeighIn";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, PageHeader, ListRow } from "@/components/ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -383,7 +383,7 @@ export default function Profile({ hideHeader }) {
               />
 
               {/* Section nav */}
-              <nav className="glass-inset p-2 flex flex-col gap-0.5">
+              <nav className="bg-charcoal-surface2 rounded-control p-2 flex flex-col gap-1">
                 {NAV.map(({ id, label, icon: Icon }) => (
                   <button
                     key={id}
@@ -427,13 +427,7 @@ export default function Profile({ hideHeader }) {
             <div
               className={`${activeSection !== null || hideHeader ? 'hidden' : 'md:hidden flex flex-col min-h-[calc(100dvh-var(--layout-header-height)-var(--floating-chrome-bottom))]'}`}
             >
-              {/* No in-page "Profile" h1 here: the Layout chrome header already shows
-                  the page title (and the avatar chip) on mobile, so a second avatar
-                  + title inside a card would stack redundantly (showAvatar=false).
-                  Rendered via the shared ProfileStatsCard primitive so the hub and
-                  desktop sidebar never drift. Stats are DATA, not the single
-                  action color, so all three read in NEUTRAL ink (no text-brand);
-                  teal is reserved for the actual action controls on the page. */}
+              <PageHeader className="px-0" title="Profile" />
               <ProfileStatsCard
                 showAvatar={false}
                 align="left"
@@ -447,23 +441,11 @@ export default function Profile({ hideHeader }) {
                   { value: profileStats.streak, label: "Streak" },
                 ] : null}
               />
-              <div className="glass-inset overflow-hidden">
-                {NAV.map(({ id, label, icon: Icon }, idx) => (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => setActiveSection(id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium text-left transition-colors active:bg-charcoal-elevated hover:bg-charcoal-elevated ${idx < NAV.length - 1 ? 'border-b border-charcoal-border' : ''}`}
-                  >
-                    {/* Inline muted-ink glyph — no raised charcoal-elevated square
-                        chip behind each row icon (that read as a decorative tile,
-                        not an affordance). */}
-                    <Icon className="w-5 h-5 text-ink-muted shrink-0" />
-                    <span className="text-ink flex-1">{label}</span>
-                    <ChevronRight className="w-4 h-4 text-ink-muted" />
-                  </button>
+              <Card>
+                {NAV.map(({ id, label, icon: Icon }) => (
+                  <ListRow key={id} title={label} leading={<Icon className="w-5 h-5 text-ink-muted" />} onClick={() => setActiveSection(id)} />
                 ))}
-              </div>
+              </Card>
 
               {/* Quick action — Sign Out follows the nav list directly so the hub
                   reads as one tight stack. */}
@@ -473,55 +455,37 @@ export default function Profile({ hideHeader }) {
                   try { await signOut(); toast.success('Signed out.'); }
                   catch { toast.error('Could not sign out. Try again.'); }
                 }}
-                className="mt-3 w-full flex items-center justify-center gap-2 min-h-[48px] rounded-xl glass-inset text-ink-muted font-semibold text-sm active:bg-charcoal-elevated hover:text-ink hover:bg-charcoal-elevated transition-colors"
+                className="mt-3 w-full flex items-center justify-center gap-2 min-h-tap rounded-control bg-charcoal-surface2 border border-charcoal-border text-ink-muted font-semibold text-body active:bg-charcoal-elevated hover:text-ink hover:bg-charcoal-elevated transition-colors duration-base"
               >
                 <LogOut className="w-4 h-4" />
                 Sign Out
               </button>
 
-              {/* Quiet brand wordmark closing the hub stack. `mt-auto` pushes it to
-                  the BOTTOM of the column (the column fills the viewport height) so
-                  the slack collapses into one intentional gap below the footer
-                  instead of stranding a dead void mid-screen above it. Led by a
-                  short teal hairline so it reads as a designed footer rule. */}
-              <div className="mt-auto pt-10 flex items-center justify-center gap-2.5">
-                <span className="h-px w-6 bg-brand/40" />
-                <p className="text-xs font-semibold tracking-wide text-ink-secondary">OptiGains</p>
-                <span className="h-px w-6 bg-brand/40" />
-              </div>
-              <p className="mt-1 text-center text-[11px] text-ink-muted">Train. Fuel. Recover.</p>
+              <p className="mt-auto pt-10 text-center text-caption font-semibold text-ink-muted">OptiGains</p>
             </div>
 
-            {/* Mobile: back navigation when inside a section */}
-            {activeSection !== null && !hideHeader && (
-              <div className="md:hidden mb-5">
-                <button
-                  type="button"
-                  onClick={() => setActiveSection(null)}
-                  className="flex items-center gap-1 text-brand text-sm font-medium mb-3 -ml-0.5"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  Profile
-                </button>
-                <h1 className="type-display text-[17px] text-ink">
-                  {NAV.find(n => n.id === activeSection)?.label}
-                </h1>
-              </div>
-            )}
-
-            {/* Desktop section heading */}
             {!hideHeader && (
-              <div className="hidden md:block mb-6">
-                <h1 className="type-display text-2xl text-ink">
-                  {NAV.find(n => n.id === resolvedSection)?.label}
-                </h1>
-                <p className="text-[14px] text-ink-muted mt-0.5">
-                  {resolvedSection === 'identity' ? 'Your account details' :
-                  resolvedSection === 'body'     ? 'Body stats, nutrition goals, and app preferences' :
-                  resolvedSection === 'training' ? 'What the adaptive engine optimizes for' :
-                                                    'Notifications, integrations, and account actions'}
-                </p>
-              </div>
+              <PageHeader
+                className={activeSection === null ? 'px-0 hidden md:flex' : 'px-0'}
+                eyebrow={activeSection !== null ? 'Profile' : undefined}
+                title={NAV.find(n => n.id === resolvedSection)?.label}
+                meta={
+                  resolvedSection === 'identity' ? 'Account details' :
+                  resolvedSection === 'body'     ? 'Body stats, nutrition goals, preferences' :
+                  resolvedSection === 'training' ? 'What the engine optimizes for' :
+                                                    'Notifications, integrations, account'
+                }
+                back={activeSection !== null ? (
+                  <button
+                    type="button"
+                    onClick={() => setActiveSection(null)}
+                    className="md:hidden flex items-center gap-1 min-h-tap text-body text-ink-secondary -ml-1"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    Profile
+                  </button>
+                ) : null}
+              />
             )}
 
         <form onSubmit={handleSubmit}>
@@ -601,12 +565,12 @@ export default function Profile({ hideHeader }) {
                       <div className="flex items-center justify-between mb-1">
                         <Label>Height</Label>
                         {/* Unit selection is passive metadata, not an action, so the
-                            selected pill stays NEUTRAL (glass-inset + ink), coral is
+                            selected pill stays NEUTRAL (bg-charcoal-surface2 rounded-control + ink), coral is
                             reserved for the single action color. The shared Tabs
                             `segment` variant only paints a brand-tinted active pill, so
                             this neutral segmented control is built inline from the same
                             visual tokens (a genuine gap: Tabs has no neutral segment). */}
-                        <div className="flex gap-1 glass-inset p-0.5" role="group" aria-label="Height unit">
+                        <div className="flex gap-1 bg-charcoal-surface2 rounded-control p-0.5" role="group" aria-label="Height unit">
                           {[
                             { id: 'in', label: 'ft/in' },
                             { id: 'cm', label: 'cm' },
@@ -630,7 +594,7 @@ export default function Profile({ hideHeader }) {
                               }}
                               className={`min-h-[44px] px-3.5 rounded-md text-sm transition-[color,background-color] duration-200 ease-[var(--ease)] ${
                                 formData.height_unit === id
-                                  ? 'bg-[var(--glass-bg)] text-ink font-semibold shadow-[inset_0_1px_0_var(--glass-specular)]'
+                                  ? 'bg-charcoal-elevated text-ink font-semibold'
                                   : 'text-ink-muted hover:text-ink'
                               }`}
                             >{label}</button>
@@ -721,17 +685,17 @@ export default function Profile({ hideHeader }) {
                     </div>
 
                     {tdee.tdee && (
-                      <div className="glass-inset p-4">
+                      <div className="bg-charcoal-surface2 rounded-control p-4">
                         <div className="flex items-center justify-between">
                           <div>
                             <div className="text-sm text-ink-muted">Estimated TDEE</div>
                             <div className="text-2xl font-numeral text-gold font-technical">{tdee.tdee} cal/day</div>
                           </div>
                           {/* Metadata tag, not data: keep BOTH states neutral
-                              (glass-inset + muted ink) so no leaf/biometric hue is
+                              (bg-charcoal-surface2 rounded-control + muted ink) so no leaf/biometric hue is
                               spent on a source label. The gold lives on the TDEE
                               number, which is the datum that owns the hue. */}
-                          <span className="px-2.5 py-1 rounded-full text-xs font-medium glass-inset text-ink-muted">
+                          <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-charcoal-surface2 rounded-control text-ink-muted">
                             {tdee.method === 'adaptive' ? 'Adaptive' : 'Formula'}
                           </span>
                         </div>
@@ -1042,7 +1006,7 @@ export default function Profile({ hideHeader }) {
           ease-out class (profile-6). */}
       <div
         aria-hidden={!showSaveBar}
-        className={`fixed bottom-[var(--floating-chrome-bottom)] md:bottom-0 left-0 right-0 z-[10000] glass-elevated md:bg-charcoal-surface rounded-none border-x-0 border-b-0 transition-[transform,opacity,visibility] duration-300 ease-[var(--ease)] ${
+        className={`fixed bottom-[var(--floating-chrome-bottom)] md:bottom-0 left-0 right-0 z-[10000] bg-charcoal-surface2 shadow-elev-3 md:bg-charcoal-surface rounded-none border-x-0 border-b-0 transition-[transform,opacity,visibility] duration-300 ease-[var(--ease)] ${
           showSaveBar
             ? 'translate-y-0 opacity-100 visible pointer-events-auto'
             : 'translate-y-[calc(100%+var(--floating-chrome-bottom))] md:translate-y-full opacity-0 invisible pointer-events-none'

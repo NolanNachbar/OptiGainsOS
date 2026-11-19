@@ -7,7 +7,7 @@ import { format } from "date-fns";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
+import { Button, PageHeader } from "@/components/ui";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -144,10 +144,9 @@ export default function Coach() {
   return (
     <div className="flex flex-col px-4 py-6 md:px-8 bg-charcoal min-h-screen pb-[calc(var(--dock-total-height)+24px+env(safe-area-inset-bottom))]">
       <div className="max-w-3xl mx-auto w-full flex flex-col">
-        <h1 className="type-display text-[28px] mb-1 rise-in">Coach office hours</h1>
-        <p className="text-sm text-muted-2 mb-4">
-          Upload a few reps and get a form critique. Best on a side view of squat,
-          deadlift, or bench. A single angle can't see depth or load, so treat it as a second set of eyes.
+        <PageHeader className="px-0 rise-in" eyebrow="Form review" title="Coach" meta="Upload a few reps for a critique. Side view works best." />
+        <p className="text-caption text-ink-muted mb-4">
+          Best on squat, deadlift or bench. One angle cannot see depth or load, so read it as a second set of eyes.
         </p>
 
         <input ref={fileInputRef} type="file" accept="video/*"
@@ -155,15 +154,15 @@ export default function Coach() {
 
         {/* Setup panel — lead with the working form so the input and CTA are
             reachable above the fold, not buried under a marketing explainer. */}
-        <div className="glass px-4 pt-4 pb-4 rise-in">
-          <div className="section-label mb-2">The lift</div>
+        <div className="bg-charcoal-surface border border-charcoal-border px-4 pt-4 pb-4 rise-in">
+          <div className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-2">The lift</div>
           <Input
             value={exercise} onChange={(e) => setExercise(e.target.value)}
             placeholder="e.g. Back squat, conventional deadlift"
             disabled={busy}
             className="mb-3"
           />
-          <div className="section-label mb-2">What to look at (optional)</div>
+          <div className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-2">What to look at (optional)</div>
           <Input
             value={notes} onChange={(e) => setNotes(e.target.value)}
             placeholder="e.g. Knees cave on the way up?"
@@ -172,7 +171,7 @@ export default function Coach() {
           />
 
           {!pending ? (
-            <Button variant="volt" size="lg" onClick={() => fileInputRef.current?.click()} disabled={busy} className="w-full">
+            <Button variant="primary" size="lg" onClick={() => fileInputRef.current?.click()} disabled={busy} className="w-full">
               <Upload className="w-4 h-4 mr-2" /> Choose clip
             </Button>
           ) : (
@@ -187,7 +186,7 @@ export default function Coach() {
               <div className="flex items-center gap-1.5 text-xs text-muted-2">
                 <Film className="w-3.5 h-3.5" /> {pending.file.name}
               </div>
-              <Button variant="volt" size="lg" onClick={analyze} disabled={busy} className="w-full">
+              <Button variant="primary" size="lg" onClick={analyze} disabled={busy} className="w-full">
                 {busy ? <Loader2 className="w-4 h-4 mr-2 spin-loop" /> : null}
                 {busy ? (status || "Working…") : "Get critique"}
               </Button>
@@ -204,7 +203,7 @@ export default function Coach() {
         {/* On a fresh, empty canvas a "how it works" strip sits under the form so
             the screen reads finished without pushing the CTA below the fold. */}
         {emptyCanvas && (
-          <div className="glass-inset rounded-xl px-4 py-3.5 mt-4 space-y-3 rise-in">
+          <div className="bg-charcoal-surface2 rounded-control rounded-xl px-4 py-3.5 mt-4 space-y-3 rise-in">
             <HowToStep icon={Video} title="Film a side view">
               A few clean reps of squat, deadlift, or bench. Keep clips under 50MB.
             </HowToStep>
@@ -222,7 +221,7 @@ export default function Coach() {
         {/* Past reviews */}
         {!loadingReviews && reviews.length > 0 && (
           <div className="mt-6">
-            <div className="section-label mb-2 flex items-center gap-1.5">
+            <div className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-2 flex items-center gap-1.5">
               <History className="w-3.5 h-3.5" /> Past reviews
             </div>
             <div className="space-y-2">
@@ -230,13 +229,13 @@ export default function Coach() {
                 <button
                   key={r.id}
                   onClick={() => reopenReview(r)}
-                  className="w-full text-left glass-inset rounded-lg px-3 min-h-[44px] py-2.5 flex items-center justify-between gap-3 hover:bg-[var(--glass-bg)] transition-colors active:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                  className="w-full text-left bg-charcoal-surface2 rounded-control rounded-lg px-3 min-h-[44px] py-2.5 flex items-center justify-between gap-3 hover:bg-charcoal-elevated transition-colors active:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
                 >
                   <div className="min-w-0">
                     <div className="text-sm font-semibold text-ink truncate">
                       {r.exercise || r.result?.exercise || "Form review"}
                     </div>
-                    <div className="text-[11px] font-semibold text-muted-2">
+                    <div className="text-caption font-semibold text-muted-2">
                       {format(new Date(r.created_at), "MMM d, yyyy")}
                     </div>
                   </div>
@@ -265,10 +264,10 @@ export default function Coach() {
               {openReview.url
                 ? <video src={openReview.url} controls playsInline className="w-full rounded-lg bg-black/40 object-contain" style={{ maxHeight: "42vh" }} />
                 : openReview.error
-                ? <div className="w-full h-40 flex items-center justify-center glass-inset rounded-lg text-bad text-sm font-semibold gap-1.5 text-center px-4">
+                ? <div className="w-full h-40 flex items-center justify-center bg-charcoal-surface2 rounded-control rounded-lg text-bad text-sm font-semibold gap-1.5 text-center px-4">
                     <AlertTriangle className="w-5 h-5 shrink-0" /> {openReview.error}
                   </div>
-                : <div className="w-full h-40 flex items-center justify-center glass-inset rounded-lg text-muted-2 text-sm font-semibold gap-1.5">
+                : <div className="w-full h-40 flex items-center justify-center bg-charcoal-surface2 rounded-control rounded-lg text-muted-2 text-sm font-semibold gap-1.5">
                     <Loader2 className="w-5 h-5 spin-loop" /> Loading clip…
                   </div>
               }
@@ -297,16 +296,16 @@ function HowToStep({ icon: Icon, title, children }) {
 
 function Critique({ c, embedded = false }) {
   return (
-    <div className={embedded ? "space-y-4" : "glass px-4 py-4 mt-4 rise-in space-y-4"}>
+    <div className={embedded ? "space-y-4" : "bg-charcoal-surface border border-charcoal-border px-4 py-4 mt-4 rise-in space-y-4"}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="section-label mb-1">{c.exercise || "Form review"}</div>
+          <div className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-1">{c.exercise || "Form review"}</div>
           <p className="text-sm text-secondary">{c.overall}</p>
         </div>
         {typeof c.rating === "number" && (
           <div className="text-right shrink-0">
             <div className={`type-display text-2xl ${RATING_COLOR(c.rating)}`}>{c.rating}<span className="text-sm text-muted-2">/10</span></div>
-            {c.confidence && <div className="text-[11px] uppercase tracking-wide text-muted-2">{c.confidence} confidence</div>}
+            {c.confidence && <div className="text-caption uppercase tracking-wide text-muted-2">{c.confidence} confidence</div>}
           </div>
         )}
       </div>
@@ -323,7 +322,7 @@ function Critique({ c, embedded = false }) {
 
       {Array.isArray(c.fixes) && c.fixes.length > 0 && (
         <div>
-          <div className="section-label mb-2">Fixes, in order</div>
+          <div className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-2">Fixes, in order</div>
           <div className="space-y-2.5">
             {c.fixes.map((f, i) => (
               <div key={i} className="rounded-lg bg-white/[0.03] px-3 py-2">
@@ -338,7 +337,7 @@ function Critique({ c, embedded = false }) {
 
       {Array.isArray(c.good) && c.good.length > 0 && (
         <div>
-          <div className="section-label mb-2">Working well</div>
+          <div className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-2">Working well</div>
           <div className="space-y-1">
             {c.good.map((g, i) => (
               <div key={i} className="flex items-start gap-1.5 text-xs text-secondary">

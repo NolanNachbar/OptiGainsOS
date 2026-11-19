@@ -2,43 +2,38 @@ import Logo from '@/components/Logo';
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
+import { Button, Card, PageHeader, cn } from '@/components/ui';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { toast } from 'sonner';
 
-// ── Shared auth composition ────────────────────────────────────────────────
-// One header recipe for Login / ForgotPassword / ResetPassword. Kept identical
-// across the three paired screens so the front door reads as a single surface.
-// CLEAN: flat charcoal background — depth comes from surface tone + shadow on
-// the card, never from an ambient gradient/glow.
-
+// Shared auth composition for Login / ForgotPassword / ResetPassword.
+// Flat field, the Gauge mark centred over a single column, one primary action.
 export function AuthShell({ children }) {
   return (
-    <div
-      className="min-h-screen flex flex-col items-center justify-end sm:justify-center px-5 pt-[max(2.5rem,env(safe-area-inset-top))] pb-[max(12vh,env(safe-area-inset-bottom))] sm:pb-[max(2rem,env(safe-area-inset-bottom))] relative w-full"
-      style={{ background: 'var(--color-bg)' }}
-    >
-      {children}
+    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-charcoal px-gutter pt-[max(2.5rem,env(safe-area-inset-top))] pb-[max(2.5rem,env(safe-area-inset-bottom))]">
+      <main className="w-full max-w-sm flex flex-col gap-6">{children}</main>
     </div>
   );
 }
 
-export function AuthHeader({ subtitle }) {
-  // Brand mark + wordmark composed as one centered unit so the hero reads
-  // intentional instead of a badge floating over a dark void.
+export function AuthHeader({ title, meta }) {
   return (
-    <div className="flex flex-col items-center text-center rise-in">
-      <Logo className="h-16 w-16" aria-hidden="true" alt="" />
-      <h1 className="type-display text-[28px] sm:text-[28px] whitespace-nowrap text-ink mt-4">OptiGains</h1>
-      {subtitle && (
-        <p className="text-[12px] font-semibold mt-1.5 tracking-[0.04em] text-muted-2">
-          {subtitle}
-        </p>
-      )}
+    <div className="flex flex-col items-center rise-in">
+      <Logo className="h-14 w-14" aria-hidden="true" alt="" />
+      <PageHeader
+        className="px-0 pt-6 pb-0 justify-center [&>div]:text-center"
+        eyebrow="OptiGains"
+        title={title}
+        meta={meta}
+      />
     </div>
   );
+}
+
+export function AuthPanel({ children, className }) {
+  return <Card className={cn('px-gutter py-6 border-x-0 sm:border-x rise-in-2', className)}>{children}</Card>;
 }
 
 export default function Login() {
@@ -77,17 +72,16 @@ export default function Login() {
 
   return (
     <AuthShell>
-      <AuthHeader subtitle="Private build" />
+      <AuthHeader title="Sign in" meta="Private build" />
 
-      <div className="glass w-full max-w-sm mt-6 sm:mt-9 px-4 pt-5 pb-4 rise-in-2">
-        <form onSubmit={handleSubmit} noValidate>
-          <div className="mb-2.5">
-            <Label htmlFor="email" className="text-ink mb-1 block">Email</Label>
+      <AuthPanel>
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="email" className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Email</Label>
             <Input
               id="email"
               type="email"
               placeholder="your@email.com"
-              className="placeholder:!text-ink-muted"
               value={email}
               onChange={(e) => { setEmail(e.target.value); setErrorMsg(''); }}
               autoComplete="email"
@@ -95,13 +89,12 @@ export default function Login() {
               aria-describedby={errorMsg ? 'login-error' : undefined}
             />
           </div>
-          <div className="mb-2">
-            <Label htmlFor="password" className="text-ink mb-1 block">Password</Label>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="password" className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Password</Label>
             <Input
               id="password"
               type="password"
               placeholder="Password"
-              className="placeholder:!text-ink-muted"
               value={password}
               onChange={(e) => { setPassword(e.target.value); setErrorMsg(''); }}
               autoComplete="current-password"
@@ -110,15 +103,9 @@ export default function Login() {
             />
           </div>
 
-          {errorMsg && <p id="login-error" role="alert" className="text-ink text-[14px] mb-2">{errorMsg}</p>}
+          {errorMsg && <p id="login-error" role="alert" className="text-body text-bad">{errorMsg}</p>}
 
-          <Button
-            type="submit"
-            variant="volt"
-            size="lg"
-            className="w-full mt-1"
-            disabled={loading}
-          >
+          <Button type="submit" variant="primary" size="lg" className="w-full" disabled={loading}>
             {loading ? (
               <>
                 <LoadingSpinner size="small" className="mr-1" />
@@ -129,11 +116,11 @@ export default function Login() {
             )}
           </Button>
 
-          <Button asChild variant="ghost" size="lg" className="w-full mt-2.5">
+          <Button asChild variant="link" size="default" className="w-full text-ink-muted">
             <Link to="/forgot-password">Forgot password</Link>
           </Button>
         </form>
-      </div>
+      </AuthPanel>
     </AuthShell>
   );
 }

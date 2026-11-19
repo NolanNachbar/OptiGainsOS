@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import QuickCapture from "@/components/QuickCapture";
-import { Button } from "@/components/ui/button";
+import { Button, PageHeader } from "@/components/ui";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -23,9 +23,9 @@ import { toast } from "sonner";
 // ─── Constants ─────────────────────────────────────────────────────────────────
 const APP_STATUSES = ["applied", "screening", "interview", "offer", "rejected"];
 // Pipeline status is a label, not a biometric — render every stage as a neutral
-// muted-glass chip. The count beside it carries the meaning; coral stays
+// muted-bg-charcoal-surface border border-charcoal-border chip. The count beside it carries the meaning; coral stays
 // reserved for the action (Add / Move), never for status garnish.
-const STATUS_CHIP = "glass-inset text-muted-2";
+const STATUS_CHIP = "bg-charcoal-surface2 rounded-control text-muted-2";
 
 // Native <input type=date> treatment. `color-scheme:dark` keeps the UA calendar
 // dropdown on the dark field; the global rule in index.css already mutes the
@@ -62,7 +62,7 @@ function FormActions({ onCancel, onSave, saveDisabled }) {
       }}
     >
       <Button variant="dim" className="shrink-0 w-auto min-h-[44px]" onClick={onCancel}>Cancel</Button>
-      <Button variant="volt" size="lg" className="flex-1" disabled={saveDisabled} onClick={onSave}>Save</Button>
+      <Button variant="primary" size="lg" className="flex-1" disabled={saveDisabled} onClick={onSave}>Save</Button>
     </div>
   );
 }
@@ -109,7 +109,7 @@ function AppForm({ initial, onSave, onClose }) {
         <Input value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} placeholder="Job title" />
       </div>
       <div className="pt-1 border-t hairline">
-        <h3 className="section-label pt-3 pb-1">Details</h3>
+        <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted pt-3 pb-1">Details</h3>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -220,7 +220,7 @@ function PipelineTab() {
           </div>
         )}
         {apps.length > 0 && (
-          <Button variant="volt" onClick={() => { setEditing(null); setShowAdd(true); }} className="gap-1.5 min-h-[44px]">
+          <Button variant="primary" onClick={() => { setEditing(null); setShowAdd(true); }} className="gap-1.5 min-h-[44px]">
             <Plus className="w-3.5 h-3.5" /> Add Application
           </Button>
         )}
@@ -232,7 +232,7 @@ function PipelineTab() {
           kanban columns at md+. Both share the same card via renderCard. */}
       {!isLoading && !isError && apps.length > 0 && (() => {
         const renderCard = (app, status) => (
-          <div key={app.id} className="p-4 glass glass-interactive group text-left">
+          <div key={app.id} className="p-4 bg-charcoal-surface border border-charcoal-border transition-colors duration-base hover:bg-charcoal-surface2 group text-left">
             <div className="flex items-start justify-between gap-1 mb-1">
               <div className="min-w-0">
                 <p className="text-sm font-extrabold text-ink truncate">{app.company}</p>
@@ -313,10 +313,10 @@ function PipelineTab() {
 
       {rejected.length > 0 && (
         <div>
-          <h3 className="section-label mb-2">Rejected ({rejected.length})</h3>
+          <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-2">Rejected ({rejected.length})</h3>
           <div className="space-y-1.5">
             {rejected.map(app => (
-              <div key={app.id} className="flex items-center gap-3 px-3 py-2 glass-inset group opacity-60">
+              <div key={app.id} className="flex items-center gap-3 px-3 py-2 bg-charcoal-surface2 rounded-control group opacity-60">
                 <span className="text-xs text-ink font-bold">{app.company}</span>
                 <span className="text-xs font-semibold text-muted-2">{app.role}</span>
                 <button onClick={() => setConfirmDelete(app.id)} aria-label="Delete" className="ml-auto -mr-2.5 flex items-center justify-center min-h-[44px] min-w-[44px] opacity-100 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad">
@@ -333,7 +333,7 @@ function PipelineTab() {
           <Building2 className="w-8 h-8 text-faint mx-auto mb-2" />
           <p className="text-sm font-semibold text-muted-2">No applications yet.</p>
           <p className="text-xs font-semibold text-muted-2 mt-1 mb-4">Log your first role to start tracking the pipeline.</p>
-          <Button variant="volt" className="gap-1.5 min-h-[44px] mx-auto" onClick={() => { setEditing(null); setShowAdd(true); }}>
+          <Button variant="primary" className="gap-1.5 min-h-[44px] mx-auto" onClick={() => { setEditing(null); setShowAdd(true); }}>
             <Plus className="w-3.5 h-3.5" /> Add your first application
           </Button>
         </div>
@@ -467,7 +467,7 @@ function NetworkingTab() {
           </div>
         )}
         {contacts.length > 0 && (
-          <Button variant="volt" className="gap-1.5 ml-auto min-h-[44px]" onClick={() => { setEditing(null); setShowAdd(true); }}>
+          <Button variant="primary" className="gap-1.5 ml-auto min-h-[44px]" onClick={() => { setEditing(null); setShowAdd(true); }}>
             <Plus className="w-3.5 h-3.5" /> Add Contact
           </Button>
         )}
@@ -480,7 +480,7 @@ function NetworkingTab() {
             <UserPlus className="w-8 h-8 text-faint mx-auto mb-2" />
             <p className="text-sm font-semibold text-muted-2">No networking contacts yet.</p>
             <p className="text-xs font-semibold text-muted-2 mt-1 mb-4">Log a conversation to track follow-ups.</p>
-            <Button variant="volt" className="gap-1.5 min-h-[44px] mx-auto" onClick={() => { setEditing(null); setShowAdd(true); }}>
+            <Button variant="primary" className="gap-1.5 min-h-[44px] mx-auto" onClick={() => { setEditing(null); setShowAdd(true); }}>
               <Plus className="w-3.5 h-3.5" /> Add your first contact
             </Button>
           </div>
@@ -488,7 +488,7 @@ function NetworkingTab() {
         {contacts.map(contact => {
           const isOverdue = contact.follow_up_date && contact.follow_up_date < today;
           return (
-            <div key={contact.id} className={`p-4 group ${isOverdue ? "glass border-bad/15 bg-bad/[0.04]" : "glass glass-interactive"}`}>
+            <div key={contact.id} className={`p-4 group ${isOverdue ? "bg-charcoal-surface border border-charcoal-border border-bad/15 bg-bad/[0.04]" : "bg-charcoal-surface border border-charcoal-border transition-colors duration-base hover:bg-charcoal-surface2"}`}>
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div>
                   <div className="flex items-center gap-2">
@@ -572,25 +572,25 @@ function CaptureTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="section-label mb-4 flex items-center gap-2">
+        <h2 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-4 flex items-center gap-2">
           <UserPlus className="w-3 h-3" /> New Pipeline Event
         </h2>
         <QuickCapture domain="career" placeholder="Applied to X, interviewed with Y, or reached out to Z on LinkedIn…" />
         <p className="text-xs font-semibold text-muted-2 mt-2 italic">Captured events sync to your pipeline.</p>
       </div>
       <div>
-        <h2 className="section-label mb-4 flex items-center gap-2">
+        <h2 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-4 flex items-center gap-2">
           <History className="w-3 h-3" /> Recent Events
         </h2>
         <div className="space-y-3">
           <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
           {recentLogs.length > 0 ? recentLogs.map(log => (
-            <div key={log.id} className="glass p-4">
+            <div key={log.id} className="bg-charcoal-surface border border-charcoal-border p-4">
               <div className="flex justify-between items-start mb-2">
-                <span className="section-label font-technical text-muted-2 px-2 py-0.5 rounded-sm glass-inset">
+                <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted px-2 py-0.5 rounded-sm bg-charcoal-surface2 rounded-control">
                   {format(parseISO(log.created_at), "MMM d, h:mm a")}
                 </span>
-                {log.processed && <span className="section-label text-leaf">Processed</span>}
+                {log.processed && <span className="text-micro font-semibold uppercase tracking-[0.08em] text-leaf">Processed</span>}
               </div>
               <p className="text-sm font-semibold text-secondary whitespace-pre-wrap leading-relaxed">{log.content}</p>
             </div>
@@ -612,15 +612,7 @@ export default function Career({ hideHeader }) {
     <div className={`px-4 py-6 md:px-8 bg-charcoal min-h-screen ${hideHeader ? 'pt-0 px-0 md:px-0 min-h-0' : ''}`}>
       <div className="max-w-3xl mx-auto">
         {!hideHeader && (
-          <header className="mb-6 rise-in hidden lg:block">
-            <div className="flex items-center gap-3 mb-1">
-              <div className="w-8 h-8 rounded flex items-center justify-center shrink-0 bg-gold/[0.13]">
-                <Briefcase className="w-[15px] h-[15px] text-gold" />
-              </div>
-              <h1 className="type-display text-2xl">Career & Pipeline</h1>
-            </div>
-            <p className="text-muted-2 font-semibold text-sm pl-11">{PAGE_SUBTITLE}</p>
-          </header>
+          <PageHeader className="px-0 rise-in" eyebrow="Pipeline" title="Career" meta={PAGE_SUBTITLE} />
         )}
 
         {/* Mobile subtitle lives in the Layout chrome (SYS-05 pageSubtitle

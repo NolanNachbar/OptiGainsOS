@@ -1,6 +1,5 @@
 import { Component } from 'react';
-import { AlertTriangle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button, PageHeader, Card, ErrorState } from '@/components/ui';
 
 export default class ErrorBoundary extends Component {
   constructor(props) {
@@ -23,23 +22,18 @@ export default class ErrorBoundary extends Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-charcoal-surface  p-6">
-          <div className="text-center max-w-md">
-            <AlertTriangle className="w-12 h-12 text-warn mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-ink mb-2">
-              This page hit an error
-            </h2>
-            <p className="text-ink-muted  text-sm mb-6">
-              {this.state.error?.message || 'Unexpected error. Try again, or return to the dashboard.'}
-            </p>
-            <div className="flex gap-3 justify-center">
-              <Button variant="outline" onClick={this.handleReset}>
-                Try again
-              </Button>
-              <Button onClick={() => { window.location.href = '/dashboard'; }}>
-                Go to Dashboard
-              </Button>
-            </div>
+        <div className="min-h-screen bg-charcoal">
+          <div className="mx-auto max-w-2xl pt-[max(1rem,env(safe-area-inset-top))]">
+            <PageHeader eyebrow="OptiGains" title="Something broke" />
+            <Card>
+              <ErrorState title="This page hit an error">
+                {this.state.error?.message || 'Unexpected error. Retry, or go back to Today.'}
+              </ErrorState>
+              <div className="flex gap-2 px-gutter pb-4">
+                <Button variant="primary" onClick={this.handleReset}>Try again</Button>
+                <Button variant="secondary" onClick={() => { window.location.href = '/today'; }}>Go to Today</Button>
+              </div>
+            </Card>
           </div>
         </div>
       );

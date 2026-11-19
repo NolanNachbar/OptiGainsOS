@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/api/supabaseClient';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Lock, ArrowLeft } from 'lucide-react';
-import { AuthShell, AuthHeader } from '@/pages/Login';
+import { AuthShell, AuthHeader, AuthPanel } from '@/pages/Login';
 import { toast } from 'sonner';
 import { passwordSchema } from '@/lib/validation';
 
@@ -76,27 +76,27 @@ export default function ResetPassword() {
 
   return (
     <AuthShell>
-      <AuthHeader subtitle="Set a new password" />
+      <AuthHeader title="New password" meta="At least 8 characters" />
 
-      <div className="glass w-full max-w-sm mt-6 sm:mt-9 p-4 rise-in-2 flex flex-col justify-center">
+      <AuthPanel className="flex flex-col justify-center">
         {hasSession === null ? (
           <div className="flex items-center justify-center gap-2 py-4">
             <LoadingSpinner size="small" />
-            <p className="text-secondary text-[14px]">Verifying your reset link…</p>
+            <p className="text-body text-ink-muted">Verifying your reset link…</p>
           </div>
         ) : !hasSession ? (
           <div className="text-center space-y-4 rise-in">
-            <p className="text-secondary text-[14px]">
+            <p className="text-body text-ink-muted">
               This reset link is invalid or expired.
             </p>
-            <Button asChild variant="volt" size="lg" className="w-full">
+            <Button asChild variant="primary" size="lg" className="w-full">
               <Link to="/forgot-password">Request a new link</Link>
             </Button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="password" className="text-ink mb-1 block">New Password</Label>
+              <Label htmlFor="password" className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-1 block">New password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                 <Input
@@ -114,7 +114,7 @@ export default function ResetPassword() {
             </div>
 
             <div>
-              <Label htmlFor="confirmPassword" className="text-ink mb-1 block">Confirm Password</Label>
+              <Label htmlFor="confirmPassword" className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-1 block">Confirm password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                 <Input
@@ -133,7 +133,7 @@ export default function ResetPassword() {
 
             <Button
               type="submit"
-              variant="volt"
+              variant="primary"
               size="lg"
               className="w-full"
               disabled={loading}
@@ -144,21 +144,21 @@ export default function ResetPassword() {
                   Updating password…
                 </>
               ) : (
-                'Reset Password'
+                'Update password'
               )}
             </Button>
           </form>
         )}
 
         <div className="flex items-center justify-center mt-3 px-0.5">
-          <Button asChild variant="plain" className="text-[14px] gap-2 min-h-[44px] px-2">
+          <Button asChild variant="plain" className="text-body gap-2 min-h-tap px-2 text-ink-muted">
             <Link to="/login">
               <ArrowLeft className="w-4 h-4" />
               Back to sign in
             </Link>
           </Button>
         </div>
-      </div>
+      </AuthPanel>
     </AuthShell>
   );
 }
