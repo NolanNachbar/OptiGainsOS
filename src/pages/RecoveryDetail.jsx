@@ -126,16 +126,13 @@ export default function RecoveryDetail() {
     : getReadinessCategory(score);
   // Keep readiness in its owned hue (teal) for the healthy tiers so it doesn't
   // collide with body-battery green; only degrade to warn/bad on low scores.
+  // One hue for readiness on every screen (teal, matching Today). The tier
+  // label carries the verdict; a stale engine reading drops to muted ink so a
+  // past number never reads as today's.
   const readinessColor =
-    score == null ? "text-ink-muted"
-    : score >= 70 ? "text-teal"
-    : score >= 50 ? "text-warn"
-    : "text-bad";
+    score == null || staleState ? "text-ink-muted" : "text-teal";
   const readinessBg =
-    score == null ? "bg-track"
-    : score >= 70 ? "bg-teal/10"
-    : score >= 50 ? "bg-warn/10"
-    : "bg-bad/10";
+    score == null || staleState ? "bg-track" : "bg-teal/10";
 
   // Which series actually have data — used to collapse empty chart shells
   // instead of reserving ~250px of void per chart.
@@ -176,11 +173,11 @@ export default function RecoveryDetail() {
     })(),
     steps: (() => {
       const d = lastWith("displaySteps");
-      return { value: d ? Math.round(d.displaySteps).toLocaleString() : "--", unit: "steps", label: "Latest Steps", date: d?.formattedDate };
+      return { value: d ? Math.round(d.displaySteps).toLocaleString() : "--", unit: "steps", label: "Latest steps", date: d?.formattedDate };
     })(),
     sleep: (() => {
       const d = lastWith("displaySleep");
-      return { value: d ? d.displaySleep.toFixed(1) : "--", unit: "h", label: "Latest Sleep", date: d?.formattedDate };
+      return { value: d ? d.displaySleep.toFixed(1) : "--", unit: "h", label: "Latest sleep", date: d?.formattedDate };
     })(),
   };
   // `activeChart` is null until the user explicitly picks a tab. While it's
@@ -214,7 +211,7 @@ export default function RecoveryDetail() {
                 </ReasonLine>
                 {staleState && (
                   <p className="text-xs text-ink-muted mb-2 tabular-nums">
-                    Last computed {format(parseISO(stateDate), "MMM d")}
+                    As of {format(parseISO(stateDate), "MMM d")}. Check in or sync for today's reading.
                   </p>
                 )}
                 {scoreSource === "local" && !athleteStateError && (
@@ -230,13 +227,13 @@ export default function RecoveryDetail() {
                 <div className="grid grid-cols-2 gap-4 w-full border-t hairline pt-3 md:pt-4 mt-1 md:mt-2">
                   <div className="text-center">
                     <div className="text-micro text-ink-muted mb-1 flex items-center justify-center gap-1.5">
-                      <i className="w-[5px] h-[5px] rounded-full bg-leaf" /> Body Battery
+                      <i className="w-[5px] h-[5px] rounded-full bg-leaf" /> Body battery
                     </div>
                     <div className="font-technical text-lg text-ink-secondary">{latest?.body_battery ?? "--"}</div>
                   </div>
                   <div className="text-center">
                     <div className="text-micro text-ink-muted mb-1 flex items-center justify-center gap-1.5">
-                      <i className="w-[5px] h-[5px] rounded-full bg-violet" /> Sleep Score
+                      <i className="w-[5px] h-[5px] rounded-full bg-violet" /> Sleep score
                     </div>
                     <div className="font-technical text-lg text-ink-secondary">{latest?.sleep_score ?? "--"}</div>
                   </div>
@@ -247,7 +244,7 @@ export default function RecoveryDetail() {
 
           <Card className="md:col-span-2 rise-in-2">
             <CardHeader className="pb-1 md:pb-2">
-              <CardTitle className="text-micro text-ink-muted">Training Load (ACWR)</CardTitle>
+              <CardTitle className="text-micro text-ink-muted">Training load (ACWR)</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col items-center md:flex-row md:items-center gap-3 md:gap-6 py-0.5 md:py-2">
@@ -260,7 +257,7 @@ export default function RecoveryDetail() {
                       it only earns the physiological spectrum once it leaves the
                       0.8–1.3 band (warn/bad). */}
                   <div className={`font-technical text-3xl font-numeral md:text-5xl tabular-nums ${acwrColor} mb-1`}>{acwr != null ? acwr.toFixed(2) : "--"}</div>
-                  <div className="text-micro text-ink-muted">Current Ratio</div>
+                  <div className="text-micro text-ink-muted">Current ratio</div>
                 </div>
                 <div className="w-full md:flex-1">
                   {/* ACWR band gauge — neutral track, the 0.8–1.3 lowest-risk

@@ -33,7 +33,7 @@ import { invalidateWorkoutLogs } from "@/lib/queryKeys";
 import { useDailyTargets } from "@/hooks/useDailyTargets";
 import { useTodayPrescription, useAthleteState } from "@/hooks/useEngineQueries";
 import { useEnrollments } from "@/hooks/useProgramQueries";
-import { useTodayBodyWeight, useLastBodyWeight, useLogWeight } from "@/hooks/useWeighIn";
+import { useTodayBodyWeight, useLogWeight } from "@/hooks/useWeighIn";
 import { BOUNDS } from "@/components/dashboard/WeighInPrompt";
 import ProgramCompleteCard from "@/components/dashboard/ProgramCompleteCard";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -47,6 +47,7 @@ import DailyBriefCard from "@/components/dashboard/DailyBriefCard";
 import TodayActions from "@/components/dashboard/TodayActions";
 import { MetricTile, SectionLabel, SegmentedControl, Module, MiniRing } from "@/components/ui/system";
 import { PageHeader, Stat } from "@/components/ui";
+import { targetBasis } from "@/components/nutrition/tracker/targetBasis";
 import { Activity, AlertTriangle, ChevronRight, ChevronDown, Flame, Check } from "lucide-react";
 import { format, parseISO, addDays } from "date-fns";
 
@@ -91,7 +92,6 @@ function WeightSpark({ trendPoints, scatterPoints, W, H }) {
 // verbatim by the pre-session check-in gate in PrescribedSessionCard.
 function WeighInRow({ today, weightUnit }) {
   const { todayWeight, isLoading, isFetching } = useTodayBodyWeight(today);
-  const { lastWeight } = useLastBodyWeight(today);
   const logWeight = useLogWeight();
   const [typed, setTyped] = useState("");
   // A message, not a bare boolean — WeighInPrompt's own sheet distinguishes
@@ -103,7 +103,6 @@ function WeighInRow({ today, weightUnit }) {
   if (isLoading || isFetching) return null;
 
   const already = todayWeight?.weight != null;
-  const reference = lastWeight?.weight ?? null;
 
   const submit = (e) => {
     e?.preventDefault?.();
@@ -146,7 +145,7 @@ function WeighInRow({ today, weightUnit }) {
               inputMode="decimal"
               enterKeyHint="done"
               autoComplete="off"
-              placeholder={reference != null ? String(reference) : "--"}
+              placeholder={weightUnit}
               value={typed}
               onChange={(e) => {
                 setTyped(e.target.value.replace(/[^\d.,]/g, "").slice(0, 6));
@@ -159,6 +158,7 @@ function WeighInRow({ today, weightUnit }) {
             />
             <Button
               type="submit"
+              variant="outline"
               disabled={logWeight.isPending || !typed.trim()}
               className="shrink-0 px-4 min-h-[44px]"
             >
@@ -442,6 +442,12 @@ export default function Today() {
   const nutrition = state?.nutrition || {};
   const vdot = state?.vdot_zones || {};
   const score = recovery?.score ?? null;
+  // useAthleteState falls back to the latest row on/before today, so the score
+  // can be days old. A stale reading keeps its number but drops the teal, says
+  // its date, and stops speaking about "today".
+  const readinessDate = state?.date ?? null;
+  const readinessStale = score != null && readinessDate != null && readinessDate !== today;
+  const readinessAsOf = readinessStale ? format(parseISO(readinessDate), "MMM d") : null;
 
   const intensity = prescription?.mpc_intensity != null ? Number(prescription.mpc_intensity) : null;
 
@@ -545,6 +551,9 @@ export default function Today() {
     }
     // No engine prescription yet: the verdict must still agree with the
     // readiness number shown above it, so read it from the score itself.
+    if (score != null && readinessStale) {
+      return `Last reading ${readinessAsOf}. Check in or sync for today's call.`;
+    }
     if (score != null) {
       const s = Math.round(score);
       if (s >= 70) return "Ready to train. No engine prescription yet, so go by plan.";
@@ -552,7 +561,7 @@ export default function Today() {
       return "Low readiness. Keep it easy or take recovery.";
     }
     return "No verdict yet. The engine needs a few more days of data.";
-  }, [prescription, intensity, score]);
+  }, [prescription, intensity, score, readinessStale, readinessAsOf]);
 
   // Readiness basis: the inputs behind the score, or the default-state line.
   const readinessBasis = useMemo(() => {
@@ -562,8 +571,9 @@ export default function Today() {
       recovery?.sleep_score != null && `Sleep ${fmt(recovery.sleep_score)}`,
       recovery?.body_battery != null && `Battery ${fmt(recovery.body_battery)}%`,
     ].filter(Boolean);
-    return parts.length ? `Inputs: ${parts.join(" · ")}` : "No check-in, using defaults.";
-  }, [recovery]);
+    const base = parts.length ? `Inputs: ${parts.join(" · ")}` : "No check-in, using defaults.";
+    return readinessAsOf ? `As of ${readinessAsOf}. ${base}` : base;
+  }, [recovery, readinessAsOf]);
 
   // The consolidated detail card's segmented control — Brief leads (the Daily
   // Brief headline is the IA priority). Muscle is offered even on error/empty so
@@ -577,6 +587,8 @@ export default function Today() {
   ];
 
   const dailyTargets = useDailyTargets(today);
+  // Same basis line Fuel shows under its kcal target, so the two agree.
+  const kcalBasis = targetBasis(dailyTargets);
 
   // Nutrition-remaining module (Today, above the fold): the same
   // allFoodEntries source + useDailyTargets targets FoodTracker's own "Daily
@@ -731,7 +743,8 @@ export default function Today() {
           ) : (
             <Stat
               size="lg"
-              hue={score == null ? "none" : "teal"}
+              hue={score == null || readinessStale ? "none" : "teal"}
+              className={readinessStale ? "[&_.font-numeral]:text-ink-muted" : ""}
               value={score == null ? null : Math.round(score)}
               reason={readinessBasis}
             />
@@ -799,6 +812,9 @@ export default function Today() {
               );
             })}
           </div>
+          {kcalBasis && (
+            <p className="mt-2 text-caption text-ink-muted tabular-nums">{kcalBasis.line}</p>
+          )}
         </Module>
 
         {/* 2 — Start/Resume session (Ledger ".sess" row): workout name, an

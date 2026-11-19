@@ -142,7 +142,7 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false, defaultCo
           </div>
           <Button asChild variant="dim" className="min-h-[44px] text-muted-2 text-xs gap-1.5">
             <Link to="/brief-history">
-              <History className="w-3.5 h-3.5" /> View Past Briefs
+              <History className="w-3.5 h-3.5" /> View past briefs
             </Link>
           </Button>
         </CardContent>
