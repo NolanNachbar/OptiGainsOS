@@ -21,7 +21,7 @@ export default function SessionCard({ chipsRow, cloneWorkoutMutation, handleStar
               {/* Title + description */}
               <CardTitle className="type-display text-2xl mb-1">{workout.title}</CardTitle>
               {workout.description && workout.description.trim().toLowerCase() !== (workout.title || "").trim().toLowerCase() && (
-                <p className="text-[13px] font-semibold text-ink-muted mb-4">{workout.description}</p>
+                <p className="text-body font-semibold text-ink-muted mb-4">{workout.description}</p>
               )}
               {/* wd-5: one HERO figure (Exercises — always present, the core
                   count for the session) reads as the hero-metric; Duration is
@@ -32,7 +32,7 @@ export default function SessionCard({ chipsRow, cloneWorkoutMutation, handleStar
                     <Target className="w-6 h-6 text-ink-muted" />
                     <div>
                       <div className="section-label">Exercises</div>
-                      <div className="hero-metric text-[28px] text-ink">{workout.exercises?.length || 0} <span className="text-[12px] font-semibold text-ink-muted">{(workout.exercises?.length || 0) === 1 ? 'exercise' : 'exercises'}</span></div>
+                      <div className="hero-metric text-display text-ink">{workout.exercises?.length || 0} <span className="text-caption font-semibold text-ink-muted">{(workout.exercises?.length || 0) === 1 ? 'exercise' : 'exercises'}</span></div>
                     </div>
                   </div>
                   {workout.duration_minutes != null && (
@@ -40,7 +40,7 @@ export default function SessionCard({ chipsRow, cloneWorkoutMutation, handleStar
                       <Clock className="w-4 h-4 text-ink-faint" />
                       <div>
                         <div className="section-label">Duration</div>
-                        <div className="font-technical font-bold text-[14px] text-ink-secondary">{workout.duration_minutes} <span className="text-[11px] font-semibold text-ink-muted">min</span></div>
+                        <div className="font-technical font-bold text-body text-ink-secondary">{workout.duration_minutes} <span className="text-caption font-semibold text-ink-muted">min</span></div>
                       </div>
                     </div>
                   )}

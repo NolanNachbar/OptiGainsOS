@@ -1,7 +1,7 @@
 import { useSearchParams, Link } from "react-router-dom";
 import WeeklySchedule from "./WeeklySchedule";
 import Workouts from "./Workouts";
-import { SubTabs } from "@/components/ui/system";
+import { SubTabs } from "@/components/ui";
 import { useEnrollments } from "@/hooks/useProgramQueries";
 import { CalendarDays, Dumbbell, BookOpen, Activity, PenLine } from "lucide-react";
 
@@ -37,25 +37,26 @@ export default function Train() {
 
   return (
     <div className="bg-charcoal min-h-full text-ink">
+      {/* Layout owns the page title; this row only carries the active program. */}
       {activeEnrollment?.program && (
-        <div className="max-w-5xl mx-auto px-4 lg:px-0 pt-2">
-          <div className="surface flex items-center justify-between gap-3 px-4 py-2.5">
+        <div className="max-w-5xl mx-auto px-gutter lg:px-0 pt-2">
+          <div className="flex items-center justify-between gap-3 py-row border-b border-charcoal-borderSoft">
             <div className="min-w-0">
-              <span className="text-[11px] font-semibold text-muted-2 block">Active program</span>
-              <span className="text-sm font-semibold text-ink truncate block">{activeEnrollment.program.title}</span>
+              <span className="text-micro text-ink-muted block">Active program</span>
+              <span className="text-emph text-ink truncate block">{activeEnrollment.program.title}</span>
             </div>
             <Link
               to={`/program-builder?edit=${activeEnrollment.program.id}`}
-              className="shrink-0 flex items-center gap-1.5 min-h-[44px] px-3 text-[14px] font-semibold text-ink"
+              className="shrink-0 flex items-center gap-1.5 min-h-tap px-3 rounded-control border border-charcoal-border bg-charcoal-surface2 text-body font-semibold text-ink transition-[transform,background-color] duration-fast ease-out active:scale-[0.97]"
             >
-              <PenLine className="w-4 h-4" />
+              <PenLine className="w-4 h-4" aria-hidden="true" />
               Edit
             </Link>
           </div>
         </div>
       )}
       <SubTabs tabs={TABS} active={activeTab} onChange={handleTabChange} />
-      <div className="max-w-5xl mx-auto py-2 px-4 lg:px-0">
+      <div className="max-w-5xl mx-auto py-2 px-gutter lg:px-0">
         {activeTab === "schedule" && <WeeklySchedule />}
         {activeTab === "library" && <Workouts defaultTab="library" hideHeader={true} />}
         {activeTab === "programs" && <Workouts defaultTab="programs" hideHeader={true} />}

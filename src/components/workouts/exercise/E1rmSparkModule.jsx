@@ -6,7 +6,7 @@ export default function E1rmSparkModule({ e1rmSpark, weightUnit }) {
         {e1rmSpark && (
           <div className="border-t border-charcoal-border pt-2.5 mb-3">
             <div className="flex items-baseline justify-between mb-1">
-              <span className="text-[10px] font-bold uppercase tracking-[0.04em] text-ink-muted">
+              <span className="text-micro text-ink-muted">
                 e1RM · last {e1rmSpark.count} sessions
               </span>
               {e1rmSpark.delta !== 0 && (
@@ -16,15 +16,15 @@ export default function E1rmSparkModule({ e1rmSpark, weightUnit }) {
                 // card already uses everywhere else (column header, Volume,
                 // the e1RM figure itself) — kept here rather than inventing a
                 // second "lb" spelling, so the screen stays on one label.
-                <span className={`text-[11px] font-bold ${e1rmSpark.delta > 0 ? "text-leaf" : "text-ink-muted"}`}>
+                <span className={`text-caption font-bold ${e1rmSpark.delta > 0 ? "text-leaf" : "text-ink-muted"}`}>
                   {e1rmSpark.delta > 0 ? "+" : "−"}{Math.abs(e1rmSpark.delta)} {weightUnit}
                 </span>
               )}
             </div>
             <div className="flex items-end gap-3">
-              <div className="font-technical font-extrabold text-ink tabular-nums flex-shrink-0" style={{ fontSize: 28, lineHeight: 1 }}>
+              <div className="text-display font-numeral text-ink tabular-nums flex-shrink-0" >
                 {e1rmSpark.current}
-                <span className="text-[12px] text-ink-muted font-semibold ml-0.5">{weightUnit}</span>
+                <span className="text-caption text-ink-muted font-semibold ml-0.5">{weightUnit}</span>
               </div>
               <svg
                 viewBox={`0 0 ${e1rmSpark.w} ${e1rmSpark.h}`}

@@ -38,12 +38,12 @@ export default function CardioSessions({ programWorkout }) {
             <div className="flex items-start gap-2.5">
               <Activity className="w-4 h-4 text-carb mt-0.5 shrink-0" />
               <div>
-                <p className="text-[13.5px] font-bold text-ink">{name}</p>
-                {meta && <p className="font-technical text-[11px] font-semibold text-ink-muted">{meta}</p>}
-                {structure && <p className="text-[11px] text-ink-muted mt-0.5 leading-snug">{structure}</p>}
+                <p className="text-body font-bold text-ink">{name}</p>
+                {meta && <p className="font-technical text-caption font-semibold text-ink-muted">{meta}</p>}
+                {structure && <p className="text-caption text-ink-muted mt-0.5 leading-snug">{structure}</p>}
               </div>
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-ink-muted border border-charcoal-border rounded-full px-2.5 py-1 shrink-0">Cardio</span>
+            <span className="text-micro text-ink-muted border border-charcoal-border rounded-full px-2.5 py-1 shrink-0">Cardio</span>
           </div>
         );
       })}

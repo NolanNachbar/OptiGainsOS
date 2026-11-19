@@ -16,8 +16,8 @@ export default function ExerciseCuesDialog({ showCues, setShowCues, exercise, ex
         </DialogHeader>
         <div className="mt-2 text-sm text-ink-secondary max-h-[60vh] overflow-y-auto space-y-3">
           {nudgeMessage && (
-            <div className="px-3 py-2.5 rounded-xl glass-inset flex items-start gap-2.5">
-              <i className={`w-[26px] h-[26px] rounded-[9px] flex items-center justify-center flex-shrink-0 not-italic ${
+            <div className="px-3 py-2.5 rounded-control glass-inset flex items-start gap-2.5">
+              <i className={`w-[26px] h-[26px] rounded-control flex items-center justify-center flex-shrink-0 not-italic ${
                 nudgeMessage.type === 'success' ? 'bg-teal/[0.16] text-teal' :
                 nudgeMessage.type === 'warning' ? 'bg-warn/[0.15] text-warn' :
                 'bg-info/[0.15] text-info'
@@ -36,14 +36,14 @@ export default function ExerciseCuesDialog({ showCues, setShowCues, exercise, ex
           )}
 
           {coachingChip && (
-            <div className="px-3 py-2.5 rounded-xl glass-inset flex items-center gap-2.5">
-              <i className="w-[26px] h-[26px] rounded-[9px] bg-coral/15 text-coral flex items-center justify-center flex-shrink-0 not-italic">
+            <div className="px-3 py-2.5 rounded-control glass-inset flex items-center gap-2.5">
+              <i className="w-[26px] h-[26px] rounded-control bg-coral/15 text-coral flex items-center justify-center flex-shrink-0 not-italic">
                 <TrendingUp className="w-3.5 h-3.5" />
               </i>
               <span className="text-xs font-semibold text-ink-muted leading-relaxed flex-1">{coachingChip.message}</span>
               {coachingChip.suggestedWeight && coachingChip.targetSetIndex != null && (
                 <button
-                  className="text-[11px] font-bold text-brand bg-brand/10 border border-brand/30 rounded-full px-2.5 py-1 hover:bg-brand/15"
+                  className="text-caption font-bold text-brand bg-brand/10 border border-brand/30 rounded-full px-2.5 py-1 hover:bg-brand/15"
                   onClick={() => {
                     onApplyCoachingSuggestion?.(exerciseIndex, coachingChip.targetSetIndex, coachingChip.suggestedWeight);
                     setCoachingChip(null);
@@ -59,8 +59,8 @@ export default function ExerciseCuesDialog({ showCues, setShowCues, exercise, ex
           )}
 
           {showShotList && shotNote && (
-            <div className="px-3 py-2.5 rounded-xl glass-inset flex items-start gap-2.5">
-              <i className="w-[26px] h-[26px] rounded-[9px] bg-brand/[0.16] text-brand flex items-center justify-center flex-shrink-0 not-italic">
+            <div className="px-3 py-2.5 rounded-control glass-inset flex items-start gap-2.5">
+              <i className="w-[26px] h-[26px] rounded-control bg-brand/[0.16] text-brand flex items-center justify-center flex-shrink-0 not-italic">
                 <Camera className="w-3.5 h-3.5" />
               </i>
               <span className="text-xs font-semibold text-ink-muted leading-relaxed pt-1">{shotNote}</span>

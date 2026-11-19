@@ -10,7 +10,7 @@ export default function WorkoutViewMode({ CardioSessions, handleStartLogging, is
           <>
           <Card className="">
             <CardHeader className="pt-4 pb-2">
-              <CardTitle className="text-[17px] font-extrabold text-ink">Exercises</CardTitle>
+              <CardTitle className="text-title font-extrabold text-ink">Exercises</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {workout.exercises?.map((exercise, index) => {
@@ -18,32 +18,32 @@ export default function WorkoutViewMode({ CardioSessions, handleStartLogging, is
                 return (
                   <div key={index} className="glass-inset px-4 py-3.5">
                       <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-full glass-inset border border-charcoal-border flex items-center justify-center text-ink-secondary font-technical font-extrabold text-[13px] flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full glass-inset border border-charcoal-border flex items-center justify-center text-ink-secondary font-technical font-extrabold text-body flex-shrink-0">
                           {index + 1}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-[15px] font-extrabold text-ink mb-2">{exercise.name}</h4>
+                          <h4 className="text-emph font-extrabold text-ink mb-2">{exercise.name}</h4>
                           {isLogFormat ? (
                             <table className="w-full text-sm mt-2">
                               <thead>
                                 <tr className="border-b border-charcoal-border">
-                                  <th className="text-left py-2 px-2 text-[9.5px] font-bold uppercase tracking-[0.08em] text-ink-muted">Set</th>
-                                  <th className="text-left py-2 px-2 text-[9.5px] font-bold uppercase tracking-[0.08em] text-ink-muted">Weight</th>
-                                  <th className="text-left py-2 px-2 text-[9.5px] font-bold uppercase tracking-[0.08em] text-ink-muted">Reps</th>
+                                  <th className="text-left py-2 px-2 text-micro text-ink-muted">Set</th>
+                                  <th className="text-left py-2 px-2 text-micro text-ink-muted">Weight</th>
+                                  <th className="text-left py-2 px-2 text-micro text-ink-muted">Reps</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {exercise.sets.map((set, si) => (
                                   <tr key={si} className="border-b border-charcoal-borderSoft">
                                     <td className="py-2 px-2 font-technical font-extrabold text-ink-muted">{set.set_number}</td>
-                                    <td className="py-2 px-2 font-technical font-semibold text-ink-secondary">{set.weight} <span className="text-[10px] text-ink-faint">{weightUnit}</span></td>
+                                    <td className="py-2 px-2 font-technical font-semibold text-ink-secondary">{set.weight} <span className="text-caption text-ink-faint">{weightUnit}</span></td>
                                     <td className="py-2 px-2 font-technical font-semibold text-ink-secondary">{set.duration_s != null ? `${set.duration_s}s` : set.reps}</td>
                                   </tr>
                                 ))}
                               </tbody>
                             </table>
                           ) : (
-                            <div className="flex flex-wrap gap-4 text-[12.5px] font-semibold text-ink-muted">
+                            <div className="flex flex-wrap gap-4 text-caption font-semibold text-ink-muted">
                               {exercise.sets > 1 && (
                                 <div>
                                   <span className="text-ink-muted">Sets:</span> <span className="font-technical font-extrabold text-ink-secondary">{exercise.sets}</span>

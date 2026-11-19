@@ -67,8 +67,8 @@ export default function WorkoutLogger({ CardioSessions, addExercise, addSet, all
                     <Fragment key={exerciseIndex}>
                     {showNextHeader && (
                       <div className="flex items-baseline justify-between px-1 pt-3 pb-1 mt-1 border-t border-charcoal-border">
-                        <span className="text-[11px] font-bold uppercase tracking-[0.04em] text-ink-muted">Next</span>
-                        <span className="text-[11px] font-bold uppercase tracking-[0.04em] text-ink-muted">last time</span>
+                        <span className="text-caption font-bold uppercase tracking-[0.04em] text-ink-muted">Next</span>
+                        <span className="text-caption font-bold uppercase tracking-[0.04em] text-ink-muted">last time</span>
                       </div>
                     )}
                     <SortableExerciseRow
@@ -165,7 +165,7 @@ export default function WorkoutLogger({ CardioSessions, addExercise, addSet, all
                     <Target className="w-5 h-5 text-ink-muted" />
                     <div>
                       <div className="section-label">Exercises</div>
-                      <div className="hero-metric text-[20px] text-ink">{workout.exercises?.length || 0}</div>
+                      <div className="hero-metric text-title text-ink">{workout.exercises?.length || 0}</div>
                     </div>
                   </div>
                   {workout.duration_minutes != null && (
@@ -173,7 +173,7 @@ export default function WorkoutLogger({ CardioSessions, addExercise, addSet, all
                       <Clock className="w-4 h-4 text-ink-faint" />
                       <div>
                         <div className="section-label">Duration</div>
-                        <div className="font-technical font-bold text-[14px] text-ink-secondary">{workout.duration_minutes} <span className="text-[11px] font-semibold text-ink-muted">min</span></div>
+                        <div className="font-technical font-bold text-body text-ink-secondary">{workout.duration_minutes} <span className="text-caption font-semibold text-ink-muted">min</span></div>
                       </div>
                     </div>
                   )}
@@ -184,7 +184,7 @@ export default function WorkoutLogger({ CardioSessions, addExercise, addSet, all
                     value={preWorkoutNotes}
                     onChange={(e) => setPreWorkoutNotes(e.target.value)}
                     placeholder="Anything notable going in? Energy, soreness, focus..."
-                    className="bg-transparent border border-charcoal-border rounded-lg px-3 py-2 min-h-[60px] resize-none text-base"
+                    className="bg-transparent border border-charcoal-border rounded-control px-3 py-2 min-h-[60px] resize-none text-base"
                   />
                 </div>
               </div>

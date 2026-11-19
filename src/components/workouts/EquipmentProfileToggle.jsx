@@ -35,7 +35,7 @@ export default function EquipmentProfileToggle({ swaps = [] }) {
         disabled={setEquipmentProfile.isPending || !profile?.id}
         className="min-h-[44px] -my-2 inline-flex items-center disabled:opacity-60"
       >
-        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold border transition-colors ${
+        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-caption font-bold border transition-colors ${
           isCasper
             ? "bg-brand/[0.16] border-brand/40 text-brand"
             : "border-charcoal-border text-ink-muted hover:border-brand/30 hover:text-ink"
@@ -47,7 +47,7 @@ export default function EquipmentProfileToggle({ swaps = [] }) {
         </span>
       </button>
       {isCasper && swaps.length > 0 && (
-        <span className="text-[11px] font-semibold text-ink-muted">
+        <span className="text-caption font-semibold text-ink-muted">
           {swaps.length} swapped: {swaps.map((s) => `${s.from} → ${s.to}`).join(", ")}
         </span>
       )}

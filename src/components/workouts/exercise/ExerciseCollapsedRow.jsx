@@ -28,7 +28,7 @@ export default function ExerciseCollapsedRow({ doneCount, dragHandleProps, exerc
         {isDone && (
           <Check className="w-3.5 h-3.5 text-up flex-shrink-0" strokeWidth={3} />
         )}
-        <span className={`flex-1 min-w-0 truncate text-[14px] font-semibold ${isDone ? "text-ink-muted" : "text-ink"}`}>
+        <span className={`flex-1 min-w-0 truncate text-body font-semibold ${isDone ? "text-ink-muted" : "text-ink"}`}>
           {exercise.name}
         </span>
         {/* Two right-side columns on one line: target (muted) and last time
@@ -37,17 +37,17 @@ export default function ExerciseCollapsedRow({ doneCount, dragHandleProps, exerc
             viewport the Next list only ever showed the target column and
             read as if it were showing last-time values (coordinator, r4f). */}
         {isDone ? (
-          <span className="flex-shrink-0 font-technical text-[12px] text-ink-faint tabular-nums">
+          <span className="flex-shrink-0 font-technical text-caption text-ink-faint tabular-nums">
             {doneCount}/{targetText || totalCount}
           </span>
         ) : (
           targetText && (
-            <span className="flex-shrink-0 font-technical text-[12px] text-ink-faint tabular-nums">
+            <span className="flex-shrink-0 font-technical text-caption text-ink-faint tabular-nums">
               {targetText}
             </span>
           )
         )}
-        <span className="flex-shrink-0 font-technical text-[12px] text-ink-secondary tabular-nums">
+        <span className="flex-shrink-0 font-technical text-caption text-ink-secondary tabular-nums">
           {lastTimeText || "–"}
         </span>
       </button>

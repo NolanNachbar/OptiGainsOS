@@ -1,4 +1,4 @@
-import { Fragment, useState, useRef, useEffect } from "react";
+import { Fragment, useState, useRef, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -263,24 +263,24 @@ export default function ExerciseCard({
   // still obvious. cellBase carries everything except bg/text color so the
   // RIR cell below can swap those two for its tint instead.
   const cellBase =
-    "h-11 w-full min-w-0 rounded-[9px] text-center font-technical font-extrabold text-[14px] " +
+    "h-11 w-full min-w-0 rounded-control text-center font-technical font-extrabold text-body " +
     "placeholder:text-ink-faint placeholder:font-semibold border-0 touch-manipulation " +
     "focus:outline focus:outline-[1.5px] focus:outline-offset-0 focus:outline-white/90 focus:ring-0";
 
   const setCell = (_isActive, muted = false) =>
-    `${cellBase} bg-[#1C1F23] ${muted ? 'text-ink-faint' : 'text-ink'}`;
+    `${cellBase} bg-charcoal-surface2 ${muted ? 'text-ink-faint' : 'text-ink'}`;
 
   // RIR cell tint (MF scale, design-reference only — our own palette tokens
   // where they exist): 0 = red (failure), 1-2 = amber, 3-4 = green (the
   // trained-to-near-failure sweet spot), 5+ = blue (a lot left in the tank).
   // Tints only this one cell, never the whole row.
   const rirCell = (rirValue) => {
-    if (rirValue == null) return `${cellBase} bg-[#1C1F23] text-ink-faint`;
+    if (rirValue == null) return `${cellBase} bg-charcoal-surface2 text-ink-faint`;
     const tint =
-      rirValue <= 0 ? 'bg-[#E5484D]/20 text-[#E5484D]'
-      : rirValue <= 2 ? 'bg-[#E2B84E]/20 text-[#E2B84E]'
-      : rirValue <= 4 ? 'bg-[#7CC389]/20 text-[#7CC389]'
-      : 'bg-[#6EA6DA]/20 text-[#6EA6DA]';
+      rirValue <= 0 ? 'bg-bad/20 text-bad'
+      : rirValue <= 2 ? 'bg-warn/20 text-warn'
+      : rirValue <= 4 ? 'bg-leaf/20 text-leaf'
+      : 'bg-info/20 text-info';
     return `${cellBase} ${tint}`;
   };
 
@@ -356,7 +356,6 @@ export default function ExerciseCard({
   const [rirRequiredIndex, setRirRequiredIndex] = useState(null);
   // Which row's set-type menu (working / warm-up / drop / failure) is open.
   const [markMenuIndex, setMarkMenuIndex] = useState(null);
-  const [whyOpen, setWhyOpen] = useState(false);
   const handleSetCompleted = (setIndex, completed) => {
     const target = exercise.sets[setIndex];
     // Completing a set without touching RIR means "it went as prescribed": record
@@ -668,7 +667,7 @@ export default function ExerciseCard({
         {vitals?.target && (
         <div className="flex items-center gap-2 mt-1">
           {vitals?.target && (
-            <div className="font-technical text-[13px] tabular-nums truncate pr-1">
+            <div className="font-technical text-body tabular-nums truncate pr-1">
               <span className="text-ink-muted">Target </span>
               <span className="text-ink font-bold">{vitals.target.primary}</span>
               {vitals.target.sub && (
@@ -699,10 +698,10 @@ export default function ExerciseCard({
 
         {/* Why this weight: only lines the engine wrote for this lift (load,
             % of e1RM, reps @ RIR, its own notes). Absent data renders nothing. */}
-        <LoadWhy loadWhy={loadWhy} whyOpen={whyOpen} setWhyOpen={setWhyOpen} />
+        <LoadWhy loadWhy={loadWhy} lastPerformance={lastPerformance} weightUnit={weightUnit} />
 
         {/* Column header */}
-        <div className={`${gridCols} gap-1 sm:gap-1.5 pb-1.5 text-[9.5px] font-bold uppercase tracking-[0.08em] text-ink-muted`}>
+        <div className={`${gridCols} gap-1 sm:gap-1.5 pb-1.5 text-micro text-ink-muted`}>
           <span className="pl-0.5">Set</span>
           <span>Prev</span>
           <span className="text-center">{weightUnit}</span>
@@ -712,8 +711,8 @@ export default function ExerciseCard({
               RIR
               <span className="group relative">
                 <HelpCircle className="w-3 h-3 cursor-help" />
-                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 w-48 p-2 glass-elevated rounded-lg text-ink text-[11px] font-semibold normal-case tracking-normal text-left">
-                  Reps In Reserve (0-10): How many reps you left in the tank. 0 = failure, 1 = 1 rep left, 2 = 2 reps left.
+                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 w-48 p-2 glass-elevated rounded-control text-ink text-caption font-semibold normal-case tracking-normal text-left">
+                  Reps in reserve, 0 to 10. 0 is failure, 2 is two reps left.
                 </span>
               </span>
             </span>
@@ -758,13 +757,13 @@ export default function ExerciseCard({
           return (
           <div key={setIndex}>
             {blockLabel && (
-              <div className="pt-2 pb-1 text-[10px] font-technical font-bold uppercase tracking-wider text-ink-faint">
+              <div className="pt-2 pb-1 text-micro font-technical font-bold uppercase tracking-wider text-ink-faint">
                 {blockLabel}
               </div>
             )}
             <div
               className={`${gridCols} gap-1 sm:gap-1.5 items-center min-h-[48px] py-[5px] transition-colors [transition-timing-function:var(--ease)] duration-200 ${
-                isActive ? 'bg-charcoal-surface2 rounded-xl -mx-2 px-2' : ''
+                isActive ? 'bg-charcoal-surface2 rounded-control -mx-2 px-2' : ''
               } ${!set.completed && !isActive ? 'text-ink-faint' : ''}`}
             >
               <button
@@ -772,7 +771,7 @@ export default function ExerciseCard({
                 onClick={() => setMarkMenuIndex((cur) => (cur === setIndex ? null : setIndex))}
                 aria-expanded={markMenuIndex === setIndex}
                 aria-label={`Set ${set.set_number}${currentMark(set) ? `, ${SET_MARK_LABEL[currentMark(set)]}` : ''}. Change set type`}
-                className={`relative font-technical text-[13px] font-extrabold pl-0.5 text-left touch-manipulation min-h-[44px] -my-3.5 after:content-[''] after:absolute after:inset-y-0 after:-left-2 after:right-0 ${
+                className={`relative font-technical text-body font-extrabold pl-0.5 text-left touch-manipulation min-h-[44px] -my-3.5 after:content-[''] after:absolute after:inset-y-0 after:-left-2 after:right-0 ${
                   baseType(set) === 'daily_min' ? 'text-info' : currentMark(set) ? 'text-brand' : (set.completed || isActive) ? 'text-ink' : 'text-ink-faint'
                 }`}
               >
@@ -787,7 +786,7 @@ export default function ExerciseCard({
                   onUpdateSet(exerciseIndex, setIndex, 'reps', prevSet.reps);
                 }}
                 aria-label={prevSet ? `Previous set ${prevSet.weight} by ${prevSet.reps}, tap to use` : 'No previous set'}
-                className="font-technical text-[11px] font-semibold text-ink-faint pr-1 text-left tabular-nums disabled:cursor-default enabled:active:text-brand min-h-[44px] min-w-0 max-w-full overflow-hidden -my-3.5 flex items-center"
+                className="font-technical text-caption font-semibold text-ink-faint pr-1 text-left tabular-nums disabled:cursor-default enabled:active:text-brand min-h-[44px] min-w-0 max-w-full overflow-hidden -my-3.5 flex items-center"
               >
                 <span className="min-w-0 truncate whitespace-nowrap">{prevSet ? `${prevSet.weight}×${prevSet.reps}` : '—'}</span>
               </button>
@@ -840,7 +839,7 @@ export default function ExerciseCard({
                     positioned + pointer-events-none so it never shrinks the input's
                     44px hit area or intercepts the tap. */}
                 {set.completed && lastPerformance?.lastWeight != null && Number(set.weight) > Number(lastPerformance.lastWeight) && (
-                  <span className="pointer-events-none absolute -top-1 -right-0.5 font-technical text-[9px] font-bold text-leaf bg-[var(--color-bg)] px-0.5 rounded">
+                  <span className="pointer-events-none absolute -top-1 -right-0.5 font-technical text-caption font-bold text-leaf bg-[var(--color-bg)] px-0.5 rounded">
                     +{Math.round(Number(set.weight) - Number(lastPerformance.lastWeight))}
                   </span>
                 )}
@@ -876,7 +875,7 @@ export default function ExerciseCard({
                     handleInputFocus(e);
                     if (useKeypad) setActiveField({ setIndex, field: 'rir' });
                   }}
-                  placeholder={String(set.rir_target ?? exercise.prescribed?.rir ?? "—")}
+                  placeholder={String(set.rir_target ?? exercise.prescribed?.rir ?? "--")}
                   min="0"
                   max="10"
                   step="0.5"
@@ -889,14 +888,14 @@ export default function ExerciseCard({
                 aria-checked={set.completed}
                 aria-label={`Mark set ${set.set_number} ${set.completed ? 'incomplete' : 'complete'}`}
                 onClick={() => handleSetCompleted(setIndex, !set.completed)}
-                className="min-h-[44px] w-full flex items-center justify-center touch-manipulation"
+                className="group min-h-tap min-w-tap w-full flex items-center justify-center touch-manipulation"
               >
                 {/* Rounded-square fill (MF-referenced), not a circle: full
                     gain-green fill + dark check when done, bordered when not. */}
-                <span className={`w-8 h-8 rounded-[8px] flex items-center justify-center transition-colors duration-200 [transition-timing-function:var(--ease)] ${
+                <span className={`w-9 h-9 rounded-control flex items-center justify-center transition-[transform,background-color,border-color] duration-fast ease-out group-active:scale-[0.94] ${
                   set.completed
-                    ? 'bg-[#7CC389] text-[#12161C]'
-                    : 'border-[1.5px] border-charcoal-border text-ink-faint hover:border-brand/50 hover:text-brand'
+                    ? 'bg-leaf text-charcoal'
+                    : 'border border-charcoal-border bg-charcoal-surface2 text-ink-faint hover:border-ink-muted hover:text-ink'
                 }`}>
                   <Check className="w-4 h-4" strokeWidth={3} />
                 </span>
@@ -928,8 +927,8 @@ export default function ExerciseCard({
                         onUpdateSet(exerciseIndex, setIndex, 'set_type_base', patch.set_type_base);
                         setMarkMenuIndex(null);
                       }}
-                      className={`min-h-[36px] px-2.5 rounded-[9px] text-[11px] font-bold touch-manipulation ${
-                        on ? 'bg-brand/20 text-brand' : 'bg-[#1C1F23] text-ink-muted'
+                      className={`min-h-[36px] px-2.5 rounded-control text-caption font-bold touch-manipulation ${
+                        on ? 'bg-brand/20 text-brand' : 'bg-charcoal-surface2 text-ink-muted'
                       }`}
                     >
                       {SET_MARK_LABEL[m]}
@@ -940,7 +939,7 @@ export default function ExerciseCard({
             )}
 
             {rirRequiredIndex === setIndex && !set.completed && set.rir == null && (
-              <div role="alert" className="pb-1.5 pl-0.5 text-[11px] font-semibold text-warn">
+              <div role="alert" className="pb-1.5 pl-0.5 text-caption font-semibold text-warn">
                 RIR required on top sets
               </div>
             )}
@@ -950,7 +949,7 @@ export default function ExerciseCard({
                 RIR ≤ 1): WHERE it stalled, programming only, never the cut signal. */}
             {reasonKeys.length > 0 && tagField && (
               <div className="flex flex-wrap items-center gap-1.5 pb-2 pl-0.5 -mt-0.5">
-                <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.06em] ${
+                <span className={`inline-flex items-center gap-1 text-micro ${
                   tagField === 'failure_reason' ? 'text-warn' : 'text-info'
                 }`}>
                   <AlertTriangle className="w-3 h-3" />
@@ -968,7 +967,7 @@ export default function ExerciseCard({
                     <button
                       type="button"
                       onClick={() => onUpdateSet(exerciseIndex, setIndex, tagField, sel ? null : rk)}
-                      className={`text-[11px] font-semibold rounded-full px-2.5 py-1 border transition-colors ${
+                      className={`text-caption font-semibold rounded-full px-2.5 py-1 border transition-colors ${
                         sel
                           ? 'bg-brand/[0.16] border-brand/40 text-brand'
                           : 'border-charcoal-border text-ink-muted hover:border-brand/30 hover:text-ink'
@@ -988,7 +987,7 @@ export default function ExerciseCard({
                     onFocus={handleInputFocus}
                     placeholder="What happened?"
                     aria-label={`Set ${set.set_number} — what happened`}
-                    className="w-full mt-1 text-[12px] rounded-lg px-2.5 py-1.5 bg-transparent border border-charcoal-border text-ink placeholder:text-ink-faint focus:border-brand/50 focus:outline-none touch-manipulation"
+                    className="w-full mt-1 text-caption rounded-control px-2.5 py-1.5 bg-transparent border border-charcoal-border text-ink placeholder:text-ink-faint focus:border-brand/50 focus:outline-none touch-manipulation"
                   />
                 )}
               </div>
@@ -1002,7 +1001,7 @@ export default function ExerciseCard({
           className="mt-2 text-brand min-h-[44px]"
         >
           <Plus className="w-4 h-4 mr-1" />
-          Add Set
+          Add set
         </Button>
 
         {/* Volume / Best set sit BELOW the set table now. They only exist once a

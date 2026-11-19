@@ -91,10 +91,10 @@ export default function OverrideProgramWorkout({ programWorkout, onDone }) {
                 type="button"
                 disabled={override.isPending}
                 onClick={() => pick(w)}
-                className="w-full text-left rounded-lg border border-charcoal-border px-3 py-2 hover:border-brand/40 transition-colors disabled:opacity-60"
+                className="w-full text-left rounded-control border border-charcoal-border px-3 py-2 hover:border-brand/40 transition-colors disabled:opacity-60"
               >
                 <span className="block font-semibold text-sm">{w.title}</span>
-                <span className="block text-[11px] text-ink-muted">
+                <span className="block text-caption text-ink-muted">
                   {(w.exercises || []).length} exercises
                   {w.folder ? ` · ${w.folder}` : ""}
                 </span>

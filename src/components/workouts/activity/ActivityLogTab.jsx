@@ -91,13 +91,13 @@ function StrengthEntryCard({ entry }) {
           <Dumbbell className="w-4 h-4" />
         </div>
         <div className="flex-1 min-w-0">
-          <h4 className="text-[15px] font-semibold text-ink truncate">{entry.title}</h4>
+          <h4 className="text-emph font-semibold text-ink truncate">{entry.title}</h4>
           <span className="section-label">{hero.label}</span>
         </div>
         {/* Dominant figure — the row's one hero metric. */}
         <div className="flex items-baseline gap-1 shrink-0">
-          <span className="font-technical font-numeral text-[28px] leading-none text-ink whitespace-nowrap">{hero.value}</span>
-          {hero.suffix && <span className="text-[11px] text-ink-muted uppercase">{hero.suffix}</span>}
+          <span className="font-technical font-numeral text-display leading-none text-ink whitespace-nowrap">{hero.value}</span>
+          {hero.suffix && <span className="text-caption text-ink-muted uppercase">{hero.suffix}</span>}
         </div>
       </div>
       {/* Stable 4-cell scaffold. Dividers derive from grid position so a wrapped
@@ -111,8 +111,8 @@ function StrengthEntryCard({ entry }) {
           >
             <span className="section-label">{cell.label}</span>
             <div className="flex items-baseline gap-1 mt-1">
-              <span className={`font-technical font-bold text-[15px] whitespace-nowrap ${cell.value === '—' ? 'text-ink-faint' : 'text-ink-secondary'}`}>{cell.value}</span>
-              {cell.suffix && <span className="text-[11px] text-ink-muted uppercase">{cell.suffix}</span>}
+              <span className={`font-technical font-bold text-emph whitespace-nowrap ${cell.value === '—' ? 'text-ink-faint' : 'text-ink-secondary'}`}>{cell.value}</span>
+              {cell.suffix && <span className="text-caption text-ink-muted uppercase">{cell.suffix}</span>}
             </div>
           </div>
         ))}
@@ -186,13 +186,13 @@ function CardioEntryCard({ entry }) {
           <ActivityTypeIcon type={entry.activityType} className="w-4 h-4" />
         </div>
         <div className="flex-1 min-w-0">
-          <h4 className="text-[15px] font-semibold text-ink truncate">{entry.title}</h4>
+          <h4 className="text-emph font-semibold text-ink truncate">{entry.title}</h4>
           <p className="section-label">{hero.label}</p>
         </div>
         {/* Dominant figure — the row's one hero metric. */}
         <div className="flex items-baseline gap-1 shrink-0">
-          <span className="font-technical font-numeral text-[28px] leading-none text-ink whitespace-nowrap">{hero.value}</span>
-          {hero.suffix && <span className="text-[11px] text-ink-muted uppercase">{hero.suffix}</span>}
+          <span className="font-technical font-numeral text-display leading-none text-ink whitespace-nowrap">{hero.value}</span>
+          {hero.suffix && <span className="text-caption text-ink-muted uppercase">{hero.suffix}</span>}
         </div>
       </div>
 
@@ -205,8 +205,8 @@ function CardioEntryCard({ entry }) {
             >
               <span className="section-label">{cell.label}</span>
               <div className="flex items-baseline gap-1 mt-1">
-                <span className="font-technical font-bold text-[15px] text-ink-secondary">{cell.value}</span>
-                {cell.suffix && <span className="text-[11px] text-ink-muted uppercase">{cell.suffix}</span>}
+                <span className="font-technical font-bold text-emph text-ink-secondary">{cell.value}</span>
+                {cell.suffix && <span className="text-caption text-ink-muted uppercase">{cell.suffix}</span>}
               </div>
             </div>
           ))}
@@ -228,7 +228,7 @@ export function ActivityLogTab({ workoutLogs, cardioSessions, workouts, isLoadin
     // boxes — so the loading state reads as the page's own scaffold dimming in.
     return (
       <div className="space-y-3">
-        <div className="h-20 glass-elevated rounded-[20px] pulse-loop" />
+        <div className="h-20 glass-elevated rounded-control pulse-loop" />
         {[1, 2, 3, 4].map(i => (
           <div key={i} className="h-28 tile pulse-loop" />
         ))}
@@ -319,28 +319,28 @@ export function ActivityLogTab({ workoutLogs, cardioSessions, workouts, isLoadin
     <>
       {/* Weekly Summary — elevated above the tile feed so it reads as a header,
           not just another entry. */}
-      <div className="flex items-stretch gap-4 p-4 glass-elevated rounded-[20px] mb-4">
+      <div className="flex items-stretch gap-4 p-4 glass-elevated rounded-control mb-4">
         {/* Hero: This Week */}
         <div className="flex flex-col justify-center shrink-0 pr-4 border-r hairline">
           <span className="section-label mb-1">This Week</span>
-          <span className="hero-metric text-[28px] text-ink">
-            {thisWeek.length}<span className="text-[12px] font-semibold text-ink-muted ml-1 align-baseline">sess</span>
+          <span className="hero-metric text-display text-ink">
+            {thisWeek.length}<span className="text-caption font-semibold text-ink-muted ml-1 align-baseline">sess</span>
           </span>
         </div>
         {/* Secondary cells — no redundant 'sess' suffix (the hero owns the unit). */}
         <div className="flex-1 grid grid-cols-3 gap-3">
           <div className="flex flex-col justify-center">
             <span className="section-label mb-0.5">Strength</span>
-            <span className="font-technical font-bold text-[17px] text-ink">{weekStrength}</span>
+            <span className="font-technical font-bold text-title text-ink">{weekStrength}</span>
           </div>
           <div className="flex flex-col justify-center">
             <span className="section-label mb-0.5">Cardio</span>
-            <span className="font-technical font-bold text-[17px] text-ink">{weekCardio}</span>
+            <span className="font-technical font-bold text-title text-ink">{weekCardio}</span>
           </div>
           <div className="flex flex-col justify-center">
             <span className="section-label mb-0.5">Distance</span>
-            <span className="font-technical font-bold text-[17px] text-ink">
-              {weekMiles > 0 ? weekMiles.toFixed(1) : 0}<span className="text-[12px] font-semibold text-ink-muted ml-1 align-baseline">mi</span>
+            <span className="font-technical font-bold text-title text-ink">
+              {weekMiles > 0 ? weekMiles.toFixed(1) : 0}<span className="text-caption font-semibold text-ink-muted ml-1 align-baseline">mi</span>
             </span>
           </div>
         </div>

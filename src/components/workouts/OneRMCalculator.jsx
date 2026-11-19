@@ -103,7 +103,7 @@ export default function OneRMCalculator({ weightUnit }) {
                 <div className="text-center">
                   <div className="text-sm text-ink-faint mb-1">Estimated 1 Rep Max</div>
                   <div className="hero-metric text-4xl text-ink-faint">
-                    —
+                    --
                   </div>
                 </div>
 
@@ -113,7 +113,7 @@ export default function OneRMCalculator({ weightUnit }) {
                     {repRanges.map((targetReps) => (
                       <div key={targetReps} className="text-center p-2 glass-inset opacity-50">
                         <div className="text-xs text-ink-faint">{targetReps} rep{targetReps > 1 ? 's' : ''}</div>
-                        <div className="font-semibold text-ink-faint font-technical">—</div>
+                        <div className="font-semibold text-ink-faint font-technical">--</div>
                       </div>
                     ))}
                   </div>

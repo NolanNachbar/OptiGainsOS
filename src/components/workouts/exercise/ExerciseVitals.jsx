@@ -10,11 +10,11 @@ export default function ExerciseVitals({ vitals, weightUnit }) {
           >
             {vitals.volume && (
               <div className="border-l border-charcoal-border first:border-l-0 pl-2.5 first:pl-0">
-                <div className="text-[10px] font-bold uppercase tracking-[0.04em] text-ink-muted">Volume</div>
-                <div className="text-[15px] font-bold text-ink mt-0.5 tabular-nums">
-                  {vitals.volume.current.toLocaleString()}<span className="text-[11px] text-ink-muted font-semibold ml-0.5">{weightUnit}</span>
+                <div className="text-micro text-ink-muted">Volume</div>
+                <div className="text-emph font-bold text-ink mt-0.5 tabular-nums">
+                  {vitals.volume.current.toLocaleString()}<span className="text-caption text-ink-muted font-semibold ml-0.5">{weightUnit}</span>
                 </div>
-                <div className="text-[11px] mt-0.5">
+                <div className="text-caption mt-0.5">
                   {vitals.volume.deltaPct != null ? (
                     <span className={vitals.volume.deltaPct > 0 ? 'text-leaf font-bold' : 'text-ink-muted'}>
                       {vitals.volume.deltaPct > 0 ? '+' : ''}{vitals.volume.deltaPct}%
@@ -28,12 +28,12 @@ export default function ExerciseVitals({ vitals, weightUnit }) {
             )}
             {vitals.best && (
               <div className="border-l border-charcoal-border first:border-l-0 pl-2.5 first:pl-0">
-                <div className="text-[10px] font-bold uppercase tracking-[0.04em] text-ink-muted">Best set</div>
-                <div className="text-[15px] font-bold text-ink mt-0.5 tabular-nums">
+                <div className="text-micro text-ink-muted">Best set</div>
+                <div className="text-emph font-bold text-ink mt-0.5 tabular-nums">
                   {vitals.best.weight}×{vitals.best.reps}
                 </div>
                 {vitals.best.e1rm != null && (
-                  <div className="text-[11px] text-ink-muted mt-0.5">{vitals.best.e1rm} e1RM</div>
+                  <div className="text-caption text-ink-muted mt-0.5">{vitals.best.e1rm} e1RM</div>
                 )}
               </div>
             )}

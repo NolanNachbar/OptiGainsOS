@@ -41,7 +41,7 @@ export default function AddExerciseForm({ onAdd, showCloseButton = true, exercis
       <Button
         variant="outline"
         onClick={() => setShowForm(true)}
-        className="w-full py-6 rounded-2xl border border-dashed border-charcoal-border bg-transparent font-bold lg:mb-0"
+        className="w-full py-6 rounded-control border border-dashed border-charcoal-border bg-transparent font-bold lg:mb-0"
       >
         <Plus className="w-5 h-5 mr-2" />
         Add Exercise
@@ -50,7 +50,7 @@ export default function AddExerciseForm({ onAdd, showCloseButton = true, exercis
   }
 
   const form = (
-    <div className="glass rounded-2xl px-4 pt-4 pb-4 lg:mb-0 rise-in">
+    <div className="glass rounded-control px-4 pt-4 pb-4 lg:mb-0 rise-in">
       {/* Quiet caption only — the type-display directive ("Build your session")
           lives one level up on the page so the hero frames this action. Here
           "No exercises yet" is a low-weight status caption, NOT a second hero,

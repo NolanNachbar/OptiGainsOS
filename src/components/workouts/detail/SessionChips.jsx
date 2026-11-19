@@ -31,7 +31,7 @@ export default function SessionChips({ equipmentSwaps, isLogging, isProgramSourc
           aria-pressed={showShotList}
           className="min-h-[44px] -my-2 inline-flex items-center"
         >
-          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold border transition-colors ${
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-caption font-bold border transition-colors ${
             showShotList
               ? 'bg-brand/[0.16] border-brand/40 text-brand'
               : 'border-charcoal-border text-ink-muted hover:border-brand/30 hover:text-ink'
@@ -44,7 +44,7 @@ export default function SessionChips({ equipmentSwaps, isLogging, isProgramSourc
       {/* Diagnostic status while the toggle is on — a silent fetch failure
           or an empty result otherwise looks identical to "feature missing". */}
       {isLogging && showShotList && (shotNotesError || shotNotesLoading || shotNoteCount === 0) && (
-        <span className="text-[11px] font-semibold text-warn self-center">
+        <span className="text-caption font-semibold text-warn self-center">
           {shotNotesError
             ? `Shot notes failed to load: ${shotNotesError.message || String(shotNotesError)}`
             : shotNotesLoading

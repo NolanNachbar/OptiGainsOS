@@ -141,7 +141,7 @@ export default function CreateWorkout() {
           }
         } else {
           if (isMounted.current) {
-            toast.error("Workout not found");
+            toast.error("Workout not found.");
             navigate("/workouts");
           }
         }
@@ -230,7 +230,7 @@ export default function CreateWorkout() {
         w.title.toLowerCase() === workoutData.title.toLowerCase() && w.id !== editId
       );
       if (duplicateName) {
-        toast.error(`A workout named "${workoutData.title}" already exists`);
+        toast.error(`A workout named "${workoutData.title}" already exists.`);
         return;
       }
       if (editId) {
@@ -250,7 +250,7 @@ export default function CreateWorkout() {
             replacement: workoutData,
             source: "custom",
           });
-          toast.success("Swapped in — the week is re-planning");
+          toast.success("Swapped in. The week is re-planning.");
           navigate("/today");
           return;
         }
@@ -296,7 +296,7 @@ export default function CreateWorkout() {
                   onChange={(e) => setWorkout({ ...workout, title: e.target.value })}
                   placeholder="e.g., Upper Body Strength"
                   required
-                  className="mt-1 h-auto py-2.5 text-[17px] font-extrabold tracking-[-0.02em]"
+                  className="mt-1 h-auto py-2.5 text-title font-extrabold tracking-[-0.02em]"
                 />
               </div>
 
@@ -340,7 +340,7 @@ export default function CreateWorkout() {
                   subject above. */}
               <div className="space-y-2">
                 <div>
-                  <Label htmlFor="folder" className="text-[11px] uppercase tracking-[0.06em] text-ink-faint">Folder</Label>
+                  <Label htmlFor="folder" className="text-caption uppercase tracking-[0.06em] text-ink-faint">Folder</Label>
                   <Combobox
                     value={workout.folder}
                     onValueChange={(value) => setWorkout({ ...workout, folder: value })}
@@ -356,7 +356,7 @@ export default function CreateWorkout() {
 
                 <div className="grid grid-cols-2 gap-2 sm:gap-4">
                   <div>
-                    <Label htmlFor="type" className="text-[11px] uppercase tracking-[0.06em] text-ink-faint">Workout Type *</Label>
+                    <Label htmlFor="type" className="text-caption uppercase tracking-[0.06em] text-ink-faint">Workout Type *</Label>
                     <Select value={workout.focus} onValueChange={handleTypeChange}>
                       <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -368,7 +368,7 @@ export default function CreateWorkout() {
                   </div>
 
                   <div>
-                    <Label htmlFor="duration" className="text-[11px] uppercase tracking-[0.06em] text-ink-faint">Duration (min) *</Label>
+                    <Label htmlFor="duration" className="text-caption uppercase tracking-[0.06em] text-ink-faint">Duration (min) *</Label>
                     <Input
                       id="duration"
                       type="number" inputMode="numeric"
@@ -634,7 +634,7 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
   );
 }
 
-function CardioStepCard({ index, step, canRemove, onRemove, onChange, nested = false }) {
+function CardioStepCard({ index, step, canRemove, onRemove, onChange }) {
   return (
     <div className="glass-inset p-3 sm:p-4 border-l-[3px] border-l-charcoal-border rise-in">
         <div className="flex justify-between items-start mb-3 sm:mb-4">

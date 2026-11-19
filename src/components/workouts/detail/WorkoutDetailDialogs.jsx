@@ -20,7 +20,7 @@ export default function WorkoutDetailDialogs({ allWorkoutLogs, exerciseLogs, han
           <DialogHeader>
             <DialogTitle>Resume Workout?</DialogTitle>
           </DialogHeader>
-          <p className="text-[14px] font-medium text-ink-secondary leading-relaxed">
+          <p className="text-body font-medium text-ink-secondary leading-relaxed">
             You have an unfinished session started {formatTimeAgo(resumeSession?.start_time)}. Would you like to pick up where you left off?
           </p>
           <div className="flex gap-3 pt-2">

@@ -371,7 +371,7 @@ export default function QuickWorkout() {
         // touches nothing about session state or the workout-active flag.
         // Unverified on iOS: Safari/iOS PWAs do not implement
         // navigator.vibrate, so on iPhone this is a silent no-op by design.
-        toast("Rest over — next set", { duration: 4000 });
+        toast("Rest over. Next set.", { duration: 4000 });
         try {
           if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
             navigator.vibrate([200, 100, 200]);
@@ -526,7 +526,7 @@ export default function QuickWorkout() {
 
   const handleSave = () => {
     if (exercises.length === 0) {
-      toast.error("Add at least one exercise before saving");
+      toast.error("Add an exercise before saving.");
       return;
     }
     if (saveWorkoutLogMutation.isPending || saveWorkoutLogMutation.isSuccess) return;
@@ -732,7 +732,7 @@ export default function QuickWorkout() {
         {isEmptyCanvas && (
           <>
             <div className="rise-in lg:hidden">
-              <h2 className="type-display text-[26px] leading-[1.1]">
+              <h2 className="type-display text-display leading-[1.1]">
                 Build your session
               </h2>
               <p className="text-sm font-semibold text-ink-muted mt-1.5 leading-relaxed">
@@ -745,14 +745,14 @@ export default function QuickWorkout() {
                 <button
                   type="button"
                   onClick={() => setInsightExpanded(true)}
-                  className="w-full mt-4 glass px-3.5 py-3 rounded-xl flex items-start gap-2.5 text-left rise-in touch-manipulation min-h-[44px] lg:hidden"
+                  className="w-full mt-4 glass px-3.5 py-3 rounded-control flex items-start gap-2.5 text-left rise-in touch-manipulation min-h-[44px] lg:hidden"
                 >
                   <span className="w-[26px] h-[26px] rounded-md bg-teal/15 flex items-center justify-center shrink-0 mt-0.5">
                     <Brain className="w-3.5 h-3.5 text-teal" />
                   </span>
                   <span className="flex-1 min-w-0">
-                    <span className="block text-[10px] text-teal uppercase tracking-[0.08em] font-bold mb-0.5">Coach</span>
-                    <span className="block text-[12.5px] font-semibold text-ink-muted leading-relaxed">
+                    <span className="block text-micro text-teal uppercase tracking-[0.08em] font-bold mb-0.5">Coach</span>
+                    <span className="block text-caption font-semibold text-ink-muted leading-relaxed">
                       {preSessionInsight.message}
                     </span>
                   </span>
@@ -783,9 +783,9 @@ export default function QuickWorkout() {
                         key={name}
                         type="button"
                         onClick={() => addExercise(name)}
-                        className="w-full min-h-[48px] px-4 glass rounded-xl text-sm font-bold text-ink flex items-center gap-2.5 touch-manipulation glass-interactive rise-in"
+                        className="w-full min-h-[48px] px-4 glass rounded-control text-sm font-bold text-ink flex items-center gap-2.5 touch-manipulation glass-interactive rise-in"
                       >
-                        <span className="w-7 h-7 rounded-lg bg-charcoal-surface2 flex items-center justify-center shrink-0">
+                        <span className="w-7 h-7 rounded-control bg-charcoal-surface2 flex items-center justify-center shrink-0">
                           <Plus className="w-4 h-4 text-ink-muted" />
                         </span>
                         <span className="truncate text-left flex-1">{name}</span>
@@ -794,11 +794,11 @@ export default function QuickWorkout() {
                   </div>
                 </>
               ) : (
-                <div className="glass rounded-2xl px-4 py-5 flex items-center gap-3 rise-in">
-                  <span className="w-10 h-10 rounded-xl bg-charcoal-surface2 flex items-center justify-center shrink-0">
+                <div className="glass rounded-control px-4 py-5 flex items-center gap-3 rise-in">
+                  <span className="w-10 h-10 rounded-control bg-charcoal-surface2 flex items-center justify-center shrink-0">
                     <Dumbbell className="w-5 h-5 text-ink-muted" />
                   </span>
-                  <p className="text-[13px] font-semibold text-ink-muted leading-relaxed">
+                  <p className="text-body font-semibold text-ink-muted leading-relaxed">
                     Pick a lift below to log your first set. Your recent lifts will show up here next time.
                   </p>
                 </div>
@@ -895,7 +895,7 @@ export default function QuickWorkout() {
 
           {/* Session notes — feed back to notes_parser for programming adjustments */}
           {exercises.length > 0 && (
-            <div className="glass px-4 py-3 rounded-xl space-y-1.5">
+            <div className="glass px-4 py-3 rounded-control space-y-1.5">
               <p className="section-label">Session notes</p>
               <Textarea
                 value={sessionNotes}
@@ -918,7 +918,7 @@ export default function QuickWorkout() {
             the athlete picks Resume vs Start Fresh. */}
         {resumeSession && (
           <div className="rise-in flex flex-col items-center justify-center text-center gap-3 py-16 text-ink-muted">
-            <span className="w-12 h-12 rounded-2xl glass flex items-center justify-center">
+            <span className="w-12 h-12 rounded-control glass flex items-center justify-center">
               <Dumbbell className="w-6 h-6 text-ink-muted" />
             </span>
             <p className="text-sm font-semibold max-w-[15rem] leading-relaxed">

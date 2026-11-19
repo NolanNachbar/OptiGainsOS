@@ -6,10 +6,10 @@ import { useState, useRef, useEffect } from "react";
 // scanner only picks up arbitrary-value classes it can see verbatim in the
 // source -- a `bg-[${var}]` built at runtime would silently generate no CSS.
 function rirPillTint(val, active) {
-  if (val <= 0) return active ? "bg-[#E5484D] text-[#12161C]" : "bg-[#E5484D]/15 text-[#E5484D]";
-  if (val <= 2) return active ? "bg-[#E2B84E] text-[#12161C]" : "bg-[#E2B84E]/15 text-[#E2B84E]";
-  if (val <= 4) return active ? "bg-[#7CC389] text-[#12161C]" : "bg-[#7CC389]/15 text-[#7CC389]";
-  return active ? "bg-[#6EA6DA] text-[#12161C]" : "bg-[#6EA6DA]/15 text-[#6EA6DA]";
+  if (val <= 0) return active ? "bg-bad text-charcoal" : "bg-bad/15 text-bad";
+  if (val <= 2) return active ? "bg-warn text-charcoal" : "bg-warn/15 text-warn";
+  if (val <= 4) return active ? "bg-leaf text-charcoal" : "bg-leaf/15 text-leaf";
+  return active ? "bg-info text-charcoal" : "bg-info/15 text-info";
 }
 
 // Phase B: Ledger-styled bottom-sheet keypad for weight/reps/RIR, referenced
@@ -170,7 +170,7 @@ export default function KeypadSheet({
   // commit round-trip through the parent's state.
   const currentRir = buffer !== "" ? Number(buffer) : null;
 
-  const key = "min-h-[52px] rounded-xl bg-[var(--key-surface)] text-[var(--key-text)] text-xl font-bold flex items-center justify-center active:bg-[var(--key-surface-active)] touch-manipulation select-none";
+  const key = "min-h-[52px] rounded-control bg-[var(--key-surface)] text-[var(--key-text)] text-title font-numeral tabular-nums flex items-center justify-center transition-[transform,background-color] duration-fast ease-out active:scale-[0.94] active:bg-[var(--key-surface-active)] touch-manipulation select-none";
   const stop = (e) => e.preventDefault();
 
   return (
@@ -191,7 +191,7 @@ export default function KeypadSheet({
 
       <div className="flex items-end justify-between px-4 pt-1 pb-3">
         <div>
-          <div className="text-[11px] font-bold uppercase tracking-wider text-ink-faint">{label}</div>
+          <div className="text-caption font-bold uppercase tracking-wider text-ink-faint">{label}</div>
           <div className="text-3xl font-extrabold tabular-nums text-[var(--key-text)] mt-0.5">
             {buffer === "" ? "—" : buffer}
           </div>
@@ -216,7 +216,7 @@ export default function KeypadSheet({
                 onPointerDown={stop}
                 onClick={() => pickRir(v)}
                 aria-label={`RIR ${v === 5 ? "5+" : v}`}
-                className={`flex-1 min-h-[52px] rounded-xl text-sm font-extrabold touch-manipulation ${rirPillTint(v, v === 5 ? currentRir >= 5 : currentRir === v)}`}
+                className={`flex-1 min-h-[52px] rounded-control text-sm font-extrabold touch-manipulation ${rirPillTint(v, v === 5 ? currentRir >= 5 : currentRir === v)}`}
               >
                 {v === 5 ? "5+" : v}
               </button>
@@ -230,7 +230,7 @@ export default function KeypadSheet({
               onPointerDown={stop}
               onClick={goNext}
               aria-label="Done, mark set complete"
-              className="flex-1 min-h-[52px] rounded-xl bg-brand text-[var(--key-ink-on-brand)] text-base font-extrabold flex items-center justify-center active:bg-brand/80 touch-manipulation"
+              className="flex-1 min-h-[52px] rounded-control bg-brand text-[var(--key-ink-on-brand)] text-base font-extrabold flex items-center justify-center active:bg-brand/80 touch-manipulation"
             >
               Done
             </button>
@@ -260,8 +260,8 @@ export default function KeypadSheet({
           <div className="col-span-1 flex flex-col gap-1.5">
             {field === "weight" && (
               <div className="flex gap-1.5">
-                <button type="button" onPointerDown={stop} onClick={() => pressStep(-1)} aria-label={`Decrease by ${increment}`} className={`${key} flex-1 text-base`}>−</button>
-                <button type="button" onPointerDown={stop} onClick={() => pressStep(1)} aria-label={`Increase by ${increment}`} className={`${key} flex-1 text-base`}>+</button>
+                <button type="button" onPointerDown={stop} onClick={() => pressStep(-1)} aria-label={`Decrease by ${increment}`} className={`${key} flex-1`}>−</button>
+                <button type="button" onPointerDown={stop} onClick={() => pressStep(1)} aria-label={`Increase by ${increment}`} className={`${key} flex-1`}>+</button>
               </div>
             )}
             <button
@@ -269,7 +269,7 @@ export default function KeypadSheet({
               onPointerDown={stop}
               onClick={goNext}
               aria-label={isLastField ? "Done, mark set complete" : "Next field"}
-              className="flex-1 min-h-[52px] rounded-xl bg-brand text-[var(--key-ink-on-brand)] text-base font-extrabold flex items-center justify-center active:bg-brand/80 touch-manipulation"
+              className="flex-1 min-h-[52px] rounded-control bg-brand text-[var(--key-ink-on-brand)] text-base font-extrabold flex items-center justify-center active:bg-brand/80 touch-manipulation"
             >
               {isLastField ? "Done" : "Next"}
             </button>

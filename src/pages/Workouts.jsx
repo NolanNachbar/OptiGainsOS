@@ -164,7 +164,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
       setRenamingFolder(null);
       setRenameValue("");
       if (folderFilter === renamingFolder) setFolderFilter(newName.trim() || "all");
-      toast.success("Folder renamed");
+      toast.success("Folder renamed.");
     },
     onError: () => toast.error("Folder not renamed. Try again."),
   });
@@ -291,8 +291,8 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
         {!hideHeader && (
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
             <div>
-              <h1 className="text-[28px] font-bold text-ink leading-tight">Workouts</h1>
-              <p className="text-[14px] text-ink-muted mt-0.5">Library & session history</p>
+              <h1 className="text-display font-bold text-ink leading-tight">Workouts</h1>
+              <p className="text-body text-ink-muted mt-0.5">Library & session history</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <Link to="/weekly-schedule">
@@ -349,7 +349,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                 <SlidersHorizontal className="w-3.5 h-3.5" />
                 Filters
                 {(filter !== 'all' || folderFilter !== 'all') && (
-                  <span className="bg-track text-ink-secondary text-[11px] font-bold px-1.5 rounded-full leading-none py-0.5 font-technical">
+                  <span className="bg-track text-ink-secondary text-caption font-bold px-1.5 rounded-full leading-none py-0.5 font-technical">
                     {(filter !== 'all' ? 1 : 0) + (folderFilter !== 'all' ? 1 : 0)}
                   </span>
                 )}
@@ -459,7 +459,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
               {workoutsLoading ? (
                 <div className="space-y-4">
                   {[1, 2, 3].map(i => (
-                    <div key={i} className="h-28 rounded-xl bg-track pulse-loop" />
+                    <div key={i} className="h-28 rounded-control bg-track pulse-loop" />
                   ))}
                 </div>
               ) : filteredWorkouts.length > 0 ? (
@@ -546,7 +546,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                     key={value}
                     onClick={() => setProgramView(value)}
                     aria-pressed={programView === value}
-                    className={`flex items-center gap-1.5 px-3 min-h-[44px] rounded-full text-[11px] font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-200 ease-[var(--ease)] active:scale-[0.97] ${
+                    className={`flex items-center gap-1.5 px-3 min-h-[44px] rounded-full text-caption font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-200 ease-[var(--ease)] active:scale-[0.97] ${
                       programView === value
                         ? 'bg-track text-ink'
                         : 'text-ink-muted hover:text-ink'
@@ -555,7 +555,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                     <Icon className="w-3.5 h-3.5" />
                     {label}
                     {count > 0 && (
-                      <span className="font-technical text-[11px] opacity-70">{count}</span>
+                      <span className="font-technical text-caption opacity-70">{count}</span>
                     )}
                   </button>
                 ))}
@@ -575,7 +575,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
               enrollmentsLoading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[1, 2].map(i => (
-                    <div key={i} className="h-40 rounded-xl bg-track pulse-loop" />
+                    <div key={i} className="h-40 rounded-control bg-track pulse-loop" />
                   ))}
                 </div>
               ) : activeEnrollments.length === 0 && pastEnrollments.length === 0 ? (
@@ -647,7 +647,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
               programsLoading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[1, 2].map(i => (
-                    <div key={i} className="h-40 rounded-xl bg-track pulse-loop" />
+                    <div key={i} className="h-40 rounded-control bg-track pulse-loop" />
                   ))}
                 </div>
               ) : programs.length === 0 ? (
@@ -743,7 +743,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
               className="flex-1"
               onClick={() => {
                 navigator.clipboard.writeText(WORKOUT_TEMPLATE);
-                toast.success("Copied to clipboard");
+                toast.success("Copied.");
               }}
             >
               <Copy className="w-4 h-4 mr-1.5" />

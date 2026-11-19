@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { createPortal } from "react-dom";
 import { CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,7 +38,7 @@ export default function ExerciseHeader({ dragHandleProps, editingName, exercise,
               //     number the athlete logs against).
               // A page-level sticky name/meta/Finish row is Step 5 (this header
               // stays a plain in-card title until then).
-              <CardTitle className="text-[17px] font-extrabold text-ink truncate">{exercise.name}</CardTitle>
+              <CardTitle className="text-title font-extrabold text-ink truncate">{exercise.name}</CardTitle>
             )}
           </div>
           <div className="flex items-center gap-1">
@@ -79,7 +78,7 @@ export default function ExerciseHeader({ dragHandleProps, editingName, exercise,
               <div
                 ref={menuContentRef}
                 style={menuStyle}
-                className="fixed glass-elevated rounded-xl overflow-y-auto max-h-[min(60vh,320px)] overscroll-contain py-1 z-[10200] min-w-[160px] text-ink"
+                className="fixed glass-elevated rounded-control overflow-y-auto max-h-[min(60vh,320px)] overscroll-contain py-1 z-[10200] min-w-[160px] text-ink"
               >
                 {/* Like/Unlike moved here from the header row (Ledger rebuild) —
                     it steers future programming, same behavior as before. */}
