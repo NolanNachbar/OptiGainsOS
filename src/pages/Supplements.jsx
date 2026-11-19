@@ -374,7 +374,7 @@ export default function Supplements({ embedded = false }) {
                         value={dose}
                         onChange={e => setLogDoses(prev => ({ ...prev, [type.id]: e.target.value }))}
                         placeholder={type.default_dose ? `${type.default_dose} ${type.unit || ""}` : "dose"}
-                        className="min-h-[44px] text-caption flex-1 glass-inset"
+                        className="min-h-[44px] text-caption normal-case flex-1 glass-inset"
                       />
                       <Button
                         size="sm"
@@ -404,8 +404,8 @@ export default function Supplements({ embedded = false }) {
                     <CheckCircle2 className="w-3.5 h-3.5 text-brand shrink-0" />
                     <span className="text-body text-ink font-medium">{log.supplement_name}</span>
                     {log.dose && (
-                      <Badge variant="outline" className="text-caption text-muted-2 hairline bg-transparent">
-                        {log.dose}{log.unit || ""}
+                      <Badge variant="outline" className="text-caption normal-case text-muted-2 hairline bg-transparent">
+                        {log.dose} {log.unit || ""}
                       </Badge>
                     )}
                   </div>
