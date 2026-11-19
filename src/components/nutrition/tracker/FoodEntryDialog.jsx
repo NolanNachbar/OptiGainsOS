@@ -41,8 +41,8 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
                   >
                     <Sparkles className="w-4 h-4 text-brand shrink-0" />
                     <span className="flex-1 min-w-0">
-                      <span className="block text-sm font-bold text-ink">Log a whole meal</span>
-                      <span className="block text-[11px] text-ink-muted">Describe it or snap a photo — splits into items</span>
+                      <span className="block text-body font-semibold text-ink">Log a whole meal</span>
+                      <span className="block text-caption text-ink-muted">Describe it or snap a photo — splits into items</span>
                     </span>
                     <Camera className="w-4 h-4 text-ink-muted shrink-0" />
                   </button>
@@ -75,13 +75,13 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
                       title="Scan a barcode"
                     >
                       <Camera className="w-4 h-4" />
-                      <span className="text-xs font-medium">Scan</span>
+                      <span className="text-caption font-medium">Scan</span>
                     </Button>
                   </div>
 
                       {/* Search results: My Foods → Generic → Branded */}
                       {fuzzyFallback && (genericResults.length > 0 || brandedResults.length > 0) && (
-                        <p className="mt-1.5 text-xs text-ink-muted px-1">Showing approximate results for "{searchQuery}"</p>
+                        <p className="mt-1.5 text-caption text-ink-muted px-1">Showing approximate results for "{searchQuery}"</p>
                       )}
                       {(matchingCustomFoods.length > 0 || genericResults.length > 0) && (
                         /* add-food-dialog-4: cap the results list on MOBILE too
@@ -97,7 +97,7 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
                               {matchingCustomFoods.map((food) => (
                                 <div key={food.id} className="flex items-center hover:bg-charcoal-elevated transition-colors duration-200 [transition-timing-function:var(--ease)]">
                                   <button onClick={() => selectCustomFood(food)} className="flex-1 text-left px-4 py-3 min-h-[44px]">
-                                    <div className="font-medium text-ink text-sm">{food.food_name}{FOOD_SOURCE_LABELS[food.source] && <span className="ml-1.5 text-[11px] font-normal text-ink-muted">{FOOD_SOURCE_LABELS[food.source]}</span>}</div>
+                                    <div className="font-medium text-ink text-body">{food.food_name}{FOOD_SOURCE_LABELS[food.source] && <span className="ml-1.5 text-caption font-normal text-ink-muted">{FOOD_SOURCE_LABELS[food.source]}</span>}</div>
                                     <MacroResultLine cal={food.calories} p={food.protein_grams} c={food.carbs_grams} f={food.fats_grams} />
                                   </button>
                                   <FavoriteToggle food={food} onToggle={toggleFavoriteFoodMutation.mutate} />
@@ -108,12 +108,12 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
                           {/* Generic whole foods (Foundation + SR Legacy) */}
                           {genericResults.length > 0 && (
                             <>
-                              <div className="px-3 py-1.5 bg-charcoal-elevated text-xs font-semibold text-ink-muted sticky top-0">
+                              <div className="px-3 py-1.5 bg-charcoal-elevated text-caption font-semibold text-ink-muted sticky top-0">
                                 Generic Foods
                               </div>
                               {genericResults.map((food) => (
                                 <button key={food.fdcId} onClick={() => selectFood(food)} className="w-full text-left px-4 py-3 min-h-[44px] hover:bg-charcoal-elevated transition-colors duration-200 [transition-timing-function:var(--ease)]">
-                                  <div className="font-medium text-ink text-sm">{food.description}</div>
+                                  <div className="font-medium text-ink text-body">{food.description}</div>
                                   <MacroResultLine cal={food.calories} p={food.protein} c={food.carbs} f={food.fats} per100g />
                                 </button>
                               ))}
@@ -125,15 +125,15 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
                               <button
                                 type="button"
                                 onClick={() => setShowBranded(v => !v)}
-                                className="w-full px-3 py-1.5 bg-charcoal-elevated text-xs font-semibold text-ink-muted flex items-center justify-between sticky top-0 hover:bg-charcoal-surface2 transition-colors duration-200 [transition-timing-function:var(--ease)]"
+                                className="w-full px-3 py-1.5 bg-charcoal-elevated text-caption font-semibold text-ink-muted flex items-center justify-between sticky top-0 hover:bg-charcoal-surface2 transition-colors duration-200 [transition-timing-function:var(--ease)]"
                               >
                                 <span>Branded Foods ({brandedResults.length})</span>
                                 {showBranded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                               </button>
                               {showBranded && brandedResults.map((food) => (
                                 <button key={food.fdcId} onClick={() => selectFood(food)} className="w-full text-left px-4 py-3 min-h-[44px] hover:bg-charcoal-elevated transition-colors duration-200 [transition-timing-function:var(--ease)]">
-                                  <div className="font-medium text-ink text-sm">{food.description}</div>
-                                  {food.brandOwner && <div className="text-xs text-ink-muted">{food.brandOwner}</div>}
+                                  <div className="font-medium text-ink text-body">{food.description}</div>
+                                  {food.brandOwner && <div className="text-caption text-ink-muted">{food.brandOwner}</div>}
                                   <MacroResultLine cal={food.calories} p={food.protein} c={food.carbs} f={food.fats} />
                                 </button>
                               ))}
@@ -155,7 +155,7 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
                         && brandedResults.length === 0 && (
                         searchError ? (
                           <div className="mt-2 glass-inset px-4 py-3 text-center space-y-2">
-                            <p className="text-xs text-ink-secondary">
+                            <p className="text-caption text-ink-secondary">
                               Could not reach the food database.
                             </p>
                             <Button
@@ -173,7 +173,7 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
                           </div>
                         ) : (
                           <div className="mt-2 glass-inset px-4 py-3 text-center space-y-2">
-                            <p className="text-xs text-ink-secondary">
+                            <p className="text-caption text-ink-secondary">
                               No matches for <span className="text-ink font-semibold">"{searchQuery}"</span>.
                             </p>
                             <button
@@ -201,7 +201,7 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
                             <button
                               type="button"
                               onClick={() => setRecentExpanded(!recentExpanded)}
-                              className="w-full px-3 min-h-[44px] py-2 bg-charcoal-elevated text-xs font-semibold text-ink-muted flex items-center justify-between hover:bg-charcoal-surface2 transition-colors duration-200 [transition-timing-function:var(--ease)]"
+                              className="w-full px-3 min-h-[44px] py-2 bg-charcoal-elevated text-caption font-semibold text-ink-muted flex items-center justify-between hover:bg-charcoal-surface2 transition-colors duration-200 [transition-timing-function:var(--ease)]"
                             >
                               <span>Recent</span>
                               {recentExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -209,12 +209,12 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
                             {recentExpanded && recentFoods.map((entry, i) => (
                               <div key={i} className="flex items-stretch border-b border-charcoal-border last:border-b-0">
                                 <button onClick={() => selectRecentFood(entry)} className="flex-1 min-w-0 text-left px-4 py-3 min-h-[44px] hover:bg-charcoal-elevated transition-colors duration-200 [transition-timing-function:var(--ease)]">
-                                  <div className="font-medium text-ink text-sm">{entry.food_name}</div>
+                                  <div className="font-medium text-ink text-body">{entry.food_name}</div>
                                   {/* add-food-dialog-3: never render a bare "1" — show
                                       the amount WITH its unit, or omit when there's no
                                       unit and the amount is the meaningless default 1. */}
                                   {formatEntryServing(entry) && (
-                                    <div className="text-[11px] text-ink-muted font-technical tabular-nums">{formatEntryServing(entry)}</div>
+                                    <div className="text-caption text-ink-muted font-technical tabular-nums">{formatEntryServing(entry)}</div>
                                   )}
                                   <MacroResultLine cal={entry.calories} p={entry.protein_grams} c={entry.carbs_grams} f={entry.fats_grams} />
                                 </button>
@@ -235,7 +235,7 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
                           <button
                             type="button"
                             onClick={() => document.getElementById("import-foods-csv-input").click()}
-                            className="min-h-[44px] px-2 text-xs text-ink-muted hover:text-brand flex items-center gap-1"
+                            className="min-h-[44px] px-2 text-caption text-ink-muted hover:text-brand flex items-center gap-1"
                             title="Import foods from CSV"
                           >
                             <Upload className="w-3 h-3" /> Import CSV
@@ -271,7 +271,7 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
                                 {sortedCustomFoods.map((food) => (
                                   <div key={food.id} className="flex items-center hover:bg-charcoal-elevated border-b border-charcoal-border last:border-b-0 transition-colors duration-200 [transition-timing-function:var(--ease)]">
                                     <button onClick={() => selectCustomFood(food)} className="flex-1 text-left px-4 py-3 min-h-[44px]">
-                                      <div className="font-medium text-ink text-sm">{food.food_name}{FOOD_SOURCE_LABELS[food.source] && <span className="ml-1.5 text-[11px] font-normal text-ink-muted">{FOOD_SOURCE_LABELS[food.source]}</span>}</div>
+                                      <div className="font-medium text-ink text-body">{food.food_name}{FOOD_SOURCE_LABELS[food.source] && <span className="ml-1.5 text-caption font-normal text-ink-muted">{FOOD_SOURCE_LABELS[food.source]}</span>}</div>
                                       <MacroResultLine cal={food.calories} p={food.protein_grams} c={food.carbs_grams} f={food.fats_grams} />
                                     </button>
                                     <FavoriteToggle food={food} onToggle={toggleFavoriteFoodMutation.mutate} />
@@ -311,11 +311,11 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
                         </Button>
                       </div>
                       {isEstimatedFood ? (
-                        <p className="mt-1.5 text-[11px] text-brand flex items-center gap-1">
+                        <p className="mt-1.5 text-caption text-brand flex items-center gap-1">
                           <Sparkles className="w-3 h-3" /> AI estimate filled in below — review the macros and adjust before logging.
                         </p>
                       ) : (
-                        <p className="mt-1 text-[11px] text-ink-muted">Estimated from the name + portion. Best with an explicit amount (oz, g, cups).</p>
+                        <p className="mt-1 text-caption text-ink-muted">Estimated from the name + portion. Best with an explicit amount (oz, g, cups).</p>
                       )}
                     </div>
                     )}
@@ -423,7 +423,7 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
                               </Select>
                             </div>
                             {servingEquivalence && (
-                              <p className="font-technical text-[11px] font-semibold text-ink-faint mt-1">{servingEquivalence}</p>
+                              <p className="font-technical text-caption font-semibold text-ink-faint mt-1">{servingEquivalence}</p>
                             )}
                           </div>
                         </div>
@@ -432,7 +432,7 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
                             and what it assumed. Kept quiet — the macros above are
                             still the thing to check. */}
                         {estimateMeta && (
-                          <p className="text-[11px] text-ink-muted -mt-2">
+                          <p className="text-caption text-ink-muted -mt-2">
                             <span className="font-semibold">{estimateMeta.kind}</span>
                             {estimateMeta.confidence && ` · ${estimateMeta.confidence} confidence`}
                             {estimateMeta.detail && ` · ${estimateMeta.detail}`}
@@ -461,7 +461,7 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
                               min="0"
                               step="1"
                             />
-                            <p className="text-[11px] text-ink-muted mt-1">
+                            <p className="text-caption text-ink-muted mt-1">
                               {foodServingSizeGrams > 0
                                 ? "Saved with the food, so grams and servings stay interchangeable."
                                 : "Optional. Weigh one serving once and every log after it is exact."}
@@ -477,7 +477,7 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
                             <button
                               type="button"
                               onClick={() => setPortionsExpanded((v) => !v)}
-                              className="flex items-center gap-1.5 text-xs font-semibold text-ink-secondary hover:text-ink"
+                              className="flex items-center gap-1.5 text-caption font-semibold text-ink-secondary hover:text-ink"
                             >
                               {portionsExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                               Portions
@@ -489,14 +489,14 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
                             {portionsExpanded && (
                               <div className="mt-2 space-y-2">
                                 {activePortions.length === 0 && (
-                                  <p className="text-[11px] text-ink-muted">
+                                  <p className="text-caption text-ink-muted">
                                     Weigh one and name it. "slice = 62 g" turns every future log into a count.
                                   </p>
                                 )}
                                 {activePortions.map((p) => (
                                   <div key={p.label} className="flex items-center gap-2 glass-inset px-2 py-1.5">
-                                    <span className="text-xs text-ink flex-1">{p.label}</span>
-                                    <span className="font-technical text-xs font-semibold text-ink-secondary">{p.grams}g</span>
+                                    <span className="text-caption text-ink flex-1">{p.label}</span>
+                                    <span className="font-technical text-caption font-semibold text-ink-secondary">{p.grams}g</span>
                                     <button
                                       type="button"
                                       onClick={() => removePortion(p.label)}
@@ -548,15 +548,15 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
                                 : []),
                             ].map(({ label, value, unit, hue }) => (
                               <div key={label} className="glass-inset px-2 py-2 text-center">
-                                <div className="text-xs text-ink-muted font-medium">{label}</div>
-                                <div className={`font-technical font-semibold text-sm ${hue}`}>{value}{unit}</div>
+                                <div className="text-caption text-ink-muted font-medium">{label}</div>
+                                <div className={`font-technical font-semibold text-body ${hue}`}>{value}{unit}</div>
                               </div>
                             ))}
                           </div>
                           </>
                         )}
 
-                        <p className="text-xs text-ink-muted">
+                        <p className="text-caption text-ink-muted">
                           Edit base values,{' '}
                           {isUsdaFood
                             ? `per ${newFood.serving_unit}`
@@ -694,7 +694,7 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
                             glass-inset + ink hierarchy; coral lives ONLY on the
                             corrective action (SYS-09c). */}
                         {macroCalcWarning && (
-                          <div className="glass-inset px-3 py-2 text-xs text-ink-secondary">
+                          <div className="glass-inset px-3 py-2 text-caption text-ink-secondary">
                             <div className="flex items-center gap-1.5 font-semibold text-ink mb-1">
                               <AlertTriangle className="w-3.5 h-3.5 text-ink-muted" />
                               Macros don't match calories

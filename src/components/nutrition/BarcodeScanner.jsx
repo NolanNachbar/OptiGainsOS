@@ -129,7 +129,7 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound,
     <div className="fixed inset-0 z-[10002] flex flex-col bg-charcoal sheet-rise">
       {/* Header */}
       <div className="flex items-center justify-between px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] bg-charcoal-surface border-b border-charcoal-border">
-        <span className="text-ink font-semibold text-base">Scan Barcode</span>
+        <span className="text-ink font-semibold text-emph">Scan Barcode</span>
         <button
           onClick={onClose}
           className="flex items-center justify-center min-h-11 min-w-11 -mr-2 text-ink/70 hover:text-ink transition-colors"
@@ -161,7 +161,7 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound,
         {(scanState === "idle" || scanState === "requesting") && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-charcoal text-center px-8">
             <ScanLine className="w-12 h-12 text-ink-muted" />
-            <p className="text-sm text-ink-muted">Point your camera at a barcode</p>
+            <p className="text-body text-ink-muted">Point your camera at a barcode</p>
           </div>
         )}
 
@@ -202,7 +202,7 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound,
         {/* Status overlay */}
         <div className="absolute bottom-0 inset-x-0 pb-8 flex flex-col items-center gap-3">
           {scanState === "requesting" && (
-            <div className="flex items-center gap-2 bg-charcoal/70 backdrop-blur border border-charcoal-border text-ink text-sm px-4 py-2 rounded-full">
+            <div className="flex items-center gap-2 bg-charcoal/70 backdrop-blur border border-charcoal-border text-ink text-body px-4 py-2 rounded-full">
               <Loader2 className="w-4 h-4 spin-loop" /> Requesting camera…
             </div>
           )}
@@ -210,7 +210,7 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound,
               already communicate the live-scan state; a redundant text pill just
               crowds the thumb zone above the single Cancel. */}
           {scanState === "looking_up" && (
-            <div className="flex items-center gap-2 bg-charcoal/70 backdrop-blur border border-charcoal-border text-ink text-sm px-4 py-2 rounded-full">
+            <div className="flex items-center gap-2 bg-charcoal/70 backdrop-blur border border-charcoal-border text-ink text-body px-4 py-2 rounded-full">
               <Loader2 className="w-4 h-4 spin-loop" /> Looking up {foundBarcode}…
             </div>
           )}
@@ -241,7 +241,7 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound,
           <PackageSearch className="w-10 h-10 text-ink-muted" />
           <div>
             <p className="font-semibold text-ink">Product not found</p>
-            <p className="text-sm text-ink-muted mt-1">Barcode: {foundBarcode}</p>
+            <p className="text-body text-ink-muted mt-1">Barcode: {foundBarcode}</p>
           </div>
           {/* When a label-read fallback is wired up it's the recommended recovery
               (reads exact macros off the panel), so it takes the single primary
@@ -284,7 +284,7 @@ export default function BarcodeScanner({ open, onClose, onFoodFound, onNotFound,
           <AlertTriangle className="w-10 h-10 text-ink-muted" />
           <div>
             <p className="font-semibold text-ink">Camera unavailable</p>
-            <p className="text-sm text-ink-muted mt-1">{errorMessage}</p>
+            <p className="text-body text-ink-muted mt-1">{errorMessage}</p>
           </div>
           {/* Manual entry is the recovery action when the camera can't run, so
               it carries the single teal action color; Close is the neutral

@@ -22,7 +22,7 @@ export default function TrackerDateBar({ changeDate, isViewingToday, resetForm, 
               tabular-nums label so no bright UA calendar box leaks onto the
               dark field. */}
           <label className="relative flex items-center h-11 px-3 glass-inset cursor-pointer">
-            <span className="font-technical tabular-nums text-sm font-semibold text-ink">
+            <span className="font-technical tabular-nums text-body font-semibold text-ink">
               {format(new Date(selectedDate + 'T00:00:00'), 'EEE, MMM d')}
             </span>
             <input
@@ -43,7 +43,7 @@ export default function TrackerDateBar({ changeDate, isViewingToday, resetForm, 
           {!isViewingToday && (
             <button
               onClick={() => setSelectedDate(getTodayString())}
-              className="text-xs font-bold tracking-wide text-ink-secondary hover:text-ink glass-inset px-2.5 h-11 ml-1 flex items-center transition-colors duration-200 [transition-timing-function:var(--ease)]"
+              className="text-caption font-semibold tracking-wide text-ink-secondary hover:text-ink glass-inset px-2.5 h-11 ml-1 flex items-center transition-colors duration-200 [transition-timing-function:var(--ease)]"
             >
               Today
             </button>

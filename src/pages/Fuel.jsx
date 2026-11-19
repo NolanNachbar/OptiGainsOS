@@ -52,8 +52,8 @@ export default function Fuel() {
               >
                 <CalendarRange className="w-4 h-4 text-gold shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-[14px] font-extrabold text-ink">Week plan</div>
-                  <div className="text-[11px] font-semibold text-ink-muted truncate">
+                  <div className="text-body font-semibold text-ink">Week plan</div>
+                  <div className="text-caption font-semibold text-ink-muted truncate">
                     carb-cycled targets · shopping list · approve
                   </div>
                 </div>

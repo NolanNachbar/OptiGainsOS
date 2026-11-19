@@ -70,10 +70,10 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
     return (
       <div className="space-y-2">
         {recipes.length === 0 ? (
-          <div className="text-center py-6 text-ink-muted text-sm">
+          <div className="text-center py-6 text-ink-muted text-body">
             <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-40" />
             <p className="text-ink font-semibold">No recipes yet</p>
-            <p className="text-xs mt-1">Recipes you create with the + button appear here.</p>
+            <p className="text-caption mt-1">Recipes you create with the + button appear here.</p>
           </div>
         ) : recipes.map((recipe) => {
           const perServing = scaleRecipeToServings(recipe, 1);
@@ -81,8 +81,8 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
             <div key={recipe.id} className="tile p-3 space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <span className="text-sm font-semibold text-ink truncate block">{recipe.name}</span>
-                  <span className="text-xs text-ink-muted capitalize">
+                  <span className="text-body font-semibold text-ink truncate block">{recipe.name}</span>
+                  <span className="text-caption text-ink-muted capitalize">
                     {recipe.ingredients?.length || 0} ingredients · {recipe.servings} serving{recipe.servings !== 1 ? 's' : ''}
                   </span>
                 </div>
@@ -99,8 +99,8 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
                   </Button>
                 </div>
               </div>
-              <div className="flex gap-3 text-xs font-technical tabular-nums">
-                <span className="text-gold font-bold">{Math.round(perServing.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
+              <div className="flex gap-3 text-caption font-technical tabular-nums">
+                <span className="text-gold font-semibold">{Math.round(perServing.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
                 <span className="text-coral">P{perServing.protein_grams}g</span>
                 <span className="text-carb">C{perServing.carbs_grams}g</span>
                 <span className="text-fat">F{perServing.fats_grams}g</span>
@@ -142,8 +142,8 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
     <div className="space-y-4">
       {!hideHeader && (
         <div>
-          <h2 className="text-xl font-bold text-left text-ink">Your Recipes</h2>
-          <p className="text-sm text-left text-ink-muted">
+          <h2 className="text-title font-semibold text-left text-ink">Your Recipes</h2>
+          <p className="text-body text-left text-ink-muted">
             Create custom recipes and log them to your daily tracker
           </p>
         </div>
@@ -152,8 +152,8 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
       {recipes.length === 0 ? (
         <div className="text-center py-12 rounded-xl border border-dashed border-charcoal-border">
           <BookOpen className="w-12 h-12 text-ink-muted mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-ink mb-1">No recipes yet</h3>
-          <p className="text-sm text-ink-muted">Recipes you create with the New Recipe button appear here.</p>
+          <h3 className="text-emph font-semibold text-ink mb-1">No recipes yet</h3>
+          <p className="text-body text-ink-muted">Recipes you create with the New Recipe button appear here.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -164,35 +164,35 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
                 {/* Name row */}
                 <div className="flex items-start gap-2">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-ink leading-snug">{recipe.name}</p>
+                    <p className="text-body font-semibold text-ink leading-snug">{recipe.name}</p>
                     {recipe.description && (
-                      <p className="text-xs text-ink-muted mt-0.5 truncate">{recipe.description}</p>
+                      <p className="text-caption text-ink-muted mt-0.5 truncate">{recipe.description}</p>
                     )}
                   </div>
-                  <span className="shrink-0 text-xs font-semibold bg-charcoal-elevated text-ink-muted rounded-md px-1.5 py-0.5">
+                  <span className="shrink-0 text-caption font-semibold bg-charcoal-elevated text-ink-muted rounded-md px-1.5 py-0.5">
                     {recipe.servings}×
                   </span>
                 </div>
                 {/* Macros */}
                 <div className="flex gap-4">
                   <div>
-                    <p className="text-sm font-bold text-gold font-technical tabular-nums">{Math.round(perServing.calories)}</p>
-                    <p className="text-xs text-ink-muted">Cal</p>
+                    <p className="text-body font-bold text-gold font-technical tabular-nums">{Math.round(perServing.calories)}</p>
+                    <p className="text-caption text-ink-muted">Cal</p>
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-coral font-technical tabular-nums">{perServing.protein_grams}g</p>
-                    <p className="text-xs text-ink-muted">Pro</p>
+                    <p className="text-body font-bold text-coral font-technical tabular-nums">{perServing.protein_grams}g</p>
+                    <p className="text-caption text-ink-muted">Pro</p>
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-carb font-technical tabular-nums">{perServing.carbs_grams}g</p>
-                    <p className="text-xs text-ink-muted">Carb</p>
+                    <p className="text-body font-bold text-carb font-technical tabular-nums">{perServing.carbs_grams}g</p>
+                    <p className="text-caption text-ink-muted">Carb</p>
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-fat font-technical tabular-nums">{perServing.fats_grams}g</p>
-                    <p className="text-xs text-ink-muted">Fat</p>
+                    <p className="text-body font-bold text-fat font-technical tabular-nums">{perServing.fats_grams}g</p>
+                    <p className="text-caption text-ink-muted">Fat</p>
                   </div>
                 </div>
-                <p className="text-xs text-ink-muted -mt-1">
+                <p className="text-caption text-ink-muted -mt-1">
                   {recipe.ingredients?.length || 0} ingredients · per serving
                 </p>
                 {/* Actions — Log is the single full-width primary; Share / Edit /

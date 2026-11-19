@@ -36,7 +36,7 @@ export default function TrackerOverlays({ copyDayMutation, copyFromDate, copySel
           </div>
 
           {copySourceEntries.length === 0 ? (
-            <p className="text-xs text-ink-muted">Nothing was logged on {copyFromDate}.</p>
+            <p className="text-caption text-ink-muted">Nothing was logged on {copyFromDate}.</p>
           ) : (
             <>
               <div className="flex items-center justify-between">
@@ -44,14 +44,14 @@ export default function TrackerOverlays({ copyDayMutation, copyFromDate, copySel
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    className="text-xs font-semibold text-brand underline"
+                    className="text-caption font-semibold text-brand underline"
                     onClick={() => setCopySelection(Object.fromEntries(copySourceEntries.map((e) => [e.id, true])))}
                   >
                     All
                   </button>
                   <button
                     type="button"
-                    className="text-xs font-semibold text-ink-muted underline"
+                    className="text-caption font-semibold text-ink-muted underline"
                     onClick={() => setCopySelection({})}
                   >
                     None
@@ -68,12 +68,12 @@ export default function TrackerOverlays({ copyDayMutation, copyFromDate, copySel
                       className="shrink-0"
                     />
                     <span className="flex-1 min-w-0">
-                      <span className="block text-sm text-ink truncate">{entry.food_name}</span>
-                      <span className="block text-[11px] text-ink-muted">
+                      <span className="block text-body text-ink truncate">{entry.food_name}</span>
+                      <span className="block text-caption text-ink-muted">
                         {entry.meal_type} · {formatEntryServing(entry)}
                       </span>
                     </span>
-                    <span className="font-technical text-xs font-semibold text-gold shrink-0">
+                    <span className="font-technical text-caption font-semibold text-gold shrink-0">
                       {Math.round(entry.calories || 0)}
                     </span>
                   </label>
@@ -104,14 +104,14 @@ export default function TrackerOverlays({ copyDayMutation, copyFromDate, copySel
           <DialogHeader>
             <DialogTitle>Food CSV Import Format</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-ink-muted mb-3">
-            Save a <code className="text-xs bg-charcoal-elevated px-1 rounded">.csv</code> file with these columns, then use the Import CSV button to add foods to My Foods.
+          <p className="text-body text-ink-muted mb-3">
+            Save a <code className="text-caption bg-charcoal-elevated px-1 rounded">.csv</code> file with these columns, then use the Import CSV button to add foods to My Foods.
           </p>
-          <pre className="bg-charcoal-surface rounded-lg p-3 text-xs overflow-auto text-ink-muted border border-charcoal-border text-left">{`food_name,calories,protein_grams,carbs_grams,fats_grams,serving_unit
+          <pre className="bg-charcoal-surface rounded-lg p-3 text-caption overflow-auto text-ink-muted border border-charcoal-border text-left">{`food_name,calories,protein_grams,carbs_grams,fats_grams,serving_unit
 Chicken Breast,165,31,0,3.6,100g
 Greek Yogurt,59,10,3.6,0.4,100g
 Oats,389,17,66,7,100g`}</pre>
-          <div className="text-xs text-ink-muted space-y-1 mt-2">
+          <div className="text-caption text-ink-muted space-y-1 mt-2">
             <p><span className="font-semibold">food_name</span> and <span className="font-semibold">calories</span> are required. All other columns are optional.</p>
             <p><span className="font-semibold">serving_unit</span>: any label like <code>100g</code>, <code>cup</code>, <code>serving</code> (defaults to "serving").</p>
             <p>Macros are per the serving size you specify.</p>

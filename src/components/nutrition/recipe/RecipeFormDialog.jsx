@@ -273,7 +273,7 @@ export function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                     }`}
                   />
                 </div>
-                <span className="text-xs text-ink-muted">
+                <span className="text-caption text-ink-muted">
                   {currentStep === 1 ? "Details" : "Ingredients"}
                 </span>
               </div>
@@ -305,7 +305,7 @@ export function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                 <div className="flex-1 overflow-y-auto min-h-0 px-6 py-5">
                   <div className="max-w-md mx-auto space-y-5">
                     <div>
-                      <Label htmlFor="recipe-name" className="text-sm font-medium">
+                      <Label htmlFor="recipe-name" className="text-body font-medium">
                         Recipe Name *
                       </Label>
                       <Input
@@ -319,7 +319,7 @@ export function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                     </div>
 
                     <div>
-                      <Label htmlFor="recipe-desc" className="text-sm font-medium">
+                      <Label htmlFor="recipe-desc" className="text-body font-medium">
                         Description
                       </Label>
                       <Input
@@ -332,7 +332,7 @@ export function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                     </div>
 
                     <div>
-                      <Label className="text-sm font-medium">Servings</Label>
+                      <Label className="text-body font-medium">Servings</Label>
                       <div className="flex items-center gap-3 mt-1.5">
                         <Button
                           variant="outline"
@@ -348,7 +348,7 @@ export function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                           value={servings}
                           onChange={(e) => setServings(Math.max(1, parseInt(e.target.value) || 1))}
                           min="1"
-                          className="w-20 h-11 text-center text-lg font-semibold font-technical tabular-nums"
+                          className="w-20 h-11 text-center text-title font-semibold font-technical tabular-nums"
                         />
                         <Button
                           variant="outline"
@@ -377,7 +377,7 @@ export function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                       }
                       goToStep(2);
                     }}
-                    className="w-full h-11 text-sm"
+                    className="w-full h-11 text-body"
                   >
                     Next: Add Ingredients
                     <ArrowRight className="w-4 h-4 ml-2" />
@@ -430,7 +430,7 @@ export function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                                 />
                               ))}
                               {matchingCustomFoods.length > 0 && searchResults.length > 0 && (
-                                <div className="px-4 py-1.5 bg-charcoal-surface text-xs font-medium text-ink-muted uppercase tracking-wide">
+                                <div className="px-4 py-1.5 bg-charcoal-surface text-caption font-medium text-ink-muted uppercase tracking-wide">
                                   USDA Database
                                 </div>
                               )}
@@ -488,7 +488,7 @@ export function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                           <div className="flex justify-center mt-3">
                             <button
                               onClick={() => setShowManualEntry(true)}
-                              className="flex items-center justify-center gap-1.5 min-h-[44px] px-3 text-xs font-medium text-ink-muted hover:text-brand transition-colors duration-200 [transition-timing-function:var(--ease)]"
+                              className="flex items-center justify-center gap-1.5 min-h-[44px] px-3 text-caption font-medium text-ink-muted hover:text-brand transition-colors duration-200 [transition-timing-function:var(--ease)]"
                             >
                               <PenLine className="w-3.5 h-3.5" />
                               or add manually from label
@@ -508,10 +508,10 @@ export function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                     {ingredients.length > 0 && (
                       <div>
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-sm font-semibold text-ink">
+                          <span className="text-body font-semibold text-ink">
                             Ingredients
                           </span>
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge variant="secondary" className="text-caption">
                             {ingredients.length}
                           </Badge>
                         </div>
@@ -542,7 +542,7 @@ export function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                     {ingredients.length === 0 && (
                       <div className="text-center py-8">
                         <Search className="w-10 h-10 text-ink-muted mx-auto mb-3" />
-                        <p className="text-sm text-ink-muted">
+                        <p className="text-body text-ink-muted">
                           Search above to start adding ingredients
                         </p>
                       </div>
@@ -559,7 +559,7 @@ export function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                     variant="volt"
                     onClick={handleSave}
                     disabled={isSaving || ingredients.length === 0}
-                    className="w-full h-11 text-sm"
+                    className="w-full h-11 text-body"
                   >
                     {isSaving ? (
                       <>

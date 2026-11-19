@@ -36,7 +36,7 @@ export default function MealEstimatorDialog({ estMealItems, estimateMeal, isEsti
                 rows={3}
                 disabled={isEstimatingMeal}
                 placeholder="e.g. cheeseburger, large fries, and a regular coke"
-                className="w-full glass-inset rounded-lg px-3 py-2 text-sm text-ink placeholder:text-faint resize-none focus-visible:ring-1 focus-visible:ring-brand"
+                className="w-full glass-inset rounded-lg px-3 py-2 text-body text-ink placeholder:text-faint resize-none focus-visible:ring-1 focus-visible:ring-brand"
               />
               {mealPhoto ? (
                 <div className="relative">
@@ -65,7 +65,7 @@ export default function MealEstimatorDialog({ estMealItems, estimateMeal, isEsti
               >
                 {isEstimatingMeal ? <><Loader2 className="w-4 h-4 spin-loop" /> Estimating…</> : <><Sparkles className="w-4 h-4" /> Estimate</>}
               </Button>
-              <p className="text-[11px] text-ink-muted">
+              <p className="text-caption text-ink-muted">
                 Rough estimate, less accurate than weighing. Review the items before logging.
               </p>
             </div>
@@ -91,8 +91,8 @@ export default function MealEstimatorDialog({ estMealItems, estimateMeal, isEsti
                 {estMealItems.map((it, i) => (
                   <div key={i} className="glass-inset rounded-lg px-3 py-2 flex items-center gap-2">
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-bold text-ink truncate">{it.food_name}</div>
-                      <div className="font-technical text-[11px] text-ink-muted">
+                      <div className="text-body font-semibold text-ink truncate">{it.food_name}</div>
+                      <div className="font-technical text-caption text-ink-muted">
                         {it.serving_description} · {it.calories} kcal · P{it.protein} C{it.carbs} F{it.fats}
                       </div>
                     </div>
@@ -114,7 +114,7 @@ export default function MealEstimatorDialog({ estMealItems, estimateMeal, isEsti
                   { cal: 0, p: 0, c: 0, f: 0 },
                 );
                 return (
-                  <div className="flex items-center justify-between text-sm font-bold text-ink border-t border-charcoal-border pt-2">
+                  <div className="flex items-center justify-between text-body font-semibold text-ink border-t border-charcoal-border pt-2">
                     <span>Total</span>
                     <span className="font-technical">
                       {Math.round(t.cal)} kcal · P{Math.round(t.p)} C{Math.round(t.c)} F{Math.round(t.f)}

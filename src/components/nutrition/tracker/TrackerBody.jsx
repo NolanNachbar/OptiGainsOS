@@ -68,7 +68,7 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                       isSelected ? 'glass-inset' : 'hover:bg-charcoal-surface2/60'
                     }`}
                   >
-                    <span className={`text-[11px] font-bold uppercase ${isSelected || isTodayCol ? 'text-ink' : 'text-ink-muted'}`}>
+                    <span className={`text-micro font-semibold uppercase ${isSelected || isTodayCol ? 'text-ink' : 'text-ink-muted'}`}>
                       {day.label[0]}
                     </span>
                     {/* Track uses the shared `track` material (same token as the
@@ -104,7 +104,7 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                         />
                       )}
                     </div>
-                    <span className="font-technical text-[11px] font-semibold tabular-nums text-ink-secondary">
+                    <span className="font-technical text-caption font-semibold tabular-nums text-ink-secondary">
                       {Math.round(day.calories) || 0}
                     </span>
                   </button>
@@ -140,10 +140,10 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                 <Module bleed className="rise-in" data-tutorial="nutrition-rings">
                   <div className="flex items-end justify-between gap-3 mb-3">
                     <div className="min-w-0">
-                      <div className="font-technical text-[34px] leading-none font-bold tabular-nums text-ink">
+                      <div className="font-technical text-display leading-none font-bold tabular-nums text-ink">
                         {headNum.toLocaleString()}
                       </div>
-                      <div className="text-[12px] text-ink-muted mt-1.5 truncate">{headCaption}</div>
+                      <div className="text-caption text-ink-muted mt-1.5 truncate">{headCaption}</div>
                     </div>
                     {isToday && (
                       <SegmentedControl
@@ -172,19 +172,19 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                       return (
                         <div key={c.label} className="min-w-0">
                           <div className="flex items-baseline justify-between gap-1 mb-1.5">
-                            <span className="text-[12px] font-semibold" style={{ color: c.hue }}>{c.label}</span>
+                            <span className="text-caption font-semibold" style={{ color: c.hue }}>{c.label}</span>
                           </div>
                           <div className="h-1.5 rounded-full bg-track overflow-hidden">
                             <div className="h-full rounded-full opacity-90" style={{ width: `${pct}%`, background: c.hue }} />
                           </div>
-                          <div className="font-technical text-[12px] text-secondary tabular-nums mt-1.5 whitespace-nowrap">
+                          <div className="font-technical text-caption text-secondary tabular-nums mt-1.5 whitespace-nowrap">
                             {caption}
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3 pt-2.5 border-t hairline font-technical text-[11px] text-ink-muted tabular-nums">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3 pt-2.5 border-t hairline font-technical text-caption text-ink-muted tabular-nums">
                     <span>
                       Fiber {Math.round(totals.fiber || 0)}/{targets.fiber}g{!totals.fiberKnown && ' + unknown'}
                     </span>
@@ -208,7 +208,7 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                 </div>
                 <div className="flex flex-wrap gap-x-4 gap-y-1">
                   {targets.carbWindows.map((w) => (
-                    <div key={w.label} className="text-xs text-ink-secondary">
+                    <div key={w.label} className="text-caption text-ink-secondary">
                       <span className="font-technical text-ink">{w.grams}g</span> {w.label}
                     </div>
                   ))}
@@ -228,7 +228,7 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                 ink hierarchy with kcal in its own GOLD hue (SYS-09a/d). The leaf/
                 warn spectrum is reserved for biometric readouts. */}
             {plannedCount > 0 && (
-              <div className="flex items-center gap-2.5 glass px-4 py-2.5 text-xs">
+              <div className="flex items-center gap-2.5 glass px-4 py-2.5 text-caption">
                 <span className="w-5 h-5 rounded-full border-[1.5px] border-track shrink-0" />
                 <span className="text-ink-secondary flex-1 min-w-0">
                   <span className="font-semibold text-ink">
@@ -258,7 +258,7 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                 {/* A failed fetch is chrome, not a biometric — the icon stays neutral
                     ink (food-tracker-4); warn-yellow is reserved for the spectrum. */}
                 <AlertTriangle className="w-4 h-4 text-ink-muted" />
-                <p className="text-xs text-ink-muted">Couldn't load this day's food log.</p>
+                <p className="text-caption text-ink-muted">Couldn't load this day's food log.</p>
                 <Button variant="dim" size="sm" onClick={() => refetchEntries()}>Retry</Button>
               </div>
             ) : entriesLoading ? (
@@ -313,19 +313,19 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                       <div className={`w-2 h-2 rounded-full shrink-0 ${hasEntries ? 'bg-ink-secondary' : 'bg-track'}`} />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-[16px] font-bold text-ink truncate">{label}</span>
+                          <span className="text-emph font-semibold text-ink truncate">{label}</span>
                           {plannedInMeal > 0 && (
-                            <span className="font-technical text-[11px] font-semibold text-ink-muted shrink-0">+{plannedInMeal} planned</span>
+                            <span className="font-technical text-caption font-semibold text-ink-muted shrink-0">+{plannedInMeal} planned</span>
                           )}
                           {mealTime && (
-                            <span className="font-technical text-[11px] font-semibold text-ink-muted shrink-0">{format(mealTime, 'h:mm a')}</span>
+                            <span className="font-technical text-caption font-semibold text-ink-muted shrink-0">{format(mealTime, 'h:mm a')}</span>
                           )}
                         </div>
                         {hasEntries && <MacroInline p={mealP} c={mealC} f={mealF} />}
                       </div>
                       {hasEntries && (
-                        <span className="font-technical text-[16px] font-bold text-ink tabular-nums shrink-0">
-                          {Math.round(mealCals)}<span className="text-[11px] font-semibold text-ink-muted ml-1">kcal</span>
+                        <span className="font-technical text-emph font-bold text-ink tabular-nums shrink-0">
+                          {Math.round(mealCals)}<span className="text-caption font-semibold text-ink-muted ml-1">kcal</span>
                         </span>
                       )}
                       {hasEntries && (
@@ -375,9 +375,9 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                             {/* The name gets the whole line, wrapping to two lines
                                 on phones. The Pre/Post-WO tag moved down beside the
                                 quantity so it can't crowd the name out. */}
-                            <span className={`block text-[15px] font-bold tracking-tight leading-snug line-clamp-2 sm:line-clamp-1 ${entry.planned ? 'text-ink-muted' : 'text-ink'}`}>{entry.food_name}</span>
+                            <span className={`block text-emph font-semibold tracking-tight leading-snug line-clamp-2 sm:line-clamp-1 ${entry.planned ? 'text-ink-muted' : 'text-ink'}`}>{entry.food_name}</span>
                             {/* Quantity + macros under the name; wraps instead of clipping. */}
-                            <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] font-technical mt-1 font-semibold text-ink-muted min-w-0">
+                            <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-caption font-technical mt-1 font-semibold text-ink-muted min-w-0">
                               {entry.tag && (
                                 <span className="section-label shrink-0 glass-inset px-1.5 py-0.5">
                                   {entry.tag === 'pre' ? 'Pre-WO' : 'Post-WO'}
@@ -412,7 +412,7 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                             </button>
                           </div>
                         </div>
-                        <span data-field="kcal" className={`font-technical text-[16px] font-bold text-ink text-right tabular-nums pt-0.5 ${entry.planned ? 'opacity-45' : ''}`}>{entry.calories ?? 0}</span>
+                        <span data-field="kcal" className={`font-technical text-emph font-bold text-ink text-right tabular-nums pt-0.5 ${entry.planned ? 'opacity-45' : ''}`}>{entry.calories ?? 0}</span>
                         {/* Phone action strip: same handlers as the desktop hover
                             buttons, full-width 44px targets, one row under the food. */}
                         {openActionsId === entry.id && (
@@ -421,7 +421,7 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                               <button
                                 onClick={() => { setOpenActionsId(null); setSwapEntry(entry); }}
                                 aria-label={`Swap out ${entry.food_name}`}
-                                className="flex-1 min-h-[44px] flex items-center justify-center gap-1.5 rounded-lg glass-inset text-[13px] font-bold text-ink-secondary active:scale-95 transition-transform duration-200 [transition-timing-function:var(--ease)]"
+                                className="flex-1 min-h-[44px] flex items-center justify-center gap-1.5 rounded-lg glass-inset text-body font-semibold text-ink-secondary active:scale-95 transition-transform duration-200 [transition-timing-function:var(--ease)]"
                               >
                                 <ArrowLeftRight className="w-4 h-4" /> Swap
                               </button>
@@ -429,14 +429,14 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                             <button
                               onClick={() => { setOpenActionsId(null); startEditEntry(entry); }}
                               aria-label="Edit entry"
-                              className="flex-1 min-h-[44px] flex items-center justify-center gap-1.5 rounded-lg glass-inset text-[13px] font-bold text-ink-secondary active:scale-95 transition-transform duration-200 [transition-timing-function:var(--ease)]"
+                              className="flex-1 min-h-[44px] flex items-center justify-center gap-1.5 rounded-lg glass-inset text-body font-semibold text-ink-secondary active:scale-95 transition-transform duration-200 [transition-timing-function:var(--ease)]"
                             >
                               <Pencil className="w-4 h-4" /> Edit
                             </button>
                             <button
                               onClick={() => { setOpenActionsId(null); deleteFoodMutation.mutate(entry); }}
                               aria-label="Delete entry"
-                              className="flex-1 min-h-[44px] flex items-center justify-center gap-1.5 rounded-lg glass-inset text-[13px] font-bold text-bad active:scale-95 transition-transform duration-200 [transition-timing-function:var(--ease)]"
+                              className="flex-1 min-h-[44px] flex items-center justify-center gap-1.5 rounded-lg glass-inset text-body font-semibold text-bad active:scale-95 transition-transform duration-200 [transition-timing-function:var(--ease)]"
                             >
                               <Trash2 className="w-4 h-4" /> Delete
                             </button>
@@ -456,7 +456,7 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                       aria-label={`Add item to ${mealType}`}
                     >
                       <Plus className="w-3.5 h-3.5 text-ink-faint group-hover:text-brand shrink-0" />
-                      <span className="text-[14px] font-bold text-ink-muted group-hover:text-brand">Add to {label.toLowerCase()}</span>
+                      <span className="text-body font-semibold text-ink-muted group-hover:text-brand">Add to {label.toLowerCase()}</span>
                     </button>
                   </section>
                 );
@@ -475,7 +475,7 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                   key={id}
                   type="button"
                   onClick={() => { setSidebarTab(id); setShowMoreSheet(true); }}
-                  className="glass glass-interactive min-h-[68px] flex flex-col items-center justify-center gap-1.5 text-[13px] font-bold text-ink-secondary hover:text-ink active:scale-[0.98] transition-[color,transform] duration-200 [transition-timing-function:var(--ease)]"
+                  className="glass glass-interactive min-h-[68px] flex flex-col items-center justify-center gap-1.5 text-body font-semibold text-ink-secondary hover:text-ink active:scale-[0.98] transition-[color,transform] duration-200 [transition-timing-function:var(--ease)]"
                 >
                   <Icon className="w-4 h-4 text-brand" />
                   {label}
@@ -532,7 +532,7 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                         key={w}
                         type="button"
                         onClick={() => setStatsWindow(w)}
-                        className={`font-technical text-[11px] font-bold px-2 py-1 ${
+                        className={`font-technical text-caption font-bold px-2 py-1 ${
                           statsWindow === w ? "text-ink glass-inset" : "text-ink-faint hover:text-ink-secondary"
                         }`}
                       >
@@ -542,13 +542,13 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                   </div>
                 </div>
                 {!intakeStats ? (
-                  <p className="text-xs text-ink-muted">Nothing logged in the last {statsWindow} days.</p>
+                  <p className="text-caption text-ink-muted">Nothing logged in the last {statsWindow} days.</p>
                 ) : (
                   <>
                     {/* Averaged over days actually logged, not over the calendar
                         window — dividing by 28 when 9 days were logged reports a
                         deficit that never happened. */}
-                    <p className="text-[11px] text-ink-muted mb-2">
+                    <p className="text-caption text-ink-muted mb-2">
                       Average of {intakeStats.daysLogged} logged {intakeStats.daysLogged === 1 ? "day" : "days"} out of the last {intakeStats.windowDays}
                     </p>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -559,12 +559,12 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                         { label: 'Fats', value: intakeStats.avgFats, unit: 'g', hue: 'text-fat' },
                       ].map(({ label, value, unit, hue }) => (
                         <div key={label} className="glass-inset px-2 py-2 text-center">
-                          <div className="text-xs text-ink-muted font-medium">{label}</div>
-                          <div className={`font-technical font-semibold text-sm ${hue}`}>{value}{unit}</div>
+                          <div className="text-caption text-ink-muted font-medium">{label}</div>
+                          <div className={`font-technical font-semibold text-body ${hue}`}>{value}{unit}</div>
                         </div>
                       ))}
                     </div>
-                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-ink-secondary">
+                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-caption text-ink-secondary">
                       {intakeStats.split && (
                         <span>
                           Split{' '}
@@ -605,7 +605,7 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                       aria-label={`Log ${entry.food_name} again`}
                       className="shrink-0 w-[136px] text-left glass-inset px-3 py-2.5 min-h-[44px] active:scale-[0.98] transition-transform duration-200 [transition-timing-function:var(--ease)] disabled:opacity-50"
                     >
-                      <div className="text-xs font-semibold text-ink truncate">{entry.food_name}</div>
+                      <div className="text-caption font-semibold text-ink truncate">{entry.food_name}</div>
                       <MacroResultLine cal={entry.calories} p={entry.protein_grams} c={entry.carbs_grams} f={entry.fats_grams} />
                     </button>
                   ))}
@@ -638,7 +638,7 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                           if (!active || !payload?.length) return null;
                           const d = payload[0].payload;
                           return (
-                            <div className="glass-elevated rounded-lg px-2.5 py-1.5 text-xs text-ink-muted space-y-0.5">
+                            <div className="glass-elevated rounded-lg px-2.5 py-1.5 text-caption text-ink-muted space-y-0.5">
                               <p className="font-semibold">{d.label}</p>
                               <p className="text-gold font-technical">{d.calories} kcal eaten</p>
                               {d.goal > 0 && <p className="text-ink-muted">Goal: {d.goal} kcal</p>}
@@ -653,7 +653,7 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                   </ResponsiveContainer>
                 </div>
               ) : (
-                <div className="h-16 flex items-center justify-center text-xs text-ink-muted">
+                <div className="h-16 flex items-center justify-center text-caption text-ink-muted">
                   Log food for a few days to see your trend
                 </div>
               )}
@@ -687,8 +687,8 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                   { label: 'Fats',     value: targets.fats,     unit: 'g' },
                 ].map(({ label, value, unit }) => (
                   <div key={label} className="flex justify-between items-center">
-                    <span className="text-xs text-ink-secondary uppercase font-semibold">{label}</span>
-                    <span className="font-technical text-xs font-bold text-ink">{value}<span className="opacity-40 font-normal ml-0.5 text-xs">{unit}</span></span>
+                    <span className="text-caption text-ink-secondary uppercase font-semibold">{label}</span>
+                    <span className="font-technical text-caption font-bold text-ink">{value}<span className="opacity-40 font-normal ml-0.5 text-caption">{unit}</span></span>
                   </div>
                 ))}
               </div>
@@ -712,7 +712,7 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
               <button
                 key={tab.id}
                 onClick={() => setSidebarTab(tab.id)}
-                className={`flex-1 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 transition-colors duration-200 [transition-timing-function:var(--ease)] ${
+                className={`flex-1 py-2.5 text-caption font-semibold uppercase tracking-wider border-b-2 transition-colors duration-200 [transition-timing-function:var(--ease)] ${
                   sidebarTab === tab.id
                     ? 'border-brand/30 text-brand'
                     : 'border-transparent text-ink-muted hover:text-ink'
@@ -732,7 +732,7 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                 <div className="flex justify-end">
                   <button
                     onClick={() => setShowNewRecipe(true)}
-                    className="flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-brand hover:text-[var(--brand-bright)] transition-colors duration-200 [transition-timing-function:var(--ease)]"
+                    className="flex items-center gap-1 text-caption font-semibold uppercase tracking-widest text-brand hover:text-[var(--brand-bright)] transition-colors duration-200 [transition-timing-function:var(--ease)]"
                   >
                     <Plus className="w-3 h-3" />New Recipe
                   </button>

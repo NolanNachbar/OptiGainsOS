@@ -80,12 +80,12 @@ function WaterCard({ today }) {
   return (
     <Card className="glass glass-interactive">
       <CardHeader className="pb-2 pt-4 px-5">
-        <CardTitle className="text-sm font-semibold text-ink flex items-center gap-2">
+        <CardTitle className="text-body font-semibold text-ink flex items-center gap-2">
           <Droplets className="w-4 h-4 text-carb" />
           Water
           {waterLoading
             ? <Skeleton className="h-3.5 w-20 rounded ml-auto" />
-            : <span className="font-technical text-muted-2 font-normal text-xs ml-auto tabular-nums">{totalMl} / {WATER_GOAL_ML} ml</span>
+            : <span className="font-technical text-muted-2 font-normal text-caption ml-auto tabular-nums">{totalMl} / {WATER_GOAL_ML} ml</span>
           }
         </CardTitle>
       </CardHeader>
@@ -108,7 +108,7 @@ function WaterCard({ today }) {
               // wider per button than Manrope did; flex-1 alone won't shrink
               // below content's intrinsic width, so 3 across overflowed the
               // row (and bled into document scrollWidth) without it.
-              className="flex-1 min-w-0 min-h-[44px] glass-inset hover:bg-carb/10 hover:text-carb text-secondary text-xs font-bold"
+              className="flex-1 min-w-0 min-h-[44px] glass-inset hover:bg-carb/10 hover:text-carb text-secondary text-caption font-semibold"
             >
               +{ml >= 1000 ? `${ml / 1000}L` : `${ml}ml`}
             </Button>
@@ -121,12 +121,12 @@ function WaterCard({ today }) {
           </div>
         )}
         {!waterLoading && waterError && (
-          <p className="text-xs text-warn text-center py-2">Could not load water data</p>
+          <p className="text-caption text-warn text-center py-2">Could not load water data</p>
         )}
         {!waterLoading && !waterError && todayWater.length > 0 && (
           <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
             {[...todayWater].reverse().map(entry => (
-              <div key={entry.id} className="flex items-center justify-between group text-xs text-muted-2">
+              <div key={entry.id} className="flex items-center justify-between group text-caption text-muted-2">
                 <span>{format(parseISO(entry.logged_at), "h:mm a")} · {entry.amount_ml}ml</span>
                 <button
                   aria-label="Delete water entry"
@@ -154,21 +154,21 @@ function SupplementForm({ initial, onSave, onClose }) {
   return (
     <div className="space-y-4">
       <div>
-        <Label className="text-xs text-ink-muted mb-1.5 block">Name</Label>
+        <Label className="text-caption text-ink-muted mb-1.5 block">Name</Label>
         <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Creatine" />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <Label className="text-xs text-ink-muted mb-1.5 block">Default Dose</Label>
+          <Label className="text-caption text-ink-muted mb-1.5 block">Default Dose</Label>
           <Input type="number" inputMode="decimal" value={dose} onChange={e => setDose(e.target.value)} placeholder="5" />
         </div>
         <div>
-          <Label className="text-xs text-ink-muted mb-1.5 block">Unit</Label>
+          <Label className="text-caption text-ink-muted mb-1.5 block">Unit</Label>
           <Input value={unit} onChange={e => setUnit(e.target.value)} placeholder="mg, g, IU, cap" />
         </div>
       </div>
       <div>
-        <Label className="text-xs text-ink-muted mb-1.5 block">Timing note (optional)</Label>
+        <Label className="text-caption text-ink-muted mb-1.5 block">Timing note (optional)</Label>
         <Input value={timing} onChange={e => setTiming(e.target.value)} placeholder="e.g. With breakfast" />
       </div>
       <div className="flex gap-2 pt-2">
@@ -308,8 +308,8 @@ export default function Supplements({ embedded = false }) {
                   <h2 className="section-label">Supplements & Water</h2>
                 ) : (
                   <>
-                    <h1 className="text-xl font-bold text-ink">Supplements & Water</h1>
-                    <p className="text-xs text-ink-muted mt-0.5">{format(new Date(), "EEEE, MMMM d")}</p>
+                    <h1 className="text-title font-semibold text-ink">Supplements & Water</h1>
+                    <p className="text-caption text-ink-muted mt-0.5">{format(new Date(), "EEEE, MMMM d")}</p>
                   </>
                 )}
               </div>
@@ -345,12 +345,12 @@ export default function Supplements({ embedded = false }) {
                       <div>
                         <div className="flex items-center gap-2">
                           {taken && <CheckCircle2 className="w-3.5 h-3.5 text-brand shrink-0" />}
-                          <span className="text-sm font-semibold text-ink">{type.name}</span>
+                          <span className="text-body font-semibold text-ink">{type.name}</span>
                         </div>
                         {type.timing_note && (
                           <div className="flex items-center gap-1 mt-0.5">
                             <Clock className="w-3 h-3 text-muted-2" />
-                            <span className="text-[11px] text-muted-2">{type.timing_note}</span>
+                            <span className="text-caption text-muted-2">{type.timing_note}</span>
                           </div>
                         )}
                       </div>
@@ -377,12 +377,12 @@ export default function Supplements({ embedded = false }) {
                         value={dose}
                         onChange={e => setLogDoses(prev => ({ ...prev, [type.id]: e.target.value }))}
                         placeholder={type.default_dose ? `${type.default_dose} ${type.unit || ""}` : "dose"}
-                        className="min-h-[44px] text-xs flex-1 glass-inset"
+                        className="min-h-[44px] text-caption flex-1 glass-inset"
                       />
                       <Button
                         size="sm"
                         variant={taken ? "ghost" : "volt"}
-                        className="min-h-[44px] px-3 text-xs shrink-0"
+                        className="min-h-[44px] px-3 text-caption shrink-0"
                         onClick={() => logSupp.mutate({ type, dose: dose || type.default_dose })}
                         disabled={logSupp.isPending}
                       >
@@ -405,15 +405,15 @@ export default function Supplements({ embedded = false }) {
                 <div key={log.id} className="flex items-center justify-between px-4 py-2.5 glass-inset group">
                   <div className="flex items-center gap-3">
                     <CheckCircle2 className="w-3.5 h-3.5 text-brand shrink-0" />
-                    <span className="text-sm text-ink font-medium">{log.supplement_name}</span>
+                    <span className="text-body text-ink font-medium">{log.supplement_name}</span>
                     {log.dose && (
-                      <Badge variant="outline" className="text-[11px] text-muted-2 hairline bg-transparent">
+                      <Badge variant="outline" className="text-caption text-muted-2 hairline bg-transparent">
                         {log.dose}{log.unit || ""}
                       </Badge>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="font-technical text-[11px] text-muted-2 tabular-nums">{format(parseISO(log.taken_at), "h:mm a")}</span>
+                    <span className="font-technical text-caption text-muted-2 tabular-nums">{format(parseISO(log.taken_at), "h:mm a")}</span>
                     <button
                       aria-label="Delete supplement log"
                       onClick={() => deleteLog.mutate(log.id)}
@@ -437,7 +437,7 @@ export default function Supplements({ embedded = false }) {
 
         {typesError && (
           <div className="py-8 text-center glass-inset">
-            <p className="text-sm text-muted-2">Couldn't load supplements.</p>
+            <p className="text-body text-muted-2">Couldn't load supplements.</p>
             <Button variant="ghost" size="sm" className="mt-3" onClick={() => refetchTypes()}>
               Retry
             </Button>
@@ -447,8 +447,8 @@ export default function Supplements({ embedded = false }) {
         {!typesLoading && !typesError && suppTypes.length === 0 && (
           <div className="py-16 text-center rounded-2xl border-2 border-dashed border-white/10 glass-inset">
             <Pill className="w-8 h-8 text-faint mx-auto mb-3" />
-            <p className="text-sm text-secondary">No supplements configured.</p>
-            <p className="text-xs text-muted-2 mt-1">Add your stack to enable one-tap daily logging.</p>
+            <p className="text-body text-secondary">No supplements configured.</p>
+            <p className="text-caption text-muted-2 mt-1">Add your stack to enable one-tap daily logging.</p>
             <Button variant="volt" size="lg" className="mt-4" onClick={() => setShowAddType(true)}>
               <Plus className="w-3.5 h-3.5 mr-1.5" /> Add First Supplement
             </Button>

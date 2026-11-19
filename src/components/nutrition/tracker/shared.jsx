@@ -38,13 +38,13 @@ export const getEatenAt = (loggingMode, mealType, dateStr) => {
 // "Eating it right now" vs "logging it earlier" segmented toggle — governs
 // eaten_at on the entries this dialog creates.
 export const LoggingModeToggle = ({ value, onChange }) => (
-  <div className="inline-flex rounded-lg surface-2 p-0.5 text-xs">
+  <div className="inline-flex rounded-lg surface-2 p-0.5 text-caption">
     {[["now", "Eating now"], ["earlier", "Logging earlier"]].map(([id, label]) => (
       <button
         key={id}
         type="button"
         onClick={() => onChange(id)}
-        className={`px-2.5 py-1 rounded-md font-bold transition-colors ${
+        className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
           value === id ? "bg-gold/15 text-gold" : "text-ink-muted"
         }`}
       >
@@ -58,7 +58,7 @@ export const LoggingModeToggle = ({ value, onChange }) => (
 // (kcal=gold, P=coral, C=carb, F=fat) so the result list reads with the same
 // color grammar as the summary tiles. Dot separators stay faint ink.
 export const MacroResultLine = ({ cal, p, c, f, per100g = false }) => (
-  <div className="flex flex-wrap gap-x-1.5 mt-0.5 text-xs font-technical tabular-nums">
+  <div className="flex flex-wrap gap-x-1.5 mt-0.5 text-caption font-technical tabular-nums">
     <span className="text-gold">{Math.round(cal)} kcal{per100g ? ' / 100g' : ''}</span>
     <span className="text-ink-faint">·</span>
     <span className="text-coral">P {Math.round(p)}g</span>
@@ -77,7 +77,7 @@ export const MacroResultLine = ({ cal, p, c, f, per100g = false }) => (
 // radius / hover-accent overrides. Documented here rather than in index.css since
 // this surface owns only FoodTracker.jsx.
 export const GHOST_DASHED =
-  "flex items-center justify-center gap-1.5 min-h-[44px] border border-dashed border-charcoal-border text-xs font-bold uppercase tracking-widest text-ink-muted transition-all duration-200 [transition-timing-function:var(--ease)]";
+  "flex items-center justify-center gap-1.5 min-h-[44px] border border-dashed border-charcoal-border text-caption font-semibold uppercase tracking-widest text-ink-muted transition-all duration-200 [transition-timing-function:var(--ease)]";
 
 // Default neutral hover for the dashed ghost; the desktop "Set up TDEE / Edit
 // goals" affordance swaps this for a teal action-hover instead.
@@ -158,7 +158,7 @@ export async function fnErrorMessage(error) {
 
 // Quiet "119P 0C 16F" line used under food names and meal headers.
 export const MacroInline = ({ p, c, f }) => (
-  <span className="font-technical text-[12px] font-semibold tabular-nums whitespace-nowrap">
+  <span className="font-technical text-caption font-semibold tabular-nums whitespace-nowrap">
     <span className="text-coral">{Math.round(p)}P</span>{" "}
     <span className="text-carb">{Math.round(c)}C</span>{" "}
     <span className="text-fat">{Math.round(f)}F</span>
@@ -192,7 +192,7 @@ export function GoalsFormContent({
                   <span className="pill-value pill-value--sm text-ink-secondary">
                     {activePhase.phase_type === 'cut' ? 'Cut' : activePhase.phase_type === 'bulk' ? 'Bulk' : activePhase.phase_type === 'reverse' ? 'Reverse' : 'Maintain'}
                   </span>
-                  <span className="text-sm text-ink-muted">
+                  <span className="text-body text-ink-muted">
                     {activePhase.phase_type === 'reverse'
                       ? `+${activePhase.weekly_rate} cal/wk`
                       : `${activePhase.weekly_rate > 0 ? '+' : ''}${activePhase.weekly_rate} ${profile?.weight_unit || 'lbs'}/wk`}
@@ -201,12 +201,12 @@ export function GoalsFormContent({
                 {/* One hero number: the saved Daily Calories goal (kcal owns
                     gold). The phase target demotes to a muted reference line. */}
                 <div className="mt-2 flex items-baseline gap-1.5">
-                  <span className="type-display text-gold text-3xl tabular-nums">
+                  <span className="type-display text-gold text-display tabular-nums">
                     {(profile?.daily_calorie_goal || goalForm?.calories || phaseCalories).toLocaleString()}
                   </span>
-                  <span className="text-xs font-semibold text-ink-muted">cal/day</span>
+                  <span className="text-caption font-semibold text-ink-muted">cal/day</span>
                 </div>
-                <div className="text-xs text-ink-muted mt-0.5 tabular-nums">
+                <div className="text-caption text-ink-muted mt-0.5 tabular-nums">
                   Phase target {phaseCalories.toLocaleString()} cal/day
                 </div>
               </div>
@@ -219,7 +219,7 @@ export function GoalsFormContent({
                 coral reserved for the Sync Goals action (SYS-09c). */}
             {goalsOutOfSync && (
               <div className="flex items-center justify-between gap-3 pt-1 border-t hairline">
-                <p className="text-xs text-ink-secondary">
+                <p className="text-caption text-ink-secondary">
                   Your saved goals ({(profile?.daily_calorie_goal || 0).toLocaleString()} cal) don't match your phase target.
                 </p>
                 <Button type="button" variant="volt" size="sm" className="min-h-[44px] shrink-0"
@@ -240,7 +240,7 @@ export function GoalsFormContent({
 
       {!tdee.tdee && (
         <div className="rounded-xl border border-dashed border-charcoal-border p-4 text-center space-y-2">
-          <p className="text-sm text-ink-muted">Set up your stats to auto-calculate daily calorie and macro targets.</p>
+          <p className="text-body text-ink-muted">Set up your stats to auto-calculate daily calorie and macro targets.</p>
           <Button type="button" variant="outline" size="lg" className="w-full min-h-[44px]" onClick={() => { setShowGoalsModal(false); setShowStatsModal(true); }}>
             <Calculator className="w-4 h-4 mr-2" />Set up TDEE calculation
           </Button>
@@ -250,11 +250,11 @@ export function GoalsFormContent({
       {tdee.tdee && latestWeight && (
         <div className="space-y-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-            <Label className="whitespace-nowrap text-sm sm:shrink-0">Protein target</Label>
+            <Label className="whitespace-nowrap text-body sm:shrink-0">Protein target</Label>
             <div className="flex items-center gap-2 flex-1">
               <Input type="number" inputMode="decimal" step="0.05" min="0.5" max="2.5" value={proteinPerLb}
                 onChange={(e) => setProteinPerLb(e.target.value)} className="flex-1 min-w-0" />
-              <span className="text-sm text-ink-muted whitespace-nowrap">g / lb</span>
+              <span className="text-body text-ink-muted whitespace-nowrap">g / lb</span>
               {latestWeight && (
                 <span className="pill-value pill-value--sm text-ink ml-auto sm:ml-0">
                   = {Math.round(proteinPerLb * (profile?.weight_unit === 'kg' ? latestWeight * 2.205 : latestWeight))}g/day
@@ -300,7 +300,7 @@ export function GoalsFormContent({
           onChange={(e) => setFiberGoal(e.target.value)}
           placeholder={String(fiberDefault)}
         />
-        <p className="text-xs text-ink-faint">
+        <p className="text-caption text-ink-faint">
           Leave blank to track 14 g per 1,000 kcal (
           {fiberDefault} g at your current calorie target).
         </p>

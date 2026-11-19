@@ -80,19 +80,19 @@ export function RecipeCardMenu({ onShare, onEdit, onDelete }) {
         <div className={`absolute right-0 glass-elevated rounded-xl py-1 z-20 min-w-[150px] ${flipUp ? "bottom-12" : "top-12"}`}>
           <button
             onClick={run(onShare)}
-            className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-[var(--glass-bg)] transition-colors duration-200 [transition-timing-function:var(--ease)] flex items-center gap-2 min-h-[44px]"
+            className="w-full px-3 py-2 text-left text-body text-ink hover:bg-[var(--glass-bg)] transition-colors duration-200 [transition-timing-function:var(--ease)] flex items-center gap-2 min-h-[44px]"
           >
             <Share2 className="w-3.5 h-3.5" />Share
           </button>
           <button
             onClick={run(onEdit)}
-            className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-[var(--glass-bg)] transition-colors duration-200 [transition-timing-function:var(--ease)] flex items-center gap-2 min-h-[44px]"
+            className="w-full px-3 py-2 text-left text-body text-ink hover:bg-[var(--glass-bg)] transition-colors duration-200 [transition-timing-function:var(--ease)] flex items-center gap-2 min-h-[44px]"
           >
             <Pencil className="w-3.5 h-3.5" />Edit
           </button>
           <button
             onClick={run(onDelete)}
-            className="w-full px-3 py-2 text-left text-sm text-bad hover:bg-bad/10 transition-colors duration-200 [transition-timing-function:var(--ease)] flex items-center gap-2 min-h-[44px]"
+            className="w-full px-3 py-2 text-left text-body text-bad hover:bg-bad/10 transition-colors duration-200 [transition-timing-function:var(--ease)] flex items-center gap-2 min-h-[44px]"
           >
             <Trash2 className="w-3.5 h-3.5" />Delete
           </button>
@@ -116,42 +116,42 @@ export function StickyMacroBar({ ingredients, servings }) {
           figures so the macro bar has a clear primary readout. */}
       <div className="flex items-end justify-between gap-4">
         <div>
-          <div className="hero-metric text-3xl text-gold transition-[color,opacity] duration-200 [transition-timing-function:var(--ease)]">
+          <div className="hero-metric text-display text-gold transition-[color,opacity] duration-200 [transition-timing-function:var(--ease)]">
             {Math.round(totals.total_calories)}
           </div>
-          <div className="text-xs font-medium text-ink-muted uppercase tracking-wide mt-0.5">
+          <div className="text-caption font-medium text-ink-muted uppercase tracking-wide mt-0.5">
             Calories
           </div>
         </div>
         <div className="flex gap-4 text-right">
           <div>
-            <div className="text-sm font-bold text-coral font-technical tabular-nums transition-[color,opacity] duration-200 [transition-timing-function:var(--ease)]">
+            <div className="text-body font-bold text-coral font-technical tabular-nums transition-[color,opacity] duration-200 [transition-timing-function:var(--ease)]">
               {Math.round(totals.total_protein * 10) / 10}g
             </div>
-            <div className="text-xs font-medium text-ink-muted uppercase tracking-wide">
+            <div className="text-caption font-medium text-ink-muted uppercase tracking-wide">
               Protein
             </div>
           </div>
           <div>
-            <div className="text-sm font-bold text-carb font-technical tabular-nums transition-[color,opacity] duration-200 [transition-timing-function:var(--ease)]">
+            <div className="text-body font-bold text-carb font-technical tabular-nums transition-[color,opacity] duration-200 [transition-timing-function:var(--ease)]">
               {Math.round(totals.total_carbs * 10) / 10}g
             </div>
-            <div className="text-xs font-medium text-ink-muted uppercase tracking-wide">
+            <div className="text-caption font-medium text-ink-muted uppercase tracking-wide">
               Carbs
             </div>
           </div>
           <div>
-            <div className="text-sm font-bold text-fat font-technical tabular-nums transition-[color,opacity] duration-200 [transition-timing-function:var(--ease)]">
+            <div className="text-body font-bold text-fat font-technical tabular-nums transition-[color,opacity] duration-200 [transition-timing-function:var(--ease)]">
               {Math.round(totals.total_fats * 10) / 10}g
             </div>
-            <div className="text-xs font-medium text-ink-muted uppercase tracking-wide">
+            <div className="text-caption font-medium text-ink-muted uppercase tracking-wide">
               Fats
             </div>
           </div>
         </div>
       </div>
       {servings > 1 && hasIngredients && (
-        <div className="text-xs text-ink-muted text-center mt-1.5 font-technical tabular-nums">
+        <div className="text-caption text-ink-muted text-center mt-1.5 font-technical tabular-nums">
           Per serving: {Math.round(totals.total_calories / servings)} cal{" · "}
           {Math.round((totals.total_protein / servings) * 10) / 10}g P{" · "}
           {Math.round((totals.total_carbs / servings) * 10) / 10}g C{" · "}
@@ -175,13 +175,13 @@ export function FoodSearchResult({ food, onClick, icon }) {
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <div className="font-medium text-ink text-sm truncate">
+          <div className="font-medium text-ink text-body truncate">
             {food.description || food.food_name}
           </div>
           {food.brandOwner && (
-            <div className="text-xs text-ink-muted">{food.brandOwner}</div>
+            <div className="text-caption text-ink-muted">{food.brandOwner}</div>
           )}
-          <div className="flex gap-3 mt-1 text-xs">
+          <div className="flex gap-3 mt-1 text-caption">
             <span className="text-gold font-medium">
               {Math.round(food.calories ?? food.cal ?? 0)} cal
             </span>
@@ -215,10 +215,10 @@ export function CollapsibleFoodSection({ label, icon, count, children }) {
           className={`w-3.5 h-3.5 text-ink-muted transition-transform duration-200 [transition-timing-function:var(--ease)] ${open ? "rotate-90" : ""}`}
         />
         {icon}
-        <span className="text-xs font-medium text-ink-muted uppercase tracking-wide">
+        <span className="text-caption font-medium text-ink-muted uppercase tracking-wide">
           {label}
         </span>
-        <span className="text-xs text-ink-muted ml-auto">{count}</span>
+        <span className="text-caption text-ink-muted ml-auto">{count}</span>
       </button>
       <AnimatePresence initial={false}>
         {open && (
@@ -244,10 +244,10 @@ export function IngredientCard({ ingredient, index, onUpdateServing, onUpdateUni
     <div className="tile tile-interactive p-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <div className="font-medium text-sm text-ink truncate">
+          <div className="font-medium text-body text-ink truncate">
             {ingredient.food_name}
           </div>
-          <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1 text-xs font-technical tabular-nums">
+          <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1 text-caption font-technical tabular-nums">
             <span className="text-ink-muted font-medium">Per serving:</span>
             <span className="text-gold font-medium">{ingredient.calories} cal</span>
             <span className="text-coral">{ingredient.protein_grams}g P</span>
@@ -279,7 +279,7 @@ export function IngredientCard({ ingredient, index, onUpdateServing, onUpdateUni
             value={ingredient.serving_unit}
             onValueChange={(val) => onUpdateUnit(index, val)}
           >
-            <SelectTrigger className="h-11 w-20 text-xs">
+            <SelectTrigger className="h-11 w-20 text-caption">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -287,12 +287,12 @@ export function IngredientCard({ ingredient, index, onUpdateServing, onUpdateUni
                   redefined drops out rather than offering two gram weights
                   under one name. */}
               {portionLabels(ingredient._portions).map((label) => (
-                <SelectItem key={label} value={label} className="text-xs">
+                <SelectItem key={label} value={label} className="text-caption">
                   {label}
                 </SelectItem>
               ))}
               {SERVING_UNITS.filter((unit) => !portionsMap(ingredient._portions)[unit]).map((unit) => (
-                <SelectItem key={unit} value={unit} className="text-xs">
+                <SelectItem key={unit} value={unit} className="text-caption">
                   {unit}
                 </SelectItem>
               ))}
@@ -394,14 +394,14 @@ export function ManualIngredientForm({ onAdd, onCancel, userId }) {
     <div className="space-y-3">
       <button
         onClick={onCancel}
-        className="flex items-center gap-1.5 text-xs font-medium text-brand hover:text-brand transition-colors duration-200 [transition-timing-function:var(--ease)]"
+        className="flex items-center gap-1.5 text-caption font-medium text-brand hover:text-brand transition-colors duration-200 [transition-timing-function:var(--ease)]"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         Back to search
       </button>
 
       <div>
-        <Label className="text-xs font-medium text-ink-muted">Food Name *</Label>
+        <Label className="text-caption font-medium text-ink-muted">Food Name *</Label>
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -412,7 +412,7 @@ export function ManualIngredientForm({ onAdd, onCancel, userId }) {
       </div>
 
       <div>
-        <Label className="text-xs font-medium text-ink-muted">Serving</Label>
+        <Label className="text-caption font-medium text-ink-muted">Serving</Label>
         <div className="flex items-center gap-2 mt-1">
           <Input
             type="number" inputMode="decimal"
@@ -423,12 +423,12 @@ export function ManualIngredientForm({ onAdd, onCancel, userId }) {
             className="w-20 h-11 text-center rounded-lg font-technical tabular-nums"
           />
           <Select value={unit} onValueChange={setUnit}>
-            <SelectTrigger className="h-11 w-28 text-sm rounded-lg">
+            <SelectTrigger className="h-11 w-28 text-body rounded-lg">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {SERVING_UNITS.map((u) => (
-                <SelectItem key={u} value={u} className="text-sm">
+                <SelectItem key={u} value={u} className="text-body">
                   {u}
                 </SelectItem>
               ))}
@@ -438,7 +438,7 @@ export function ManualIngredientForm({ onAdd, onCancel, userId }) {
       </div>
 
       <div>
-        <Label className="text-xs font-medium text-ink-muted">
+        <Label className="text-caption font-medium text-ink-muted">
           Nutrition (per serving)
         </Label>
         <div className="grid grid-cols-4 gap-2 mt-1">
@@ -449,9 +449,9 @@ export function ManualIngredientForm({ onAdd, onCancel, userId }) {
               onChange={(e) => setCalories(e.target.value)}
               placeholder="Cal"
               min="0"
-              className="h-11 text-sm text-center rounded-lg"
+              className="h-11 text-body text-center rounded-lg"
             />
-            <div className="text-xs text-gold font-medium text-center mt-0.5">
+            <div className="text-caption text-gold font-medium text-center mt-0.5">
               Calories
             </div>
           </div>
@@ -463,9 +463,9 @@ export function ManualIngredientForm({ onAdd, onCancel, userId }) {
               placeholder="g"
               min="0"
               step="0.1"
-              className="h-11 text-sm text-center rounded-lg"
+              className="h-11 text-body text-center rounded-lg"
             />
-            <div className="text-xs text-coral font-medium text-center mt-0.5">
+            <div className="text-caption text-coral font-medium text-center mt-0.5">
               Protein
             </div>
           </div>
@@ -477,9 +477,9 @@ export function ManualIngredientForm({ onAdd, onCancel, userId }) {
               placeholder="g"
               min="0"
               step="0.1"
-              className="h-11 text-sm text-center rounded-lg"
+              className="h-11 text-body text-center rounded-lg"
             />
-            <div className="text-xs text-carb font-medium text-center mt-0.5">
+            <div className="text-caption text-carb font-medium text-center mt-0.5">
               Carbs
             </div>
           </div>
@@ -491,9 +491,9 @@ export function ManualIngredientForm({ onAdd, onCancel, userId }) {
               placeholder="g"
               min="0"
               step="0.1"
-              className="h-11 text-sm text-center rounded-lg"
+              className="h-11 text-body text-center rounded-lg"
             />
-            <div className="text-xs text-fat font-medium text-center mt-0.5">
+            <div className="text-caption text-fat font-medium text-center mt-0.5">
               Fats
             </div>
           </div>
@@ -501,7 +501,7 @@ export function ManualIngredientForm({ onAdd, onCancel, userId }) {
       </div>
 
       {amount > 1 && (parseFloat(calories) > 0 || parseFloat(protein) > 0) && (
-        <div className="bg-brand/[8%] rounded-lg px-3 py-2 text-xs text-brand">
+        <div className="bg-brand/[8%] rounded-lg px-3 py-2 text-caption text-brand">
           <span className="font-medium">Total ({amount} {unit}s):</span>{" "}
           {Math.round((parseFloat(calories) || 0) * amount)} cal &middot;{" "}
           {Math.round((parseFloat(protein) || 0) * amount * 10) / 10}g P &middot;{" "}
@@ -513,7 +513,7 @@ export function ManualIngredientForm({ onAdd, onCancel, userId }) {
       <Button
         variant="volt"
         onClick={handleAdd}
-        className="w-full h-11 text-sm"
+        className="w-full h-11 text-body"
       >
         <Plus className="w-4 h-4 mr-1.5" />
         Add Ingredient

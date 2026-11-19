@@ -66,7 +66,7 @@ export default function LabelReaderDialog({ isReadingLabel, labelName, labelPhot
             >
               {isReadingLabel ? <><Loader2 className="w-4 h-4 spin-loop" /> Reading…</> : <><Camera className="w-4 h-4" /> Read label</>}
             </Button>
-            <p className="text-[11px] text-ink-muted">
+            <p className="text-caption text-ink-muted">
               Reads the printed numbers, so it's accurate when the panel is sharp and fully in frame. Review before logging.
             </p>
           </div>

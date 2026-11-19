@@ -481,25 +481,25 @@ export default function WeeklyPlanCard({ bare = false }) {
         <div>
           <div className="flex items-center gap-2">
             <Cpu className="w-4 h-4 text-ink-muted" />
-            <span className="text-[11px] uppercase tracking-[0.18em] text-ink-muted font-bold">This Week's Plan</span>
+            <span className="text-micro uppercase tracking-[0.18em] text-ink-muted font-semibold">This Week's Plan</span>
             {isSunday && (
-              <span className="text-[11px] uppercase tracking-wider text-ink-muted bg-charcoal-surface px-1.5 py-0.5 rounded-full font-bold">Sunday, plan ready</span>
+              <span className="text-micro uppercase tracking-wider text-ink-muted bg-charcoal-surface px-1.5 py-0.5 rounded-full font-semibold">Sunday, plan ready</span>
             )}
           </div>
-          <h3 className="text-lg font-bold text-ink leading-tight mt-1">{planLabel}</h3>
+          <h3 className="text-title font-semibold text-ink leading-tight mt-1">{planLabel}</h3>
         </div>
         <div className="text-right shrink-0">
-          <div className="text-2xl font-technical text-gold leading-none">
+          <div className="text-display font-technical text-gold leading-none">
             {calTarget ? Math.round(calTarget).toLocaleString() : "—"}
           </div>
-          <div className="text-[11px] uppercase tracking-widest text-ink-muted font-bold mt-1">
+          <div className="text-micro uppercase tracking-widest text-ink-muted font-semibold mt-1">
             kcal / day{manualOverride ? " · manual" : engineSet ? " · engine-set" : ""}
           </div>
         </div>
       </div>
 
       {phasePending && !manualOverride && (
-        <p className="mx-5 mb-3 text-xs text-ink-muted">
+        <p className="mx-5 mb-3 text-caption text-ink-muted">
           The engine computes your {choiceLabel.toLowerCase()} numbers tonight. Until then this shows last night&apos;s target.
         </p>
       )}
@@ -511,9 +511,9 @@ export default function WeeklyPlanCard({ bare = false }) {
         <div className="mx-5 mb-3 surface-2 px-3.5 py-2.5">
           <div className="flex items-center gap-2">
             <SlidersHorizontal className="w-3.5 h-3.5 text-ink-muted shrink-0" />
-            <span className="text-[11px] uppercase tracking-widest text-ink-muted font-bold">Manual target</span>
+            <span className="text-micro uppercase tracking-widest text-ink-muted font-semibold">Manual target</span>
           </div>
-          <p className="text-xs text-ink-secondary leading-relaxed mt-1">
+          <p className="text-caption text-ink-secondary leading-relaxed mt-1">
             You set this week's target by hand — the engine's recovery-gated number is
             overridden until you clear it.
           </p>
@@ -525,19 +525,19 @@ export default function WeeklyPlanCard({ bare = false }) {
         <div className="mx-5 mb-3 surface-2 px-3.5 py-2.5">
           <div className="flex items-center gap-2 mb-1">
             <Sparkles className="w-3.5 h-3.5 text-ink-muted shrink-0" />
-            <span className="text-[11px] uppercase tracking-widest text-ink-muted font-bold">{currentChoice === "bulk" ? "Surplus" : currentChoice === "maintain" ? "Maintenance" : "Recovery-Gated Deficit"}</span>
+            <span className="text-micro uppercase tracking-widest text-ink-muted font-semibold">{currentChoice === "bulk" ? "Surplus" : currentChoice === "maintain" ? "Maintenance" : "Recovery-Gated Deficit"}</span>
             {/* This % is the PLANNED deficit magnitude — a derived ratio, not a
                 kcal figure, so it must NOT borrow the gold kcal hue (that hue is
                 owned by the calorie datum). Render it neutral (font-technical +
                 secondary ink). text-warn stays reserved for the gate chips below,
                 which are the actual recovery alarms. */}
-            <span className="ml-auto font-technical text-sm text-ink-secondary">{currentChoice === "cut" ? `${Math.round((rec.deficit_ratio || 0) * 100)}%` : `${Math.round(rec.maintenance_kcal || 0).toLocaleString()} TDEE`}</span>
+            <span className="ml-auto font-technical text-body text-ink-secondary">{currentChoice === "cut" ? `${Math.round((rec.deficit_ratio || 0) * 100)}%` : `${Math.round(rec.maintenance_kcal || 0).toLocaleString()} TDEE`}</span>
           </div>
-          <p className={`text-xs text-ink-secondary leading-relaxed ${showRationale ? "" : "line-clamp-2"}`}>{rec.rationale}</p>
+          <p className={`text-caption text-ink-secondary leading-relaxed ${showRationale ? "" : "line-clamp-2"}`}>{rec.rationale}</p>
           {rec.rationale && rec.rationale.length > 90 && (
             <button
               onClick={() => setShowRationale((s) => !s)}
-              className="glass-interactive mt-1 min-h-[44px] inline-flex items-center px-2 -mx-2 text-[11px] uppercase tracking-wider text-ink-muted font-bold active:scale-[0.98]"
+              className="glass-interactive mt-1 min-h-[44px] inline-flex items-center px-2 -mx-2 text-micro uppercase tracking-wider text-ink-muted font-semibold active:scale-[0.98]"
             >
               {showRationale ? "Less" : "Why?"}
             </button>
@@ -545,7 +545,7 @@ export default function WeeklyPlanCard({ bare = false }) {
           {(rec.gates || []).length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-2">
               {rec.gates.map((g) => (
-                <span key={g} className="text-[11px] uppercase tracking-wider text-warn bg-warn/10 border border-warn/20 px-1.5 py-0.5 rounded-full font-bold">
+                <span key={g} className="text-micro uppercase tracking-wider text-warn bg-warn/10 border border-warn/20 px-1.5 py-0.5 rounded-full font-semibold">
                   {GATE_LABEL[g] || g}
                 </span>
               ))}
@@ -560,11 +560,11 @@ export default function WeeklyPlanCard({ bare = false }) {
         <div className="mx-5 mb-3 surface-2 px-3.5 py-2.5">
           <div className="flex items-center gap-2 mb-1.5">
             <Flame className="w-3.5 h-3.5 text-ink-muted shrink-0" />
-            <span className="text-[11px] uppercase tracking-widest text-ink-muted font-bold">Carb Timing</span>
+            <span className="text-micro uppercase tracking-widest text-ink-muted font-semibold">Carb Timing</span>
           </div>
           <div className="flex flex-wrap gap-x-4 gap-y-1">
             {carbWindows.map((w) => (
-              <div key={w.label} className="text-xs text-ink-secondary">
+              <div key={w.label} className="text-caption text-ink-secondary">
                 <span className="font-technical text-ink">{w.grams}g</span> {w.label}
               </div>
             ))}
@@ -588,7 +588,7 @@ export default function WeeklyPlanCard({ bare = false }) {
                   : "border-charcoal-border bg-charcoal-surface/40"
                 }`}
               >
-                <div className="text-[11px] uppercase tracking-wider text-ink-muted font-bold leading-none">{format(parseISO(d.date), "EEEEE")}</div>
+                <div className="text-micro uppercase tracking-wider text-ink-muted font-semibold leading-none">{format(parseISO(d.date), "EEEEE")}</div>
                 <div className="flex justify-center my-1.5">
                   {d.trainingDay
                     ? <Dumbbell className="w-3 h-3 text-viz-1" />
@@ -598,15 +598,15 @@ export default function WeeklyPlanCard({ bare = false }) {
                     day-detail panel). Eaten-out days keep the gold figure and swap
                     only the sub-line to a muted tag, so the gold/viz-3 hue mapping
                     stays uniform across all 7 cells. */}
-                <div className="font-technical text-xs text-gold leading-none">{d.totals.calories ? d.totals.calories.toLocaleString() : "—"}</div>
+                <div className="font-technical text-caption text-gold leading-none">{d.totals.calories ? d.totals.calories.toLocaleString() : "—"}</div>
                 {!d.rows.length && (
-                  <div className="text-[11px] uppercase tracking-wider font-bold text-ink-faint leading-none mt-1">logged</div>
+                  <div className="text-micro uppercase tracking-wider font-semibold text-ink-faint leading-none mt-1">logged</div>
                 )}
               </button>
             );
           })}
         </div>
-        <div className="flex items-center justify-between mt-2 text-[11px]">
+        <div className="flex items-center justify-between mt-2 text-caption">
           <span className="flex items-center gap-1 text-ink-muted"><Dumbbell className="w-3 h-3 text-viz-1" /> {trainCount} lift · <Moon className="w-3 h-3 text-ink-faint" /> {7 - trainCount} rest</span>
           {/* Carb-cycle range is the headline datum of the strip — promote it to
               font-technical + secondary ink; the lift/rest tally stays muted. */}
@@ -620,11 +620,11 @@ export default function WeeklyPlanCard({ bare = false }) {
       {openDayData && (
         <div className="mx-5 mt-3 glass-inset rise-in">
           <div className="flex items-center justify-between px-3.5 py-2.5 border-b hairline">
-            <span className="text-xs font-bold text-ink">
+            <span className="text-caption font-semibold text-ink">
               {format(parseISO(openDayData.date), "EEEE, MMM d")}
-              <span className="ml-1.5 text-[11px] font-semibold text-ink-muted">{openDayData.trainingDay ? "lift day" : "rest day"}</span>
+              <span className="ml-1.5 text-caption font-semibold text-ink-muted">{openDayData.trainingDay ? "lift day" : "rest day"}</span>
             </span>
-            <span className="font-technical text-[11px] text-ink-muted">
+            <span className="font-technical text-caption text-ink-muted">
               target {Math.round(openDayData.target).toLocaleString()}
               {openDayData.eatenCal > 0 && ` · eaten ${Math.round(openDayData.eatenCal).toLocaleString()}`}
               {` · plan fills ${openDayData.totals.calories.toLocaleString()}`}
@@ -633,7 +633,7 @@ export default function WeeklyPlanCard({ bare = false }) {
           </div>
           {/* ── Force a food into this day (e.g. a Creami-sized cottage cheese
               portion) — cost-driven everywhere else, this is the manual override. ── */}
-          <div className="flex items-center gap-1.5 px-3.5 py-2 border-b hairline text-[11px]">
+          <div className="flex items-center gap-1.5 px-3.5 py-2 border-b hairline text-caption">
             <Snowflake className="w-3 h-3 text-carb shrink-0" />
             <select
               value={forceFood}
@@ -653,7 +653,7 @@ export default function WeeklyPlanCard({ bare = false }) {
             <button
               onClick={() => forceFood && setFoodMin.mutate({ date: openDayData.date, food: forceFood, grams: parseInt(forceGrams, 10) || 250 })}
               disabled={!forceFood || setFoodMin.isPending}
-              className="glass-interactive min-h-[28px] px-2 rounded text-[11px] uppercase tracking-wider font-bold text-brand active:scale-[0.97] disabled:opacity-40"
+              className="glass-interactive min-h-[28px] px-2 rounded text-micro uppercase tracking-wider font-semibold text-brand active:scale-[0.97] disabled:opacity-40"
             >
               Set
             </button>
@@ -661,26 +661,26 @@ export default function WeeklyPlanCard({ bare = false }) {
               <button
                 onClick={() => setFoodMin.mutate({ date: openDayData.date, food: null, grams: null })}
                 disabled={setFoodMin.isPending}
-                className="glass-interactive min-h-[28px] px-2 rounded text-[11px] uppercase tracking-wider font-bold text-ink-muted active:scale-[0.97]"
+                className="glass-interactive min-h-[28px] px-2 rounded text-micro uppercase tracking-wider font-semibold text-ink-muted active:scale-[0.97]"
               >
                 Clear
               </button>
             )}
           </div>
           {openDayData.rows.length === 0 ? (
-            <p className="px-3.5 py-3 text-xs text-ink-muted">
+            <p className="px-3.5 py-3 text-caption text-ink-muted">
               This day's budget is already used up by logged food, nothing left to plan.
             </p>
           ) : (
             <>
               {MEAL_ORDER.filter((m) => openDayData.rows.some((r) => r.meal_type === m)).map((m) => (
                 <div key={m} className="px-3.5 py-2 border-b hairline last:border-b-0">
-                  <div className="text-[11px] uppercase tracking-widest text-ink-faint font-bold mb-1">{MEAL_LABEL[m]}</div>
+                  <div className="text-micro uppercase tracking-widest text-ink-faint font-semibold mb-1">{MEAL_LABEL[m]}</div>
                   {openDayData.rows.filter((r) => r.meal_type === m).map((r) => (
-                    <div key={r.food_name} className="flex items-center gap-2 py-0.5 text-xs">
+                    <div key={r.food_name} className="flex items-center gap-2 py-0.5 text-caption">
                       <span className="text-ink font-semibold flex-1 truncate">{r.food_name}</span>
                       {r.timing && r.timing !== "anytime" && (
-                        <span className="shrink-0 text-[11px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-full text-ink-muted bg-charcoal-surface">
+                        <span className="shrink-0 text-micro uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded-full text-ink-muted bg-charcoal-surface">
                           {r.timing === "pre" ? "Pre-WO" : "Post-WO"}
                         </span>
                       )}
@@ -691,7 +691,7 @@ export default function WeeklyPlanCard({ bare = false }) {
                 </div>
               ))}
               <div className="px-3.5 py-2.5">
-                <div className="flex items-center justify-between text-[11px] mb-1">
+                <div className="flex items-center justify-between text-caption mb-1">
                   <span className="text-ink-muted font-semibold">Day macros</span>
                   <span className="font-technical text-ink-muted">
                     <span className="text-coral">{Math.round(openDayData.totals.protein)}p</span> · <span className="text-carb">{Math.round(openDayData.totals.carbs)}c</span> · <span className="text-fat">{Math.round(openDayData.totals.fats)}f</span>
@@ -699,25 +699,25 @@ export default function WeeklyPlanCard({ bare = false }) {
                 </div>
                 <MacroBar p={openDayData.totals.protein} c={openDayData.totals.carbs} f={openDayData.totals.fats} />
                 {openDayData.rows.proteinShortfall > 0 && (
-                  <p className="mt-2 text-[11px] text-ink-secondary">
+                  <p className="mt-2 text-caption text-ink-secondary">
                     Protein lands {openDayData.rows.proteinShortfall} g under target, the food list's lean
                     sources are maxed out. Add a lean protein to the catalog or cover it manually.
                   </p>
                 )}
                 {openDayData.rows.proteinEased > 0 && (
-                  <p className="mt-2 text-[11px] text-ink-muted">
+                  <p className="mt-2 text-caption text-ink-muted">
                     Protein eased {openDayData.rows.proteinEased} g below the 1.3 g/lb anchor (still ≥ the
                     1.2 g/lb floor) to hold this day's calorie wall, protein drops last, calories don't bend.
                   </p>
                 )}
                 {openDayData.rows.calorieOverage > 0 && (
-                  <p className="mt-2 text-[11px] text-ink-secondary">
+                  <p className="mt-2 text-caption text-ink-secondary">
                     Even at the 1.2 g/lb protein floor this day runs {openDayData.rows.calorieOverage} kcal
                     over target, the calorie wall bends before the hard protein floor does.
                   </p>
                 )}
                 {creamiFoods.length > 0 && (
-                  <p className="flex items-center gap-1.5 mt-2 text-[11px] text-ink-muted">
+                  <p className="flex items-center gap-1.5 mt-2 text-caption text-ink-muted">
                     <Snowflake className="w-3 h-3 text-carb shrink-0" />
                     Creami option: {creamiFoods.length > 1
                       ? `blend the ${creamiFoods.slice(0, 3).join(" + ")} into protein ice cream`
@@ -733,10 +733,10 @@ export default function WeeklyPlanCard({ bare = false }) {
       {/* ── Grocery list: checkable while shopping, persists for the week ── */}
       <button
         onClick={() => setShowShopping((s) => !s)}
-        className="glass-interactive w-full min-h-[44px] px-5 py-3 mt-3 flex items-center gap-2 text-xs text-ink-secondary hover:text-ink active:scale-[0.99] border-t hairline"
+        className="glass-interactive w-full min-h-[44px] px-5 py-3 mt-3 flex items-center gap-2 text-caption text-ink-secondary hover:text-ink active:scale-[0.99] border-t hairline"
       >
         <ShoppingCart className="w-3.5 h-3.5 text-ink-muted" />
-        <span className="font-bold">Grocery list</span>
+        <span className="font-semibold">Grocery list</span>
         <span className="font-technical text-ink-muted">
           {checkedCount > 0 ? `${checkedCount}/${shopping.items.length} · ` : ""}~${shopping.totalCost.toFixed(0)} / wk
         </span>
@@ -751,7 +751,7 @@ export default function WeeklyPlanCard({ bare = false }) {
                 <button
                   key={it.food}
                   onClick={() => toggleChecked(it.food)}
-                  className="glass-interactive w-full flex items-center gap-3 min-h-[44px] px-3.5 py-3 text-xs text-left hover:bg-charcoal-surface active:scale-[0.99]"
+                  className="glass-interactive w-full flex items-center gap-3 min-h-[44px] px-3.5 py-3 text-caption text-left hover:bg-charcoal-surface active:scale-[0.99]"
                 >
                   {/* Done is a neutral checklist state, NOT a biometric reading —
                       the ok/warn/bad/info spectrum (and leaf) is reserved for
@@ -791,14 +791,14 @@ export default function WeeklyPlanCard({ bare = false }) {
           </button>
           <button
             onClick={openOverride}
-            className="glass-interactive shrink-0 min-h-[44px] px-4 rounded-xl border border-charcoal-border flex items-center gap-1.5 text-xs font-bold text-ink-secondary active:scale-[0.98]"
+            className="glass-interactive shrink-0 min-h-[44px] px-4 rounded-xl border border-charcoal-border flex items-center gap-1.5 text-caption font-semibold text-ink-secondary active:scale-[0.98]"
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
             {choiceLabel}
             <ChevronDown className="w-3.5 h-3.5" />
           </button>
         </div>
-        <p className="text-[11px] text-ink-muted text-center mt-2 flex items-center justify-center gap-1">
+        <p className="text-caption text-ink-muted text-center mt-2 flex items-center justify-center gap-1">
           <Flame className="w-3 h-3" /> Pre-fills your log as check-off items · portions auto-adjust to each day's target
         </p>
       </div>
@@ -817,20 +817,20 @@ export default function WeeklyPlanCard({ bare = false }) {
           </DialogHeader>
           <div className="px-5 pb-5 space-y-5">
             {!maintenanceKnown && (
-              <p className="text-[11px] text-ink-muted">
+              <p className="text-caption text-ink-muted">
                 Maintenance estimate pending — using today&apos;s target as the midpoint until the engine has one.
               </p>
             )}
 
             <div className="text-center">
-              <div className="text-3xl font-technical text-gold leading-none [font-variant-numeric:tabular-nums]">
-                {sliderValue.toLocaleString()} <span className="text-base text-ink-muted">kcal</span>
+              <div className="text-display font-technical text-gold leading-none [font-variant-numeric:tabular-nums]">
+                {sliderValue.toLocaleString()} <span className="text-emph text-ink-muted">kcal</span>
               </div>
-              <div className="text-xs text-ink-secondary mt-1.5">
+              <div className="text-caption text-ink-secondary mt-1.5">
                 {landmarkText(sliderValue, landmarks)}
               </div>
               {maintenanceKnown && (
-                <div className="text-[11px] text-ink-muted mt-0.5 font-technical">
+                <div className="text-caption text-ink-muted mt-0.5 font-technical">
                   {deltaText(sliderValue, maintenance)}
                 </div>
               )}
@@ -889,7 +889,7 @@ export default function WeeklyPlanCard({ bare = false }) {
                       <div className={edge === "left" ? "w-px h-1.5 bg-charcoal-border" : edge === "right" ? "w-px h-1.5 bg-charcoal-border ml-auto" : "w-px h-1.5 bg-charcoal-border mx-auto"} />
                       {showLabel && (
                         <div
-                          className={`text-[11px] uppercase tracking-wider text-ink-faint font-bold mt-0.5 leading-tight ${edge === "left" ? "text-left" : edge === "right" ? "text-right" : "text-center"}`}
+                          className={`text-micro uppercase tracking-wider text-ink-faint font-semibold mt-0.5 leading-tight ${edge === "left" ? "text-left" : edge === "right" ? "text-right" : "text-center"}`}
                         >
                           {l.label}
                         </div>
@@ -901,12 +901,12 @@ export default function WeeklyPlanCard({ bare = false }) {
             </div>
 
             <label className="block">
-              <span className="text-[11px] uppercase tracking-widest text-ink-muted font-bold">Protein g / day</span>
+              <span className="text-micro uppercase tracking-widest text-ink-muted font-semibold">Protein g / day</span>
               <input
                 type="number" inputMode="numeric" value={overrideProtein}
                 placeholder={proteinTarget ? String(Math.round(proteinTarget)) : ""}
                 onChange={(e) => setOverrideProtein(e.target.value)}
-                className="mt-1 w-full rounded-lg bg-charcoal-surface border border-charcoal-border px-3 py-2.5 text-lg font-technical text-coral"
+                className="mt-1 w-full rounded-lg bg-charcoal-surface border border-charcoal-border px-3 py-2.5 text-title font-technical text-coral"
               />
             </label>
 
@@ -922,7 +922,7 @@ export default function WeeklyPlanCard({ bare = false }) {
                 type="button"
                 onClick={() => setOverride.mutate({ clear: true })}
                 disabled={setOverride.isPending}
-                className="glass-interactive w-full min-h-[44px] rounded-xl border border-charcoal-border text-xs font-bold text-ink-secondary active:scale-[0.98] disabled:opacity-60"
+                className="glass-interactive w-full min-h-[44px] rounded-xl border border-charcoal-border text-caption font-semibold text-ink-secondary active:scale-[0.98] disabled:opacity-60"
               >
                 Back to the engine&apos;s target
               </button>

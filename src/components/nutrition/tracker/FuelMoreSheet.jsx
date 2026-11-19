@@ -33,7 +33,7 @@ export default function FuelMoreSheet({ activePortionLabels, activePortionMap, a
               <button
                 key={tab.id}
                 onClick={() => setSidebarTab(tab.id)}
-                className={`flex-1 min-h-[44px] text-xs font-bold uppercase tracking-wider border-b-2 transition-colors duration-200 [transition-timing-function:var(--ease)] ${
+                className={`flex-1 min-h-[44px] text-caption font-semibold uppercase tracking-wider border-b-2 transition-colors duration-200 [transition-timing-function:var(--ease)] ${
                   sidebarTab === tab.id ? 'border-brand/60 text-brand' : 'border-transparent text-ink-muted'
                 }`}
               >
@@ -58,7 +58,7 @@ export default function FuelMoreSheet({ activePortionLabels, activePortionMap, a
             {sidebarTab === 'recipes' && (
               <div className="space-y-2">
                 <div className="flex justify-end">
-                  <button onClick={() => setShowNewRecipe(true)} className="flex items-center gap-1 text-xs font-bold text-brand uppercase tracking-widest min-h-[44px] px-1">
+                  <button onClick={() => setShowNewRecipe(true)} className="flex items-center gap-1 text-caption font-semibold text-brand uppercase tracking-widest min-h-[44px] px-1">
                     <Plus className="w-3 h-3" />New recipe
                   </button>
                 </div>
@@ -133,7 +133,7 @@ export default function FuelMoreSheet({ activePortionLabels, activePortionMap, a
           </div>
 
           {fuzzyFallback && (genericResults.length > 0 || brandedResults.length > 0) && (
-            <p className="mt-1.5 text-xs text-ink-muted px-1">Showing approximate results for "{searchQuery}"</p>
+            <p className="mt-1.5 text-caption text-ink-muted px-1">Showing approximate results for "{searchQuery}"</p>
           )}
           {(matchingCustomFoods.length > 0 || genericResults.length > 0) && (
             <div className="mt-2 md:max-h-56 md:overflow-y-auto border border-charcoal-border rounded-lg bg-charcoal-surface divide-y divide-charcoal-border">
@@ -143,7 +143,7 @@ export default function FuelMoreSheet({ activePortionLabels, activePortionMap, a
                   {matchingCustomFoods.map((food) => (
                     <div key={food.id} className="flex items-center hover:bg-charcoal-elevated transition-colors duration-200 [transition-timing-function:var(--ease)]">
                       <button onClick={() => selectCustomFood(food)} className="flex-1 text-left px-4 py-3 min-h-[44px]">
-                        <div className="font-medium text-ink text-sm">{food.food_name}{FOOD_SOURCE_LABELS[food.source] && <span className="ml-1.5 text-[11px] font-normal text-ink-muted">{FOOD_SOURCE_LABELS[food.source]}</span>}</div>
+                        <div className="font-medium text-ink text-body">{food.food_name}{FOOD_SOURCE_LABELS[food.source] && <span className="ml-1.5 text-caption font-normal text-ink-muted">{FOOD_SOURCE_LABELS[food.source]}</span>}</div>
                         <MacroResultLine cal={food.calories} p={food.protein_grams} c={food.carbs_grams} f={food.fats_grams} />
                       </button>
                       <FavoriteToggle food={food} onToggle={toggleFavoriteFoodMutation.mutate} />
@@ -153,10 +153,10 @@ export default function FuelMoreSheet({ activePortionLabels, activePortionMap, a
               )}
               {genericResults.length > 0 && (
                 <>
-                  <div className="px-3 py-1.5 bg-charcoal-elevated text-xs font-semibold text-ink-muted sticky top-0">Generic Foods</div>
+                  <div className="px-3 py-1.5 bg-charcoal-elevated text-caption font-semibold text-ink-muted sticky top-0">Generic Foods</div>
                   {genericResults.map((food) => (
                     <button key={food.fdcId} onClick={() => selectFood(food)} className="w-full text-left px-4 py-3 min-h-[44px] hover:bg-charcoal-elevated transition-colors duration-200 [transition-timing-function:var(--ease)]">
-                      <div className="font-medium text-ink text-sm">{food.description}</div>
+                      <div className="font-medium text-ink text-body">{food.description}</div>
                       <MacroResultLine cal={food.calories} p={food.protein} c={food.carbs} f={food.fats} per100g />
                     </button>
                   ))}
@@ -164,14 +164,14 @@ export default function FuelMoreSheet({ activePortionLabels, activePortionMap, a
               )}
               {brandedResults.length > 0 && (
                 <>
-                  <button type="button" onClick={() => setShowBranded(v => !v)} className="w-full px-3 py-1.5 bg-charcoal-elevated text-xs font-semibold text-ink-muted flex items-center justify-between hover:bg-charcoal-surface2 transition-colors duration-200 [transition-timing-function:var(--ease)] sticky top-0">
+                  <button type="button" onClick={() => setShowBranded(v => !v)} className="w-full px-3 py-1.5 bg-charcoal-elevated text-caption font-semibold text-ink-muted flex items-center justify-between hover:bg-charcoal-surface2 transition-colors duration-200 [transition-timing-function:var(--ease)] sticky top-0">
                     <span>Branded ({brandedResults.length})</span>
                     {showBranded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                   </button>
                   {showBranded && brandedResults.map((food) => (
                     <button key={food.fdcId} onClick={() => selectFood(food)} className="w-full text-left px-4 py-3 min-h-[44px] hover:bg-charcoal-elevated transition-colors duration-200 [transition-timing-function:var(--ease)]">
-                      <div className="font-medium text-ink text-sm">{food.description}</div>
-                      {food.brandOwner && <div className="text-xs text-ink-muted">{food.brandOwner}</div>}
+                      <div className="font-medium text-ink text-body">{food.description}</div>
+                      {food.brandOwner && <div className="text-caption text-ink-muted">{food.brandOwner}</div>}
                       <MacroResultLine cal={food.calories} p={food.protein} c={food.carbs} f={food.fats} />
                     </button>
                   ))}
@@ -234,7 +234,7 @@ export default function FuelMoreSheet({ activePortionLabels, activePortionMap, a
                 </Select>
               </div>
               {servingEquivalence && (
-                <p className="font-technical text-[11px] font-semibold text-ink-faint mt-1">{servingEquivalence}</p>
+                <p className="font-technical text-caption font-semibold text-ink-faint mt-1">{servingEquivalence}</p>
               )}
             </div>
             {isServingLikeUnit(newFood.serving_unit) && (
@@ -321,7 +321,7 @@ export default function FuelMoreSheet({ activePortionLabels, activePortionMap, a
           </div>
 
           {mealItems.length === 0 ? (
-            <div className="text-sm text-ink-muted border border-charcoal-border rounded-lg p-4">
+            <div className="text-body text-ink-muted border border-charcoal-border rounded-lg p-4">
               No foods added yet.
             </div>
           ) : (
@@ -332,8 +332,8 @@ export default function FuelMoreSheet({ activePortionLabels, activePortionMap, a
                   className="flex items-start justify-between gap-2 p-3 glass-inset"
                 >
                   <div className="min-w-0">
-                    <div className="font-medium text-sm text-ink truncate">{item.food_name}</div>
-                    <div className="text-xs text-ink-muted font-technical tabular-nums">{item.serving_size}</div>
+                    <div className="font-medium text-body text-ink truncate">{item.food_name}</div>
+                    <div className="text-caption text-ink-muted font-technical tabular-nums">{item.serving_size}</div>
                     {/* Shared hue strip — kcal=gold, P=coral, C=carb, F=fat. */}
                     <MacroResultLine cal={item.calories} p={item.protein_grams} c={item.carbs_grams} f={item.fats_grams} />
                   </div>
