@@ -17,7 +17,7 @@ export default function ExerciseHeader({ dragHandleProps, editingName, exercise,
                 onChange={(e) => onUpdateName(exerciseIndex, e.target.value)}
                 onBlur={() => setEditingName(false)}
                 onKeyDown={(e) => e.key === 'Enter' && setEditingName(false)}
-                className="h-8 text-lg font-semibold"
+                className="h-8 text-title"
               />
             ) : (
               // Ledger rebuild: the name is the only thing left in the header row
@@ -38,7 +38,7 @@ export default function ExerciseHeader({ dragHandleProps, editingName, exercise,
               //     number the athlete logs against).
               // A page-level sticky name/meta/Finish row is Step 5 (this header
               // stays a plain in-card title until then).
-              <CardTitle className="text-title font-extrabold text-ink truncate">{exercise.name}</CardTitle>
+              <CardTitle className="text-title font-semibold text-ink truncate">{exercise.name}</CardTitle>
             )}
           </div>
           <div className="flex items-center gap-1">
@@ -89,7 +89,7 @@ export default function ExerciseHeader({ dragHandleProps, editingName, exercise,
                       setOpenMenu(false);
                     }}
                     aria-pressed={liked}
-                    className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--color-border)] flex items-center gap-2"
+                    className="w-full px-3 py-2 min-h-[44px] text-left text-body text-ink-secondary hover:bg-[var(--color-border)] flex items-center gap-2"
                   >
                     <Heart className={`w-4 h-4 ${liked ? "fill-brand text-brand" : ""}`} />
                     {liked ? "Unlike this exercise" : "Like — program this more often"}
@@ -107,7 +107,7 @@ export default function ExerciseHeader({ dragHandleProps, editingName, exercise,
                       onToggleReorderMode();
                       setOpenMenu(false);
                     }}
-                    className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--color-border)] flex items-center gap-2"
+                    className="w-full px-3 py-2 min-h-[44px] text-left text-body text-ink-secondary hover:bg-[var(--color-border)] flex items-center gap-2"
                   >
                     <GripVertical className="w-4 h-4" />
                     {reorderMode ? "Done reordering" : "Reorder exercises"}
@@ -124,7 +124,7 @@ export default function ExerciseHeader({ dragHandleProps, editingName, exercise,
                     setShowReplaceDialog(true);
                     setOpenMenu(false);
                   }}
-                  className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--color-border)] flex items-center gap-2"
+                  className="w-full px-3 py-2 min-h-[44px] text-left text-body text-ink-secondary hover:bg-[var(--color-border)] flex items-center gap-2"
                 >
                   <RefreshCw className="w-4 h-4" />
                   Replace exercise
@@ -135,7 +135,7 @@ export default function ExerciseHeader({ dragHandleProps, editingName, exercise,
                     setEditingNotes(true);
                     setOpenMenu(false);
                   }}
-                  className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--color-border)] flex items-center gap-2"
+                  className="w-full px-3 py-2 min-h-[44px] text-left text-body text-ink-secondary hover:bg-[var(--color-border)] flex items-center gap-2"
                 >
                   <FileText className="w-4 h-4" />
                   Add notes
@@ -145,7 +145,7 @@ export default function ExerciseHeader({ dragHandleProps, editingName, exercise,
                     setShowCues(true);
                     setOpenMenu(false);
                   }}
-                  className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--color-border)] flex items-center gap-2 relative"
+                  className="w-full px-3 py-2 min-h-[44px] text-left text-body text-ink-secondary hover:bg-[var(--color-border)] flex items-center gap-2 relative"
                 >
                   <HelpCircle className="w-4 h-4" />
                   Notes &amp; cues
@@ -159,7 +159,7 @@ export default function ExerciseHeader({ dragHandleProps, editingName, exercise,
                       onAddSet(exerciseIndex, { set_type: 'daily_min', weight: progressionTargets?.dailyMin || 0 });
                       setOpenMenu(false);
                     }}
-                    className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--color-border)] flex items-center gap-2"
+                    className="w-full px-3 py-2 min-h-[44px] text-left text-body text-ink-secondary hover:bg-[var(--color-border)] flex items-center gap-2"
                   >
                     <TrendingUp className="w-4 h-4" />
                     Add daily min set
@@ -170,7 +170,7 @@ export default function ExerciseHeader({ dragHandleProps, editingName, exercise,
                     onRemoveExercise(exerciseIndex);
                     setOpenMenu(false);
                   }}
-                  className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-bad hover:bg-bad/10 flex items-center gap-2"
+                  className="w-full px-3 py-2 min-h-[44px] text-left text-body text-bad hover:bg-bad/10 flex items-center gap-2"
                 >
                   <Trash2 className="w-4 h-4" />
                   Remove exercise
@@ -181,7 +181,7 @@ export default function ExerciseHeader({ dragHandleProps, editingName, exercise,
                       onOpenCalculators();
                       setOpenMenu(false);
                     }}
-                    className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--color-border)] flex items-center gap-2 border-t border-charcoal-border mt-1 pt-2"
+                    className="w-full px-3 py-2 min-h-[44px] text-left text-body text-ink-secondary hover:bg-[var(--color-border)] flex items-center gap-2 border-t border-charcoal-border mt-1 pt-2"
                   >
                     <Calculator className="w-4 h-4" />
                     Calculators
@@ -193,7 +193,7 @@ export default function ExerciseHeader({ dragHandleProps, editingName, exercise,
                       onRequestCancelWorkout();
                       setOpenMenu(false);
                     }}
-                    className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-bad hover:bg-bad/10 flex items-center gap-2"
+                    className="w-full px-3 py-2 min-h-[44px] text-left text-body text-bad hover:bg-bad/10 flex items-center gap-2"
                   >
                     <X className="w-4 h-4" />
                     Cancel workout

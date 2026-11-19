@@ -665,19 +665,14 @@ export default function ExerciseCard({
             ("Notes & cues", "Replace exercise", "Add notes"), so a free-mode
             card no longer spends a 44px row on four unlabeled controls. */}
         {vitals?.target && (
-        <div className="flex items-center gap-2 mt-1">
-          {vitals?.target && (
-            <div className="font-technical text-body tabular-nums truncate pr-1">
-              <span className="text-ink-muted">Target </span>
-              <span className="text-ink font-bold">{vitals.target.primary}</span>
-              {vitals.target.sub && (
-                <>
-                  <span className="text-ink-muted"> · </span>
-                  <span className="text-ink font-bold">{vitals.target.sub}</span>
-                </>
-              )}
-            </div>
-          )}
+        <div className="mt-1 flex items-baseline gap-2 min-w-0">
+          <span className="text-micro text-ink-muted shrink-0">Target</span>
+          <span className="truncate text-emph font-numeral tabular-nums text-ink">
+            {vitals.target.primary}
+            {vitals.target.sub && (
+              <span className="text-caption text-ink-muted font-normal"> · {vitals.target.sub}</span>
+            )}
+          </span>
         </div>
         )}
       </CardHeader>
