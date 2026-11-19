@@ -11,9 +11,9 @@ import {
   ConfirmDialog, Skeleton, SegmentedControl, Stat, ReasonLine, EmptyState, ErrorState,
 } from "@/components/ui";
 import { calculateEWMA } from "@/utils/coachingUtils";
-import { weeklyRate, signed } from "@/components/progress/trendMath";
+import { signed, weightTrendState, periodDelta } from "@/components/progress/trendMath";
 import { Camera, Trash2, Plus, X, ArrowUpRight, ArrowDownRight } from "lucide-react";
-import { format, parseISO, differenceInCalendarDays } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { db } from "@/api/supabaseClient";
 import { invalidateBodyWeight } from "@/lib/queryKeys";
 import { getTodayString } from "@/utils/dateUtils";
@@ -44,24 +44,8 @@ const DELTA_PERIODS = [
   { label: "3M", days: 90 },
 ];
 
-// Delta is read from the smoothed TREND, not the raw weigh-ins (task spec):
-// latest trend value minus the trend value at the most recent entry on or
-// before (anchor - days). If no entry reaches back that far, there's no
-// honest delta to show — null, never a value computed from whatever the
-// first in-window point happens to be.
-function trendDelta(trended, days) {
-  if (!trended || trended.length < 2) return null;
-  const last = trended[trended.length - 1];
-  const cutoff = new Date(`${last.recorded_date}T00:00:00`);
-  cutoff.setDate(cutoff.getDate() - days);
-  const cutoffStr = cutoff.toISOString().slice(0, 10);
-  let candidate = null;
-  for (let i = trended.length - 1; i >= 0; i--) {
-    if (trended[i].recorded_date <= cutoffStr) { candidate = trended[i]; break; }
-  }
-  if (!candidate) return null;
-  return Math.round((last.trendWeight - candidate.trendWeight) * 10) / 10;
-}
+// Deltas, rate and basis all come from one trend state (weightTrendState in
+// trendMath.js), so the card never contradicts itself.
 
 // Weight chart (system charts): logged weigh-ins as faint 3px dots, the smoothed
 // trend as a 2px line on top, small tabular axis labels on the right. Same
@@ -113,11 +97,13 @@ function WeightTrendChart({ trended }) {
   );
 }
 
-function DeltaTriples({ trended, weightUnit }) {
+function DeltaTriples({ trended, trendState, weightUnit }) {
+  // No rate means no honest trend, so no period changes either.
+  if (trendState.status !== "ok") return null;
   return (
     <div className="flex items-center gap-5 mt-3 flex-wrap">
       {DELTA_PERIODS.map(({ label, days }) => {
-        const value = trendDelta(trended, days);
+        const value = periodDelta(trended, days, trendState);
         return (
           <div key={label} className="flex items-center gap-2">
             <span className="text-caption text-ink-muted">{label}</span>
@@ -178,16 +164,11 @@ function WeightModule() {
     return allTrended.filter((e) => e.recorded_date >= cutoffStr);
   }, [allTrended, range]);
 
-  const rate = useMemo(
-    () => weeklyRate(allTrended.map((r) => ({ date: r.recorded_date, value: r.trendWeight }))),
-    [allTrended]
-  );
+  const trendState = useMemo(() => weightTrendState(allTrended), [allTrended]);
+  const { rate, latest, isStale } = trendState;
 
   const rangeLabel = range === "All" ? "this range"
-    : `the last ${RANGES.find((r) => r.value === range)?.days} days of weigh-ins`;
-  const latest = allTrended[allTrended.length - 1];
-  const isStale = latest
-    && differenceInCalendarDays(new Date(), parseISO(latest.recorded_date)) > 7;
+    : `the ${RANGES.find((r) => r.value === range)?.days} days to your last weigh-in`;
 
   const add = useMutation({
     mutationFn: async () => {
@@ -227,12 +208,6 @@ function WeightModule() {
   const visibleHistory = showAllHistory ? reversed : reversed.slice(0, HISTORY_PAGE_SIZE);
   const remainingHistory = reversed.length - visibleHistory.length;
 
-  const trendReason = latest && (
-    `${isStale ? `As of ${format(parseISO(latest.recorded_date), "MMM d")}. ` : ""}Smoothed trend of ${allTrended.length} weigh-ins, ${
-      rate ? `rate over the last ${rate.spanDays} days` : "no rate yet: the last 7 days need 2 or more weigh-ins"
-    }`
-  );
-
   return (
     <>
       <Card>
@@ -265,9 +240,12 @@ function WeightModule() {
                 label="Trend weight"
                 value={fmt(latest.trendWeight, 1)}
                 unit={weightUnit}
+                className={isStale ? "opacity-60" : ""}
                 delta={rate ? `${signed(rate.perWeek)} ${weightUnit}/wk` : undefined}
-                reason={trendReason}
               />
+              {/* Own line, not Stat's reason: ReasonLine truncates, and this
+                  basis has to read in full. */}
+              <p className="mt-1 text-caption text-ink-muted tabular-nums">{trendState.basis}</p>
               {windowed.length >= 2 ? (
                 <div className="mt-3">
                   <WeightTrendChart trended={windowed} />
@@ -285,10 +263,10 @@ function WeightModule() {
               ) : (
                 <p className="mt-3 text-caption text-ink-muted">
                   {windowed.length === 1 ? "Only 1 weigh-in" : "No weigh-ins"} in {rangeLabel}, so there is no line to draw.
-                  {range !== "All" && " Pick a longer range to see all " + allTrended.length + "."}
+                  {range !== "All" && ` Pick a longer range to see all ${allTrended.length}.`}
                 </p>
               )}
-              <DeltaTriples trended={allTrended} weightUnit={weightUnit} />
+              <DeltaTriples trended={allTrended} trendState={trendState} weightUnit={weightUnit} />
             </>
           )}
         </div>
@@ -342,7 +320,7 @@ function WeightModule() {
               return (
                 <div key={entry.id} className="group flex items-center gap-3 px-4 min-h-[56px] border-t border-charcoal-borderSoft">
                   <span className="w-24 shrink-0 text-caption text-ink-muted tabular-nums">{format(parseISO(entry.recorded_date), "MMM d, yyyy")}</span>
-                  <span className="text-emph font-semibold text-ink tabular-nums">{entry.weight} {weightUnit}</span>
+                  <span className="text-emph font-semibold text-ink tabular-nums">{fmt(entry.weight, 1)} {weightUnit}</span>
                   {diff !== null && diff !== 0 && (
                     <span className="flex items-center gap-1 text-caption font-semibold tabular-nums text-ink-secondary">
                       {diff > 0 ? <ArrowUpRight className="w-3 h-3" aria-hidden="true" /> : <ArrowDownRight className="w-3 h-3" aria-hidden="true" />}
@@ -622,10 +600,8 @@ function MetabolismTab() {
   // don't just relabel an unconverted lbs value.
   // When the engine has no rate for today, fall back to the same smoothed
   // weigh-in rate the Weight card shows, so the two never disagree.
-  const clientRate = useMemo(() => {
-    const t = calculateEWMA(weightEntries, 0.1);
-    return weeklyRate(t.map((r) => ({ date: r.recorded_date, value: r.trendWeight })));
-  }, [weightEntries]);
+  const clientState = useMemo(() => weightTrendState(calculateEWMA(weightEntries, 0.1)), [weightEntries]);
+  const clientRate = clientState.rate;
   const engineTrendLbs = state?.nutrition?.weight_trend_lbs_per_week;
   const weightTrendLbs = engineTrendLbs != null ? engineTrendLbs
     : clientRate ? (weightUnit === "kg" ? clientRate.perWeek / LBS_PER_KG : clientRate.perWeek)
@@ -666,8 +642,13 @@ function MetabolismTab() {
             unit={weightTrend != null ? `${weightUnit}/wk` : undefined}
             reason={weightTrend != null
               ? (engineTrendLbs != null ? "From the engine's smoothed trend" : "From your smoothed weigh-ins")
-              : "Needs 2 or more weigh-ins in the last 7 days"}
+              : null}
           />
+          {weightTrend == null && (
+            <p className="mt-1 text-caption text-ink-muted">
+              {clientState.basis || "Needs 2 or more weigh-ins spanning 7 days."}
+            </p>
+          )}
         </Card>
         <Card className="p-4">
           <Stat

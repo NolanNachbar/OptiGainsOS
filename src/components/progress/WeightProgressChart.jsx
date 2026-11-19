@@ -3,7 +3,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { format } from "date-fns";
 import { Stat, EmptyState, cn } from "@/components/ui";
 import { calculateEWMA } from "@/utils/coachingUtils";
-import { dayStamp, signed, weeklyRate } from "./trendMath";
+import { dayStamp, signed, weightTrendState } from "./trendMath";
 
 const AXIS_TICK = { fontSize: 11, fill: "var(--text-faint)", fontFamily: "var(--font-ui)" };
 
@@ -45,10 +45,9 @@ export default function WeightProgressChart({ data, weightUnit = "lbs", classNam
     return rows.map((r) => ({ ...r, t: dayStamp(r.recorded_date) }));
   }, [data]);
 
-  const rate = useMemo(
-    () => weeklyRate(trended.map((r) => ({ date: r.recorded_date, value: r.trendWeight }))),
-    [trended],
-  );
+  // Same trend state as the Body weight card, so the basis copy matches.
+  const trendState = useMemo(() => weightTrendState(trended), [trended]);
+  const { rate } = trendState;
 
   if (trended.length === 0) {
     return (
@@ -69,12 +68,11 @@ export default function WeightProgressChart({ data, weightUnit = "lbs", classNam
         value={last.trendWeight}
         unit={weightUnit}
         delta={rateLabel}
-        reason={
-          rate
-            ? `Smoothed trend of ${trended.length} weigh-ins, rate over the last ${rate.spanDays} days`
-            : `Smoothed trend of ${trended.length} weigh-ins, rate needs 7 days of data`
-        }
+        className={trendState.isStale ? "opacity-60" : ""}
       />
+      {trendState.basis && (
+        <p className="mt-1 text-caption text-ink-muted tabular-nums">{trendState.basis}</p>
+      )}
 
       <div className={cn("mt-3", className || "h-64")}>
         <ResponsiveContainer width="100%" height="100%" minHeight={200}>

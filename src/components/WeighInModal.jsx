@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useProfile } from "@/hooks/useUserQueries";
+import { useProfile, useAllBodyWeightEntries } from "@/hooks/useUserQueries";
 import { useLogWeight } from "@/hooks/useWeighIn";
 import { toast } from "sonner";
 import { Button, Input, Label, Sheet, ReasonLine } from "@/components/ui";
@@ -9,7 +9,11 @@ export default function WeighInModal({ open, onOpenChange }) {
   const [weight, setWeight] = useState("");
 
   const weightUnit = profile?.weight_unit || "lbs";
-  const lastWeight = profile?.current_weight;
+  // Same source and precision as the Body history list (newest entry, one
+  // decimal), so the hint and the history never show two different numbers.
+  const { weightEntries } = useAllBodyWeightEntries();
+  const newest = weightEntries?.[0];
+  const lastWeight = newest?.weight != null ? Number(newest.weight).toFixed(1) : null;
 
   const weighInMutation = useLogWeight();
   const invalid = !weight || parseFloat(weight) <= 0;
