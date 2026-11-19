@@ -1,13 +1,14 @@
 import { MetricTile } from "@/components/ui/system";
 import FatigueSection from "./FatigueSection";
+import { pstCountdown } from "./athleteUtils";
 
 // ── Summary strip ─────────────────────────────────────────────────────────────
 // The focal content: a compact, glanceable row of the screen's headline numbers
 // so the answer is grokkable in <2s before any drill-down.
-export function SummaryStrip({ state, vdot }) {
+export function SummaryStrip({ state, vdot, today, stale = false }) {
+  const pst = pstCountdown(state?.endurance, state?.date, today);
   const recovery = state?.recovery;
   const fatigue = state?.fatigue;
-  const endurance = state?.endurance;
 
   const tiles = [
     recovery?.data_available && {
@@ -28,11 +29,15 @@ export function SummaryStrip({ state, vdot }) {
       label: "VDOT", value: Number(vdot).toFixed(1),
       accent: "var(--hue-teal)",
     },
-    endurance?.days_to_aug31 != null && {
-      label: "Days to PST", value: endurance.days_to_aug31,
-      accent: "var(--hue-gold)", sub: "Aug 31 deadline",
-    },
-  ].filter(Boolean);
+    pst && (pst.passed
+      ? { label: "PST deadline", value: "Passed", accent: "var(--text-muted)", sub: `${pst.label} deadline` }
+      : { label: "Days to PST", value: pst.days, accent: "var(--hue-gold)", sub: `${pst.label} deadline` }),
+  ].filter(Boolean).map((t) => (
+    // Stale rows keep their numbers but drop their datum hue so they read as
+    // last-known values, not live readings.
+    stale ? { ...t, accent: "var(--text-muted)" } : t
+  ));
+  const dim = stale ? " opacity-60" : "";
 
   if (tiles.length === 0) return null;
 
@@ -45,7 +50,7 @@ export function SummaryStrip({ state, vdot }) {
     const hero = tiles[heroIdx];
     const rest = tiles.filter((_, i) => i !== heroIdx);
     return (
-      <div className="mb-4 rise-in space-y-2">
+      <div className={`mb-4 rise-in space-y-2${dim}`}>
         <div className="bg-charcoal-surface2 rounded-control px-4 py-4">
           <div className="text-micro text-ink-muted flex items-center gap-1.5">
             <span className="w-[5px] h-[5px] rounded-full shrink-0" style={{ background: hero.accent }} />
@@ -69,7 +74,7 @@ export function SummaryStrip({ state, vdot }) {
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4 rise-in">
+    <div className={`grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4 rise-in${dim}`}>
       {tiles.map((t) => (
         <MetricTile key={t.label} label={t.label} value={t.value} unit={t.unit} accent={t.accent} sub={t.sub} />
       ))}

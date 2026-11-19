@@ -61,6 +61,9 @@ export default function AthleteState({ hideHeader = false }) {
   // When the surfaced row predates today, note it so the page can flag the data
   // as carried-forward rather than silently implying it was computed this morning.
   const isStale = !!state?.date && state.date !== today;
+  // Older than 2 days: the numbers are last-known, not live. Lead with that.
+  const daysOld = state?.date ? Math.round((parseISO(today) - parseISO(state.date)) / 86400000) : 0;
+  const isOld = isStale && daysOld > 2;
   const asOf = isStale ? `As of ${format(parseISO(state.date), "MMM d")}` : null;
   const staleNote = isStale && (
     <span className="ml-2 text-faint">
@@ -164,8 +167,21 @@ export default function AthleteState({ hideHeader = false }) {
           </Card>
         )}
 
+        {!isLoading && !isError && state && isOld && (
+          <div role="status" className="mb-4 bg-charcoal-surface border border-charcoal-border rounded-control px-4 py-3.5 flex items-start gap-3">
+            <AlertTriangle className="w-4 h-4 text-warn shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-ink">State is {daysOld} days old</p>
+              <p className="text-caption font-semibold text-muted-2 mt-0.5 leading-snug">
+                Last computed {format(parseISO(state.date), "MMM d")}. Numbers below are last-known values, not today&apos;s.
+              </p>
+            </div>
+            <Button variant="outline" className="h-11 shrink-0" onClick={() => refetch()}>Refresh</Button>
+          </div>
+        )}
+
         {!isLoading && !isError && state && (
-          <SummaryStrip state={state} vdot={engineParams?.vdot_state?.vdot} />
+          <SummaryStrip state={state} vdot={engineParams?.vdot_state?.vdot} today={today} stale={isOld} />
         )}
 
         {/* Engine internals — inline on desktop only. On mobile this disclosure
@@ -185,11 +201,11 @@ export default function AthleteState({ hideHeader = false }) {
             section on the STATE tab would duplicate the label and collide with
             the RECOVERY tab. */}
         {!isLoading && !isError && state && (
-        <div className="grid grid-cols-1 gap-4 rise-in-2">
+        <div className={`grid grid-cols-1 gap-4 rise-in-2${isOld ? " opacity-60" : ""}`}>
           {/* Strength */}
           <Card>
             <CardHeader className="pb-2 pt-4 px-5">
-              <SectionHeader icon={Dumbbell} title="Strength Goals" />
+              <SectionHeader icon={Dumbbell} title="Strength goals" />
             </CardHeader>
             <CardContent className="px-5 pb-4">
               <StrengthSection data={state?.strength} />
@@ -214,7 +230,7 @@ export default function AthleteState({ hideHeader = false }) {
             aria-expanded={detailOpen}
             className="lg:hidden w-full bg-charcoal-surface border border-charcoal-border hover:bg-charcoal-surface2 transition-colors duration-base px-4 py-3 min-h-[44px] flex items-center gap-2.5 rise-in-2 active:scale-[0.99] transition-transform duration-200 ease-[var(--ease)]"
           >
-            <span className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center bg-violet/[0.13] text-violet">
+            <span className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center bg-charcoal-surface2 text-muted-2">
               <BarChart3 className="w-3.5 h-3.5" />
             </span>
             <span className="flex-1 min-w-0 text-left">
@@ -235,7 +251,7 @@ export default function AthleteState({ hideHeader = false }) {
               {state?.fatigue && (
               <Card>
                 <CardHeader className="pb-2 pt-4 px-5">
-                  <SectionHeader icon={Activity} title="Fatigue / Load" color="text-violet" />
+                  <SectionHeader icon={Activity} title="Fatigue / load" color="text-muted-2" />
                 </CardHeader>
                 <CardContent className="px-5 pb-4">
                   <FatigueSection data={state?.fatigue} />
@@ -246,7 +262,7 @@ export default function AthleteState({ hideHeader = false }) {
               {/* Muscle Volume */}
               <Card>
                 <CardHeader className="pb-2 pt-4 px-5">
-                  <SectionHeader icon={BarChart3} title="Muscle Volume" color="text-teal" />
+                  <SectionHeader icon={BarChart3} title="Muscle volume" color="text-teal" />
                 </CardHeader>
                 <CardContent className="px-5 pb-4">
                   <HypertrophySection
@@ -262,10 +278,10 @@ export default function AthleteState({ hideHeader = false }) {
               {state?.endurance && (
               <Card>
                 <CardHeader className="pb-2 pt-4 px-5">
-                  <SectionHeader icon={Waves} title="Endurance / BUD/S Readiness" color="text-teal" />
+                  <SectionHeader icon={Waves} title="Endurance / BUD/S readiness" color="text-teal" />
                 </CardHeader>
                 <CardContent className="px-5 pb-4">
-                  <EnduranceSection data={state?.endurance} />
+                  <EnduranceSection data={state?.endurance} asOfDate={state?.date} today={today} />
                 </CardContent>
               </Card>
               )}
@@ -299,7 +315,7 @@ export default function AthleteState({ hideHeader = false }) {
               aria-expanded={engineOpen}
               className="w-full bg-charcoal-surface border border-charcoal-border hover:bg-charcoal-surface2 transition-colors duration-base px-4 py-3 min-h-[44px] mt-4 mb-4 flex items-center gap-2.5 rise-in-3 active:scale-[0.99] transition-transform duration-200 ease-[var(--ease)]"
             >
-              <span className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center bg-gold/[0.13] text-gold">
+              <span className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center bg-charcoal-surface2 text-muted-2">
                 <Cpu className="w-3.5 h-3.5" />
               </span>
               <span className="flex-1 min-w-0 text-left">
@@ -326,12 +342,12 @@ export default function AthleteState({ hideHeader = false }) {
             no longer pads so clearance lives on the true last child. */}
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 rise-in-3 pb-[var(--dock-clearance)] lg:pb-2">
           <Link to="/physique" className="bg-charcoal-surface border border-charcoal-border hover:bg-charcoal-surface2 transition-colors duration-base px-4 py-3.5 flex items-center gap-3">
-            <span className="w-9 h-9 rounded-lg shrink-0 flex items-center justify-center bg-violet/[0.13] text-violet">
+            <span className="w-9 h-9 rounded-lg shrink-0 flex items-center justify-center bg-charcoal-surface2 text-muted-2">
               <Camera className="w-4 h-4" />
             </span>
             <span className="flex-1 min-w-0">
               <span className="block text-sm font-extrabold text-ink">Physique photos</span>
-              <span className="block text-caption font-semibold text-muted-2 truncate">upload · AI body-comp estimate · trend</span>
+              <span className="block text-caption font-semibold text-muted-2 truncate">Upload · AI body-comp estimate · trend</span>
             </span>
             <ChevronRight className="w-4 h-4 text-faint shrink-0" />
           </Link>
