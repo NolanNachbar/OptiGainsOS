@@ -104,7 +104,7 @@ const navigationItems = [
     children: [
       { label: "Daily Brief", url: "/insights",
         active: (l) => l.pathname.startsWith("/insights") },
-      { label: "Brief History", url: "/brief-history",
+      { label: "Brief history", url: "/brief-history",
         active: (l) => l.pathname.startsWith("/brief-history") },
     ] },
 ];
@@ -204,7 +204,7 @@ function Wordmark() {
 // this does NOT add new navigation, it just gives the existing "go back"
 // affordance a consistent chrome position. navigate(-1) mirrors what each of
 // these pages' own in-page back links already do (return to the prior route).
-const DRILL_DOWN_PAGES = new Set(["WorkoutDetail", "ProgramDetail", "ProgramBuilder", "QuickWorkout", "Profile", "BriefHistory"]);
+const DRILL_DOWN_PAGES = new Set(["WorkoutDetail", "ProgramDetail", "ProgramBuilder", "QuickWorkout", "BriefHistory"]);
 
 // Where the back chevron sends him when there's no in-app history to pop
 // (see the isDrillDown back button below) -- each drill-down's logical
@@ -214,7 +214,6 @@ const DRILL_DOWN_ROOTS = {
   ProgramDetail: "/train",
   ProgramBuilder: "/train",
   QuickWorkout: "/train",
-  Profile: "/today",
   BriefHistory: "/today",
 };
 
@@ -361,13 +360,13 @@ export default function Layout({ children, currentPageName }) {
     Career: "Career",
     Profile: "Profile",
     WorkoutDetail: "Workout",
-    QuickWorkout: "Quick Workout",
-    CreateWorkout: "Create Workout",
+    QuickWorkout: "Quick workout",
+    CreateWorkout: "Create workout",
     ProgramDetail: "Program",
-    ProgramBuilder: "Program Builder",
+    ProgramBuilder: "Program builder",
     AthleteState: "State",
     Recovery: "Recovery",
-    BriefHistory: "Brief History",
+    BriefHistory: "Brief history",
   }[currentPageName] || currentPageName || "Home";
 
   // Per-page contextual subtitle for the mobile header. Defaults to today's
