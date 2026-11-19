@@ -47,7 +47,7 @@ export default function StatRing({
           {unit && <span className="text-base text-muted-2 ml-0.5 font-semibold">{unit}</span>}
         </div>
         {sublabel && (
-          <div className="text-[11px] font-bold mt-0.5" style={{ color: band.color }}>
+          <div className="text-micro font-bold mt-0.5" style={{ color: band.color }}>
             {sublabel}
           </div>
         )}

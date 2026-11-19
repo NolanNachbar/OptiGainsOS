@@ -88,9 +88,8 @@ export default {
       // unchanged. Shifts: base 16->15, lg 18->17, xl 20->17, 2xl 24->28,
       // 3xl 30->28, 4xl 36->28, 5xl+ 48/60/72/96/128->44. Nothing is below 11.
       // Arbitrary `text-[Npx]` classes in JSX bypass this and need a codemod.
-      // CAUTION: tailwind-merge (button.jsx, card.jsx) does not know the named
-      // steps and treats `text-body` like a colour (it would drop `text-ink`).
-      // Inside twMerge'd className strings use `text-[14px]`-style on-scale px.
+      // Merge classes with `cn` from src/components/ui/system/cva.js: it knows
+      // the named steps (plain twMerge treats `text-body` as a colour).
       fontSize: {
         micro:   ['11px', { lineHeight: '14px' }],
         caption: ['12px', { lineHeight: '16px' }],
@@ -145,7 +144,31 @@ export default {
         '3xl': '10px',
         'full': '9999px',
       },
+      // ── Spacing / elevation / motion tokens (see index.css :root) ────────
+      spacing: {
+        gutter: 'var(--space-gutter)',
+        stack: 'var(--space-stack)',
+        row: 'var(--space-row)',
+        tap: 'var(--space-tap)',
+      },
+      minHeight: { tap: 'var(--space-tap)' },
+      minWidth: { tap: 'var(--space-tap)' },
+      transitionDuration: {
+        fast: 'var(--dur-fast)',
+        base: 'var(--dur-base)',
+        slow: 'var(--dur-slow)',
+      },
+      transitionTimingFunction: {
+        DEFAULT: 'var(--ease)',
+        brand: 'var(--ease)',
+        out: 'var(--ease-out)',
+        'in-out': 'var(--ease-in-out)',
+      },
       boxShadow: {
+        'elev-0': 'var(--elev-0)',
+        'elev-1': 'var(--elev-1)',
+        'elev-2': 'var(--elev-2)',
+        'elev-3': 'var(--elev-3)',
         'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
         'dark-card': 'var(--shadow-1)',
         'neon': '0 8px 22px rgba(var(--color-brand-rgb) / 0.28)',

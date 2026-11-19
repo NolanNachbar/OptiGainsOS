@@ -1,55 +1,36 @@
 import * as React from "react";
-import { twMerge } from "tailwind-merge";
+import { cn } from "./system/cva";
+import { cardVariants } from "./system/variants";
 
-// Ledger modules are flat full-bleed surfaces — `.glass` itself now forces
-// border-radius:0 (src/index.css), so no rounded-* class here.
-const Card = React.forwardRef(({ className = "", ...props }, ref) => (
-  <div
-    ref={ref}
-    className={`glass text-ink transition-colors duration-200 ease-[var(--ease)] ${className}`}
-    {...props}
-  />
+
+
+const Card = React.forwardRef(({ className = "", variant = "default", ...props }, ref) => (
+  <div ref={ref} className={cn(cardVariants({ variant }), className)} {...props} />
 ));
 Card.displayName = "Card";
 
 const CardHeader = React.forwardRef(({ className = "", ...props }, ref) => (
-  <div
-    ref={ref}
-    className={`flex flex-col space-y-1 px-4 py-3.5 ${className}`}
-    {...props}
-  />
+  <div ref={ref} className={cn("flex flex-col gap-1 px-4 py-3.5", className)} {...props} />
 ));
 CardHeader.displayName = "CardHeader";
 
 const CardTitle = React.forwardRef(({ className = "", ...props }, ref) => (
-  <h3
-    ref={ref}
-    className={`text-lg font-bold leading-none tracking-tight ${className}`}
-    {...props}
-  />
+  <h3 ref={ref} className={cn("text-title font-semibold tracking-tight text-ink", className)} {...props} />
 ));
 CardTitle.displayName = "CardTitle";
 
 const CardDescription = React.forwardRef(({ className = "", ...props }, ref) => (
-  <p
-    ref={ref}
-    className={`text-xs text-ink-muted ${className}`}
-    {...props}
-  />
+  <p ref={ref} className={cn("text-caption text-ink-muted", className)} {...props} />
 ));
 CardDescription.displayName = "CardDescription";
 
 const CardContent = React.forwardRef(({ className = "", ...props }, ref) => (
-  <div ref={ref} className={twMerge("px-4 pb-4 pt-0", className)} {...props} />
+  <div ref={ref} className={cn("px-4 pb-4 pt-0", className)} {...props} />
 ));
 CardContent.displayName = "CardContent";
 
 const CardFooter = React.forwardRef(({ className = "", ...props }, ref) => (
-  <div
-    ref={ref}
-    className={`flex items-center px-4 pb-4 pt-0 ${className}`}
-    {...props}
-  />
+  <div ref={ref} className={cn("flex items-center gap-2 px-4 pb-4 pt-0", className)} {...props} />
 ));
 CardFooter.displayName = "CardFooter";
 

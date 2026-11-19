@@ -13,11 +13,13 @@ const SIZE_HEIGHTS = {
 // material across all field primitives), not a per-surface hue tint.
 // `focusHue` is accepted-and-ignored: callers (QuickCapture) still thread it,
 // but the textarea no longer tints focus by hue, so it must not reach the DOM.
-const Textarea = React.forwardRef(({ className = "", size = "default", focusHue, ...props }, ref) => {
+const Textarea = React.forwardRef(({ className = "", size = "default", ...rest }, ref) => {
+  // eslint-disable-next-line no-unused-vars
+  const { focusHue, ...props } = rest;
   const heightClass = SIZE_HEIGHTS[size] || SIZE_HEIGHTS.default;
   return (
     <textarea
-      className={`flex ${heightClass} w-full resize-none rounded-lg border-[0.5px] border-charcoal-borderSoft bg-charcoal-surface2 px-3.5 py-2 text-[14px] text-ink placeholder:text-ink-muted focus-visible:outline-none focus-visible:border-charcoal-border focus-visible:shadow-[0_0_0_3px_var(--glass-edge)] transition-[border-color,box-shadow] duration-[180ms] ease-[var(--ease)] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      className={`flex ${heightClass} w-full resize-none rounded-control border border-charcoal-borderSoft bg-charcoal-surface2 px-3.5 py-2 text-body text-ink placeholder:text-ink-muted focus-visible:outline-none focus-visible:border-charcoal-border focus-visible:shadow-[0_0_0_3px_var(--glass-edge)] transition-[border-color,box-shadow] duration-[180ms] ease-[var(--ease)] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
       ref={ref}
       {...props}
     />

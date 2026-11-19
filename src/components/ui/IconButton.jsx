@@ -1,4 +1,5 @@
 import * as React from "react";
+import { cn } from "./system/cva";
 
 // Shared icon-button primitive. Hand-rolled icon buttons (meal-card actions,
 // row affordances) kept re-tripping the same two findings on every surface:
@@ -22,7 +23,7 @@ const variants = {
   plain: "bg-transparent",
   // frosted glass fill for actions that need a visible affordance box
   glass:
-    "bg-[var(--glass-bg)] border border-charcoal-border [box-shadow:inset_0_1px_0_var(--glass-specular)] hover:bg-[var(--glass-edge)]",
+    "bg-charcoal-surface2 border border-charcoal-border hover:bg-charcoal-elevated",
 };
 
 const IconButton = React.forwardRef(
@@ -39,8 +40,8 @@ const IconButton = React.forwardRef(
     ref
   ) => {
     const base =
-      "inline-flex items-center justify-center shrink-0 min-h-[44px] min-w-[44px] rounded-xl " +
-      "text-ink-secondary hover:text-ink transition-colors duration-200 " +
+      "inline-flex items-center justify-center shrink-0 min-h-tap min-w-tap rounded-control " +
+      "text-ink-secondary hover:text-ink transition-[color,background-color,transform] duration-fast ease-out active:scale-[0.94] " +
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 " +
       "disabled:pointer-events-none disabled:opacity-50 cursor-pointer";
 
@@ -50,7 +51,7 @@ const IconButton = React.forwardRef(
         type="button"
         aria-label={label}
         title={label}
-        className={`${base} ${variants[variant] || variants.plain} ${className}`}
+        className={cn(base, variants[variant] || variants.plain, className)}
         {...props}
       >
         {Icon && (

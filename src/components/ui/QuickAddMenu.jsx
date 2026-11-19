@@ -113,9 +113,9 @@ export default function QuickAddMenu({ open, onClose, onWeighIn, onCalculators, 
                     </span>
                     <span className={
                       action.primary
-                        ? "text-[15px] font-bold text-ink"
+                        ? "text-emph font-bold text-ink"
                         : demoted
-                          ? "text-[14px] font-medium text-muted-2"
+                          ? "text-body font-medium text-muted-2"
                           : "text-sm font-semibold text-ink"
                     }>
                       {action.label}
@@ -191,7 +191,7 @@ export default function QuickAddMenu({ open, onClose, onWeighIn, onCalculators, 
                   className="flex items-center gap-3"
                 >
                   <span className={`glass-elevated rounded-lg whitespace-nowrap ${
-                    demoted ? "text-muted-2 text-[14px] font-medium px-2.5 py-1" : "text-ink text-sm font-medium px-3 py-1.5"
+                    demoted ? "text-muted-2 text-body font-medium px-2.5 py-1" : "text-ink text-sm font-medium px-3 py-1.5"
                   }`}>
                     {action.label}
                   </span>

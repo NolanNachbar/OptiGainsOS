@@ -293,6 +293,35 @@
   --r-module:  0;
   --r-control: 10px;
   --r-pill:    9999px;
+
+  /* Spacing: 4px grid, named steps (mirrors spacing in tailwind.config.js).
+     gutter = page side padding, stack = gap between modules, row = list row
+     vertical padding, tap = minimum touch target. */
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px;  --s-4: 16px;  --s-5: 20px;
+  --s-6: 24px; --s-8: 32px; --s-10: 40px; --s-12: 48px;
+  --space-gutter: 16px;
+  --space-stack:  12px;
+  --space-row:    12px;
+  --space-tap:    44px;
+
+  /* Elevation: four steps. Modules are flat (0). Only floating chrome lifts,
+     and the lift is a neutral black shadow, never a coloured glow. */
+  --elev-0: none;
+  --elev-1: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 1px 2px rgba(0, 0, 0, 0.35);
+  --elev-2: 0 6px 18px rgba(0, 0, 0, 0.42);
+  --elev-3: 0 12px 32px rgba(0, 0, 0, 0.45);
+
+  /* Motion: three durations, two curves. Press feedback = fast, state change
+     = base, sheets/drawers = slow. Never animate on a keyboard-driven action. */
+  --dur-fast: 160ms;
+  --dur-base: 200ms;
+  --dur-slow: 280ms;
+  --ease-out:    cubic-bezier(.23, 1, .32, 1);     /* entrances, number tweens */
+  --ease-in-out: cubic-bezier(.77, 0, .175, 1);    /* on-screen movement */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-fast: 0ms; --dur-base: 0ms; --dur-slow: 0ms; }
 }
 
 /* Bottom clearance for Layout's main content column. The active value (dock-

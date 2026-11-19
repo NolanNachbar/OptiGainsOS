@@ -30,17 +30,17 @@ export function Module({ label, detail, detailHref, onDetailClick, right, childr
     <div className={`surface px-4 sm:px-5 lg:px-4 py-3 ${bleedClass} ${className}`} {...rest}>
       {(label || detail || right) && (
         <div className="flex items-center justify-between gap-2 mb-2">
-          {label && <span className="text-[14px] font-semibold text-muted-2 truncate">{label}</span>}
+          {label && <span className="text-body font-semibold text-muted-2 truncate">{label}</span>}
           {/* `right` is a free-form node (e.g. "1,034 kcal left") for when the
               header's right slot isn't a "Detail ›" navigation affordance. */}
           {right && !detail && <span className="shrink-0">{right}</span>}
           {detail && (
             detailHref ? (
-              <Link to={detailHref} className="flex items-center gap-0.5 text-[14px] font-semibold text-muted-2 min-h-[44px] -my-3">
+              <Link to={detailHref} className="flex items-center gap-0.5 text-body font-semibold text-muted-2 min-h-[44px] -my-3">
                 {detail}<ChevronRight className="w-3.5 h-3.5" />
               </Link>
             ) : (
-              <button type="button" onClick={onDetailClick} className="flex items-center gap-0.5 text-[14px] font-semibold text-muted-2 min-h-[44px] -my-3">
+              <button type="button" onClick={onDetailClick} className="flex items-center gap-0.5 text-body font-semibold text-muted-2 min-h-[44px] -my-3">
                 {detail}<ChevronRight className="w-3.5 h-3.5" />
               </button>
             )
@@ -104,7 +104,7 @@ export function VerdictBanner({ score, headline, detail, className = "" }) {
           {headline || v.word}
         </span>
       </div>
-      {detail && <p className="text-[14px] sm:text-sm text-secondary leading-snug">{detail}</p>}
+      {detail && <p className="text-body sm:text-sm text-secondary leading-snug">{detail}</p>}
     </div>
   );
 }
@@ -170,7 +170,7 @@ export function PosePillRow({ options, value, onChange, variant = "solid", disab
       {options.map(({ value: v, label }) => {
         const isActive = value === v;
         const base =
-          "shrink-0 whitespace-nowrap px-3 py-1.5 min-h-[44px] rounded-full text-[11px] font-bold border-[0.5px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand";
+          "shrink-0 whitespace-nowrap px-3 py-1.5 min-h-[44px] rounded-full text-micro font-bold border-[0.5px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand";
         // Active pill is a neutral elevated chip (raised glass fill + hairline +
         // shadow) so the selected pose reads as "lifted" without spending the
         // single coral/brand action hue on a selector. Same active treatment
@@ -239,7 +239,7 @@ export function ProfileStatsCard({
         </div>
       )}
       <p className={`text-ink font-semibold ${showAvatar ? "mt-3 text-sm" : "text-base"} leading-tight`}>{name}</p>
-      {subtitle && <p className="text-ink-secondary text-[14px] mt-0.5">{subtitle}</p>}
+      {subtitle && <p className="text-ink-secondary text-body mt-0.5">{subtitle}</p>}
       {stats?.length > 0 && (
         <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-charcoal-border">
           {stats.map(({ value, label }, i) => (
@@ -247,7 +247,7 @@ export function ProfileStatsCard({
               {/* Stats are DATA, not the single action color: they read in
                   NEUTRAL ink. At most ONE stat (heroIndex) leads in brand teal. */}
               <p className={`font-bold leading-tight font-technical ${showAvatar ? "text-lg" : "text-2xl leading-none"} ${i === heroIndex ? "text-brand" : "text-ink"}`}>{value}</p>
-              <p className="text-ink-secondary text-[11px] uppercase tracking-wider mt-1">{label}</p>
+              <p className="text-ink-secondary text-micro uppercase tracking-wider mt-1">{label}</p>
             </div>
           ))}
         </div>
@@ -287,7 +287,7 @@ export function MiniRing({ label, value, frac = 1, hue = "var(--hue-teal)", size
           {value}
         </text>
       </svg>
-      <span className="text-[11px] font-bold text-ink-secondary">{label}</span>
+      <span className="text-micro font-bold text-ink-secondary">{label}</span>
     </div>
   );
 }

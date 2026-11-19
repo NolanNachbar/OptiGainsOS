@@ -235,3 +235,210 @@ emoji. Two tabs may not share a name (the app has two called "Body" today; one b
 # Identity decision
 
 Option 2, The Instrument, is the chosen identity (2026-10-14): a 270-degree arc, flat ends, one reading tick. Off-white on #0B0C0E. Implemented in public/optigains-logo.svg, optigains-icon.svg and the generated PNGs. Options 1 (The Sum) and 3 (The Delta) are kept in BRAND_BRIEF_2026-10-14.md and the identity board for the record.
+
+# System (build reference for screen work)
+
+This section is literal. If a screen needs something not listed here, use the
+nearest listed thing and note it; do not invent a size, colour, radius or shadow.
+Everything below is importable from `@/components/ui` (barrel `src/components/ui/index.js`).
+Merge classes with `cn` (exported from the same barrel): plain `twMerge` does not
+know `text-body` and will drop your colour class.
+
+## Tokens
+
+### Type (seven steps, nothing else)
+
+| Class | Size / line | Weight | Use |
+|---|---|---|---|
+| `text-micro` | 11/14 | 600, `uppercase tracking-[0.08em]` | eyebrows, stat labels, column heads |
+| `text-caption` | 12/16 | 400 | reason lines, meta, units, timestamps |
+| `text-body` | 14/20 | 400 | paragraph, inputs, buttons |
+| `text-emph` | 15/20 | 600 | list-row titles, inline values |
+| `text-title` | 17/22 | 600 | card titles, sheet and dialog titles |
+| `text-display` | 28/32 | 700 `font-numeral` for numbers, 600 for words | page title, stat value |
+| `text-hero` | 44/44 | 700 `font-numeral` | the one hero number per screen (readiness) |
+
+Rules: never `text-[Npx]`. Numbers always `tabular-nums`. Units one step smaller
+and `text-ink-muted` beside the value: `<span class="text-display font-numeral tabular-nums">242.5</span><span class="text-caption text-ink-muted">lb</span>`
+(or just use `<Stat>`). Legacy `text-xs..9xl` are remapped to the nearest step;
+new code uses the named classes.
+
+### Colour
+
+| Token | Class | Meaning |
+|---|---|---|
+| `--color-bg` #0B0C0E | `bg-charcoal` | page field |
+| `--color-surface` | `bg-charcoal-surface` | module |
+| `--color-surface-2` | `bg-charcoal-surface2` | controls, selected row, sheet |
+| `--color-elevated` | `bg-charcoal-elevated` | menus, pressed control |
+| `--color-border` | `border-charcoal-border` | module rule |
+| `--color-border-soft` | `border-charcoal-borderSoft` | row hairline |
+| ink | `text-ink`, `text-ink-secondary`, `text-ink-muted`, `text-ink-faint` | text tiers |
+| `--color-brand` #ECEEF1 | `bg-brand` | THE action colour. Only the primary button fills with it. |
+| teal #5EDCD2 | `text-teal` | readiness only |
+| coral | `text-coral` | protein, RHR |
+| violet | `text-violet` | sleep, fatigue |
+| leaf | `text-leaf` | done, positive delta, PR |
+| carb | `text-carb` | carbs, cardio |
+| fat | `text-fat` | fat |
+| `bad` | `text-bad` | destructive actions and real errors only, never a "bad day" |
+| track | `bg-track` | every empty bar / ring track |
+
+Hue = datum. A hue never decorates a header, icon or border. No hex in JSX.
+
+### Spacing (4px grid)
+
+Tailwind default steps (`1`=4px ... `12`=48px) plus named tokens:
+`px-gutter` (16px page side padding), `gap-stack` / `space-y-stack` (12px between
+modules), `py-row` (12px list row padding), `min-h-tap` / `min-w-tap` (44px touch floor).
+Allowed gaps: 4, 8, 12, 16, 24, 32. Page sections are separated by `gap-stack`, not margins.
+
+### Radius (three)
+
+`rounded-module` (0: cards, modules, full-bleed sections), `rounded-control`
+(10px: buttons, inputs, chips that are controls, inset cards), `rounded-pill`
+(badges, segmented thumb, drag handle). Legacy `rounded-sm..3xl` all equal 10px.
+
+### Elevation (four)
+
+`shadow-elev-0` (modules: flat), `shadow-elev-1` (raised control, rare),
+`shadow-elev-2` (primary button, dock), `shadow-elev-3` (sheet, dialog, menu).
+Never a coloured shadow or glow.
+
+### Motion
+
+`duration-fast` 160ms (press feedback), `duration-base` 200ms (state change,
+hover, colour), `duration-slow` 280ms (sheets, drawers, bars filling).
+Curves: `ease-out` (entrances, number tweens), `ease-in-out` (on-screen moves),
+`ease-brand` (legacy `--ease`). Press = `active:scale-[0.97]` (buttons) or
+`active:scale-[0.94]` (icon / stepper keys). Durations collapse to 0 under
+reduced motion. No confetti, no bounce, no animation on keyboard-driven actions.
+A set completion gets one 200ms flash on the row, nothing more.
+
+## Components
+
+### Button (`<Button variant size>`)
+
+| variant | Look | Use |
+|---|---|---|
+| `primary` (aliases `volt`, `energy`, `coral`) | off-white fill, dark ink | the ONE primary action per screen |
+| `secondary` (aliases `default`, `dark`, `ghost`, `ai`) | surface-2 fill, hairline | everything else |
+| `outline` (alias `dim`) | transparent, hairline | tertiary, filters |
+| `subtle` (alias `coralGhost`) | brand 10% tint | secondary action that must still read as action |
+| `destructive` | bad tint + bad border | delete, discard |
+| `plain` | no chrome | icon affordances |
+| `link` | text, underline on hover | "Keep current", inline links |
+
+Sizes: `default` (44px mobile / 36 desktop), `sm` (32px, caption), `lg` (48px,
+emph; full-width bottom CTA), `icon` (44px square). Icon-only: use `<IconButton icon={X} label="Close" />`.
+
+Example primary CTA: `<Button variant="primary" size="lg" className="w-full">Start Push A</Button>`
+
+### Page header (`<PageHeader>`)
+
+```jsx
+<PageHeader eyebrow="Tue 18 Nov" title="Today" meta="Week 6 of 8 · Push A" action={<IconButton icon={Settings} label="Settings" />} />
+```
+One per page, first element. Title is the destination name, one or two words.
+Eyebrow is optional context (date, program). No icon before the title.
+
+### Card / module
+
+`<Card>` (flat full-bleed module, radius 0) with `<CardHeader><CardTitle>`,
+`<CardContent>`, `<CardFooter>`. For a section label row inside a page use the
+existing `<Module label="Readiness" detail="History" detailHref="/body">`.
+`<Card variant="inset">` for a card inside a card (radius 10). Do not nest
+glass in glass. Modules stack with `flex flex-col gap-stack`.
+
+### List row (`<ListRow>`)
+
+```jsx
+<ListRow title="Bench press" detail="3 x 6-10 · last 225 lb x 8" value="242.5" unit="lb" onClick={open} />
+```
+56px min, title `text-emph`, detail `text-caption text-ink-muted`, value tabular
+right-aligned with muted unit, chevron automatic when interactive. Rows sit
+inside a Card with no extra padding; the hairline is built in.
+
+### Reason line (`<ReasonLine>`) — the basis under every engine number
+
+```jsx
+<Stat label="Top set" value="242.5" unit="lb" delta="+5 lb" reason="Top set 8 reps at 2 RIR last week, +5 lb step" />
+<ReasonLine detail={<>Inputs: 237.5 x 8 @ RIR 2 · Rule: double progression 6-10 · Previous: 237.5 lb</>}>
+  +5 lb: last 2 sessions hit top of range at RIR 2
+</ReasonLine>
+```
+Rules: directly under the number, one line, `text-caption text-ink-muted`,
+ellipsized. Format `<delta or value>: <cause>`. With `detail` it expands inline
+(never a modal). Every engine-originated number on Today, Train and Fuel has one.
+No engine basis available: "No check-in, using defaults." Never "AI recommends".
+
+### Stat (`<Stat>`)
+
+`label` (micro caps), `value`, `unit`, optional `delta`, `reason`, `size`
+(`sm` title / `md` display / `lg` hero), `hue` (`teal` only for readiness, other
+hues only when the value is that datum). Missing value renders `--`.
+
+### Stepper (`<Stepper>`) — set entry
+
+```jsx
+<Stepper label="Weight" value={w} onChange={setW} step={2.5} unit="lb" />
+<Stepper label="Reps" value={r} onChange={setR} step={1} min={0} />
+```
+48px +/- keys, tabular display readout. Use in the set-edit sheet instead of the
+keyboard. On-plan sets are committed with one tap on the row check; the stepper
+is the deviation path.
+
+### Sheet (`<Sheet>`)
+
+`<Sheet open onOpenChange title="Edit set" footer={<Button variant="primary" size="lg" className="w-full">Save</Button>}>...</Sheet>`
+Bottom sheet on mobile, right panel on desktop. For editors and pickers.
+Existing `<Dialog>` remains for confirmations; `<ConfirmDialog>` for destructive confirms.
+
+### Empty, loading, error
+
+```jsx
+<EmptyState title="No weigh-ins yet" progress={{ value: 3, max: 14 }}>
+  Expenditure estimate firms up after about 14 days of weigh-ins and logs. Day 3 of 14.
+</EmptyState>
+<LoadingState rows={4} />           // skeleton rows shaped like the final list
+<ErrorState title="Could not load workouts" onRetry={refetch}>Network request failed.</ErrorState>
+```
+Empty says what the engine needs and how long. No illustration, no mascot, no
+"Get started!". Loading is skeletons shaped like the content (`<Skeleton>` for
+custom shapes), never a full-page spinner. Error names what failed and offers Retry.
+
+### Other primitives
+
+`Separator`, `Badge` (variants `default`, `outline`, `teal`, `green`, `amber`,
+`red`; `volt` legacy), `Input` / `Textarea` / `Select` (44px, `rounded-control`),
+`Tabs` (`TabsTrigger variant="underline" | "segment"`), `SegmentedControl`,
+`SubTabs`, `MetricTile`, `StatRing`, `Skeleton`, `AppCard` (legacy; prefer `Card`).
+
+## Screen recipe
+
+1. `<PageHeader>` 2. one hero module (one number + reason line + contributors)
+3. the single `primary` Button 4. supporting modules as `Card` + `ListRow`s,
+`gap-stack` between. Content column `max-w-2xl mx-auto`, side padding `px-gutter`,
+bottom padding clears the dock (`pb-[var(--dock-clearance)]`). One thumb at 390-430px,
+no horizontal scroll.
+
+## Voice checklist (apply to every string)
+
+- Flat and exact. Declarative. Stop when done.
+- No exclamation marks. No "successfully", "awesome", "great job", "crushed it", "Oops".
+- Logs in past tense: "Logged 3 sets." "Saved." "Deleted Push A." Not "Workout saved successfully!"
+- Units always: "242.5 lb", "8 reps", "2 RIR", "1,850 kcal", "-0.4 kg/wk", "7 h 12 min".
+- Engine numbers carry a one-line basis (ReasonLine): "+5 lb: top of range at RIR 2 twice."
+- Missed days are neutral: "No log for Mon." Not "You missed a day".
+- Buttons are verbs + object: "Start Push A", "Log set", "Add food", "Keep current".
+- Sentence case everywhere except `text-micro` eyebrows (uppercase via class, not typed).
+- Name is "OptiGains", always.
+
+Before / after:
+| Before | After |
+|---|---|
+| Workout saved successfully! | Saved. 5 exercises, 18 sets. |
+| Great job! New PR! | PR: 245 lb x 6, +5 lb. |
+| AI recommends 2,400 calories | 2,400 kcal: expenditure 2,650, cut at -250. |
+| Oops, something went wrong | Could not save. Retry. |
+| No data yet. Start tracking! | No weigh-ins yet. The trend needs 7. |

@@ -35,7 +35,7 @@ const SelectTrigger = React.forwardRef(({ className = "", children, ...props }, 
       type="button"
       ref={mergedRef}
       onClick={() => setOpen(!open)}
-      className={`flex h-11 w-full items-center justify-between rounded-lg border-[0.5px] border-charcoal-borderSoft bg-charcoal-surface2 px-3.5 text-[14px] font-semibold text-ink placeholder:text-ink-muted focus-visible:outline-none focus-visible:border-charcoal-border focus-visible:shadow-[0_0_0_3px_var(--glass-edge)] transition-[border-color,box-shadow] duration-[180ms] ease-[var(--ease)] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      className={`flex h-11 w-full items-center justify-between rounded-lg border-[0.5px] border-charcoal-borderSoft bg-charcoal-surface2 px-3.5 text-body font-semibold text-ink placeholder:text-ink-muted focus-visible:outline-none focus-visible:border-charcoal-border focus-visible:shadow-[0_0_0_3px_var(--glass-edge)] transition-[border-color,box-shadow] duration-[180ms] ease-[var(--ease)] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
       {...props}
     >
       {children}
@@ -50,8 +50,12 @@ const SelectValue = ({ placeholder, children }) => {
   if (children) {
     return <span>{children}</span>;
   }
+  // Labels register during SelectItem render (pre-existing design; the label
+  // map is a render-time cache, not reactive state).
+  /* eslint-disable react-hooks/refs */
   const label = value ? (labelsRef?.current[value] ?? value) : null;
   return <span>{label || placeholder}</span>;
+  /* eslint-enable react-hooks/refs */
 };
 
 const SelectContent = ({ className = "", children, ...props }) => {
@@ -116,6 +120,7 @@ const SelectItem = ({ value, children, className = "", ...props }) => {
 
   // Register the label so SelectValue can display it after the dropdown closes
   if (labelsRef && typeof children === 'string') {
+    // eslint-disable-next-line react-hooks/refs
     labelsRef.current[value] = children;
   }
 
@@ -125,7 +130,7 @@ const SelectItem = ({ value, children, className = "", ...props }) => {
         onValueChange(value);
         setOpen(false);
       }}
-      className={`relative flex min-h-[44px] cursor-pointer select-none items-center rounded-md px-2 py-2.5 text-[14px] outline-none text-ink-muted hover:bg-charcoal-elevated hover:text-ink ${selectedValue === value ? 'bg-[var(--glass-edge)] text-ink' : ''} ${className}`}
+      className={`relative flex min-h-[44px] cursor-pointer select-none items-center rounded-md px-2 py-2.5 text-body outline-none text-ink-muted hover:bg-charcoal-elevated hover:text-ink ${selectedValue === value ? 'bg-[var(--glass-edge)] text-ink' : ''} ${className}`}
       {...props}
     >
       {children}

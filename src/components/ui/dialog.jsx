@@ -136,7 +136,7 @@ const DialogHeader = ({ className = "", ...props }) => (
 const DialogTitle = React.forwardRef(({ className = "", ...props }, ref) => (
   <h2
     ref={ref}
-    className={`type-display text-lg leading-none ${className}`}
+    className={`text-title font-semibold tracking-tight text-ink ${className}`}
     {...props}
   />
 ));
@@ -145,10 +145,23 @@ DialogTitle.displayName = "DialogTitle";
 const DialogDescription = React.forwardRef(({ className = "", ...props }, ref) => (
   <p
     ref={ref}
-    className={`text-sm text-ink-secondary leading-relaxed ${className}`}
+    className={`text-body text-ink-secondary ${className}`}
     {...props}
   />
 ));
 DialogDescription.displayName = "DialogDescription";
 
-export { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription };
+const DialogFooter = ({ className = "", ...props }) => (
+  <div className={`mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end ${className}`} {...props} />
+);
+
+const DialogClose = ({ children, onClick, ...props }) => {
+  const ctx = React.useContext(DialogContext);
+  return (
+    <button type="button" onClick={(e) => { onClick?.(e); ctx?.onOpenChange?.(false); }} {...props}>
+      {children}
+    </button>
+  );
+};
+
+export { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose };
