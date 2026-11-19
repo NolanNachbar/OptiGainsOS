@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useMyPrograms, useEnrollments } from "@/hooks/useProgramQueries";
 import ProgramCard from "@/components/programs/ProgramCard";
 import { TabCount } from "@/components/ui/system";
+import { PageHeader } from "@/components/ui";
 import { Calendar, Plus, Dumbbell, BookOpen, TrendingUp, FolderOpen, Upload, HelpCircle, Copy, Download, Activity, SlidersHorizontal, Pencil, Check, X } from "lucide-react";
 import { supabase } from "@/api/supabaseClient";
 import { parseISO } from "date-fns";
@@ -289,26 +290,27 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
     <div className={hideHeader ? "w-full" : "p-4 md:p-6 bg-charcoal min-h-screen transition-colors duration-300"}>
       <div className="max-w-5xl mx-auto">
         {!hideHeader && (
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
-            <div>
-              <h1 className="text-display font-bold text-ink leading-tight">Workouts</h1>
-              <p className="text-body text-ink-muted mt-0.5">Library & session history</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Link to="/weekly-schedule">
-                <Button variant="dim" size="sm" className="gap-1.5">
-                  <Calendar className="w-3.5 h-3.5" />
-                  Weekly Schedule
-                </Button>
-              </Link>
-              <Link to={"/create-workout"}>
-                <Button variant="dim" size="sm">
-                  <Plus className="w-3.5 h-3.5" />
-                  Create Custom
-                </Button>
-              </Link>
-            </div>
-          </div>
+          <PageHeader
+            className="px-0 pt-0 mb-4 max-lg:[&_h1]:hidden"
+            title="Workouts"
+            meta="Library and session history"
+            action={
+              <div className="flex items-center gap-2">
+                <Link to="/weekly-schedule">
+                  <Button variant="dim" size="sm" className="gap-1.5">
+                    <Calendar className="w-3.5 h-3.5" />
+                    Weekly Schedule
+                  </Button>
+                </Link>
+                <Link to={"/create-workout"}>
+                  <Button size="sm">
+                    <Plus className="w-3.5 h-3.5" />
+                    Create Custom
+                  </Button>
+                </Link>
+              </div>
+            }
+          />
         )}
 
         <Tabs defaultValue={defaultTab} className="w-full">
@@ -343,7 +345,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
               <Button
                 variant="dim"
                 size="lg"
-                className={`px-3 ${filter !== 'all' || folderFilter !== 'all' ? 'bg-[var(--glass-edge)] text-ink' : ''}`}
+                className={`px-3 ${filter !== 'all' || folderFilter !== 'all' ? 'bg-[var(--color-border)] text-ink' : ''}`}
                 onClick={() => setFilterOpen(v => !v)}
               >
                 <SlidersHorizontal className="w-3.5 h-3.5" />
@@ -375,7 +377,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
           {filterOpen && (
             <div className="rise-in pb-4 border-t hairline pt-3 space-y-3">
               <div>
-                <p className="section-label mb-2">Type</p>
+                <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-2">Type</p>
                 <div className="flex flex-wrap gap-1.5">
                   {[
                     { value: 'all', label: 'All' },
@@ -395,7 +397,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
               </div>
               {folders.length > 0 && (
                 <div>
-                  <p className="section-label mb-2">Folder</p>
+                  <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-2">Folder</p>
                   <div className="flex flex-wrap gap-1.5">
                     {['all', ...folders, 'unfiled'].map(f => {
                       if (f !== 'all' && f !== 'unfiled' && renamingFolder === f) {
@@ -416,7 +418,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                               autoFocus
                               value={renameValue}
                               onChange={(e) => setRenameValue(e.target.value)}
-                              className="px-3 h-11 rounded-full text-xs font-semibold border border-charcoal-border glass-inset text-ink outline-none w-28"
+                              className="px-3 h-11 rounded-full text-xs font-semibold border border-charcoal-border bg-charcoal-surface2 rounded-control text-ink outline-none w-28"
                             />
                             <button type="submit" aria-label="Save folder name" className="h-11 w-11 flex items-center justify-center rounded-full text-brand hover:text-brand active:scale-[0.97]">
                               <Check className="w-4 h-4" />
@@ -537,7 +539,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                 'Build a Program' CTA, so the empty Programs view never shows two
                 teal-fill create controls. */}
             <div className="flex items-center gap-2 mb-6">
-              <div className="inline-flex gap-1 p-1 glass-inset rounded-full min-w-0 overflow-x-auto">
+              <div className="inline-flex gap-1 p-1 bg-charcoal-surface2 rounded-control rounded-full min-w-0 overflow-x-auto">
                 {[
                   { value: 'active', label: 'Active', icon: TrendingUp, count: activeEnrollments.length },
                   { value: 'my-programs', label: 'My Programs', icon: BookOpen, count: null },
@@ -624,7 +626,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                       the active-cards branch. */}
                   {pastEnrollments.length > 0 && (
                     <div>
-                      <h3 className="section-label mb-3">
+                      <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3">
                         Past Programs
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -698,7 +700,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
               Are you sure you want to delete <span className="font-semibold text-ink">"{workoutToDelete?.title}"</span>?
             </DialogDescription>
           </DialogHeader>
-          <div className="glass-inset p-3 text-sm text-ink-muted">
+          <div className="bg-charcoal-surface2 rounded-control p-3 text-sm text-ink-muted">
             This will remove it from your library and any scheduled workouts. This action cannot be undone.
           </div>
           <div className="flex gap-4 mt-2">
@@ -729,10 +731,10 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
           <DialogHeader>
             <DialogTitle>Workout Import Format</DialogTitle>
             <DialogDescription>
-              Save a <code className="text-xs glass-inset px-1 rounded">.json</code> file matching this structure, then use the Import button to add it to your library.
+              Save a <code className="text-xs bg-charcoal-surface2 rounded-control px-1 rounded">.json</code> file matching this structure, then use the Import button to add it to your library.
             </DialogDescription>
           </DialogHeader>
-          <pre className="glass-inset font-technical p-3 text-xs overflow-auto max-h-72 text-ink-muted text-left">{WORKOUT_TEMPLATE}</pre>
+          <pre className="bg-charcoal-surface2 rounded-control font-technical p-3 text-xs overflow-auto max-h-72 text-ink-muted text-left">{WORKOUT_TEMPLATE}</pre>
           <div className="text-xs text-ink-muted space-y-1 mt-1">
             <p><span className="font-semibold">type</span>: <code>strength</code>, <code>cardio</code>, or <code>hiit</code></p>
             <p><span className="font-semibold">reps</span>: number or range string like <code>"8-10"</code></p>

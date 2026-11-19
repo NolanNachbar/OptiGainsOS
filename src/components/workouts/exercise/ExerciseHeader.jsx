@@ -78,7 +78,7 @@ export default function ExerciseHeader({ dragHandleProps, editingName, exercise,
               <div
                 ref={menuContentRef}
                 style={menuStyle}
-                className="fixed glass-elevated rounded-control overflow-y-auto max-h-[min(60vh,320px)] overscroll-contain py-1 z-[10200] min-w-[160px] text-ink"
+                className="fixed bg-charcoal-surface2 border border-charcoal-border shadow-lg rounded-control overflow-y-auto max-h-[min(60vh,320px)] overscroll-contain py-1 z-[10200] min-w-[160px] text-ink"
               >
                 {/* Like/Unlike moved here from the header row (Ledger rebuild) —
                     it steers future programming, same behavior as before. */}
@@ -89,7 +89,7 @@ export default function ExerciseHeader({ dragHandleProps, editingName, exercise,
                       setOpenMenu(false);
                     }}
                     aria-pressed={liked}
-                    className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--glass-edge)] flex items-center gap-2"
+                    className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--color-border)] flex items-center gap-2"
                   >
                     <Heart className={`w-4 h-4 ${liked ? "fill-brand text-brand" : ""}`} />
                     {liked ? "Unlike this exercise" : "Like — program this more often"}
@@ -107,7 +107,7 @@ export default function ExerciseHeader({ dragHandleProps, editingName, exercise,
                       onToggleReorderMode();
                       setOpenMenu(false);
                     }}
-                    className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--glass-edge)] flex items-center gap-2"
+                    className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--color-border)] flex items-center gap-2"
                   >
                     <GripVertical className="w-4 h-4" />
                     {reorderMode ? "Done reordering" : "Reorder exercises"}
@@ -124,7 +124,7 @@ export default function ExerciseHeader({ dragHandleProps, editingName, exercise,
                     setShowReplaceDialog(true);
                     setOpenMenu(false);
                   }}
-                  className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--glass-edge)] flex items-center gap-2"
+                  className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--color-border)] flex items-center gap-2"
                 >
                   <RefreshCw className="w-4 h-4" />
                   Replace exercise
@@ -135,7 +135,7 @@ export default function ExerciseHeader({ dragHandleProps, editingName, exercise,
                     setEditingNotes(true);
                     setOpenMenu(false);
                   }}
-                  className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--glass-edge)] flex items-center gap-2"
+                  className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--color-border)] flex items-center gap-2"
                 >
                   <FileText className="w-4 h-4" />
                   Add notes
@@ -145,7 +145,7 @@ export default function ExerciseHeader({ dragHandleProps, editingName, exercise,
                     setShowCues(true);
                     setOpenMenu(false);
                   }}
-                  className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--glass-edge)] flex items-center gap-2 relative"
+                  className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--color-border)] flex items-center gap-2 relative"
                 >
                   <HelpCircle className="w-4 h-4" />
                   Notes &amp; cues
@@ -159,7 +159,7 @@ export default function ExerciseHeader({ dragHandleProps, editingName, exercise,
                       onAddSet(exerciseIndex, { set_type: 'daily_min', weight: progressionTargets?.dailyMin || 0 });
                       setOpenMenu(false);
                     }}
-                    className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--glass-edge)] flex items-center gap-2"
+                    className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--color-border)] flex items-center gap-2"
                   >
                     <TrendingUp className="w-4 h-4" />
                     Add daily min set
@@ -181,7 +181,7 @@ export default function ExerciseHeader({ dragHandleProps, editingName, exercise,
                       onOpenCalculators();
                       setOpenMenu(false);
                     }}
-                    className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--glass-edge)] flex items-center gap-2 border-t border-charcoal-border mt-1 pt-2"
+                    className="w-full px-3 py-2 min-h-[44px] text-left text-sm font-semibold text-ink-secondary hover:bg-[var(--color-border)] flex items-center gap-2 border-t border-charcoal-border mt-1 pt-2"
                   >
                     <Calculator className="w-4 h-4" />
                     Calculators

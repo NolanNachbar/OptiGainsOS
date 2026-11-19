@@ -1093,7 +1093,7 @@ export default function WorkoutDetail() {
 
   const muscleToggleRow = workout.exercises?.length > 0 && getWorkoutBodyData(workout.exercises).length > 0 ? (
     <div className="flex items-center gap-2 shrink-0 lg:hidden">
-      <span className="section-label hidden sm:inline">Muscles worked</span>
+      <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted hidden sm:inline">Muscles worked</span>
       <SegmentedControl
         value={muscleView}
         onChange={setMuscleView}

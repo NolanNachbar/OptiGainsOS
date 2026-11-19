@@ -707,7 +707,7 @@ export default function QuickWorkout() {
 
         {/* Engine prescription banner */}
         {prescribed && (
-          <div className="mb-6 glass px-4 py-3 flex items-center gap-2.5">
+          <div className="mb-6 bg-charcoal-surface border border-charcoal-border rounded-module px-4 py-3 flex items-center gap-2.5">
             <div className="w-[26px] h-[26px] rounded-md bg-teal/15 flex items-center justify-center shrink-0">
               <Brain className="w-3.5 h-3.5 text-teal" />
             </div>
@@ -745,7 +745,7 @@ export default function QuickWorkout() {
                 <button
                   type="button"
                   onClick={() => setInsightExpanded(true)}
-                  className="w-full mt-4 glass px-3.5 py-3 rounded-control flex items-start gap-2.5 text-left rise-in touch-manipulation min-h-[44px] lg:hidden"
+                  className="w-full mt-4 bg-charcoal-surface border border-charcoal-border rounded-module px-3.5 py-3 flex items-start gap-2.5 text-left rise-in touch-manipulation min-h-[44px] lg:hidden"
                 >
                   <span className="w-[26px] h-[26px] rounded-md bg-teal/15 flex items-center justify-center shrink-0 mt-0.5">
                     <Brain className="w-3.5 h-3.5 text-teal" />
@@ -776,14 +776,14 @@ export default function QuickWorkout() {
             <div className="mt-6 flex-1 min-h-0 flex flex-col justify-center lg:hidden">
               {recentExerciseNames.length > 0 ? (
                 <>
-                  <p className="section-label mb-2.5">Recent lifts</p>
+                  <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-2.5">Recent lifts</p>
                   <div className="flex flex-col gap-2">
                     {recentExerciseNames.map((name) => (
                       <button
                         key={name}
                         type="button"
                         onClick={() => addExercise(name)}
-                        className="w-full min-h-[48px] px-4 glass rounded-control text-sm font-bold text-ink flex items-center gap-2.5 touch-manipulation glass-interactive rise-in"
+                        className="w-full min-h-[48px] px-4 bg-charcoal-surface border border-charcoal-border rounded-module text-sm font-bold text-ink flex items-center gap-2.5 touch-manipulation transition-colors rise-in"
                       >
                         <span className="w-7 h-7 rounded-control bg-charcoal-surface2 flex items-center justify-center shrink-0">
                           <Plus className="w-4 h-4 text-ink-muted" />
@@ -794,7 +794,7 @@ export default function QuickWorkout() {
                   </div>
                 </>
               ) : (
-                <div className="glass rounded-control px-4 py-5 flex items-center gap-3 rise-in">
+                <div className="bg-charcoal-surface border border-charcoal-border rounded-module px-4 py-5 flex items-center gap-3 rise-in">
                   <span className="w-10 h-10 rounded-control bg-charcoal-surface2 flex items-center justify-center shrink-0">
                     <Dumbbell className="w-5 h-5 text-ink-muted" />
                   </span>
@@ -895,8 +895,8 @@ export default function QuickWorkout() {
 
           {/* Session notes — feed back to notes_parser for programming adjustments */}
           {exercises.length > 0 && (
-            <div className="glass px-4 py-3 rounded-control space-y-1.5">
-              <p className="section-label">Session notes</p>
+            <div className="bg-charcoal-surface border border-charcoal-border rounded-module px-4 py-3 space-y-1.5">
+              <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Session notes</p>
               <Textarea
                 value={sessionNotes}
                 onChange={(e) => setSessionNotes(e.target.value)}
@@ -918,7 +918,7 @@ export default function QuickWorkout() {
             the athlete picks Resume vs Start Fresh. */}
         {resumeSession && (
           <div className="rise-in flex flex-col items-center justify-center text-center gap-3 py-16 text-ink-muted">
-            <span className="w-12 h-12 rounded-control glass flex items-center justify-center">
+            <span className="w-12 h-12 rounded-module bg-charcoal-surface border border-charcoal-border flex items-center justify-center">
               <Dumbbell className="w-6 h-6 text-ink-muted" />
             </span>
             <p className="text-sm font-semibold max-w-[15rem] leading-relaxed">

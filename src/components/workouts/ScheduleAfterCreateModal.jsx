@@ -120,7 +120,7 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
           {/* Calendar Preview */}
           {scheduledWorkouts.length > 0 && (
             <div className="border border-charcoal-border rounded-control p-4 bg-charcoal-surface">
-              <h3 className="section-label mb-3 flex items-center gap-2">
+              <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3 flex items-center gap-2">
                 <BookOpen className="w-3.5 h-3.5 text-ink-muted" />
                 Cycle 1 Schedule Preview
               </h3>

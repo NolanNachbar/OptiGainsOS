@@ -612,7 +612,7 @@ export default function ExerciseCard({
 
   // Compact one-line row for every exercise other than the focused one
   // (mockup .nx: "name · target · last time"). Ledger rebuild (coordinator
-  // review, r4d/step3): the old version was a boxed glass-inset card with a
+  // review, r4d/step3): the old version was a boxed bg-charcoal-surface2 rounded-control card with a
   // big gap, an always-visible (usually empty) drag-handle slot, and an
   // empty check circle — heavy for a row that mostly just says "up next".
   // Rebuilt full-bleed and flush: no card chrome, no rounded box, just a 1px
@@ -639,7 +639,7 @@ export default function ExerciseCard({
   return (
     <>
     {/* Full-bleed module per DESIGN.md, matching the Next list below it: 1px
-        top/bottom rule, no radius, no shadow. Card/.glass applies a border +
+        top/bottom rule, no radius, no shadow. Card applies a border +
         shadow on all four sides (radius was already 0, so that border+shadow
         combo — not radius — is what read as a "rounded, inset card" per the
         coordinator, r4f), so this module now uses a plain div instead of
@@ -711,7 +711,7 @@ export default function ExerciseCard({
               RIR
               <span className="group relative">
                 <HelpCircle className="w-3 h-3 cursor-help" />
-                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 w-48 p-2 glass-elevated rounded-control text-ink text-caption font-semibold normal-case tracking-normal text-left">
+                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 w-48 p-2 bg-charcoal-surface2 border border-charcoal-border shadow-lg rounded-control text-ink text-caption font-semibold normal-case tracking-normal text-left">
                   Reps in reserve, 0 to 10. 0 is failure, 2 is two reps left.
                 </span>
               </span>

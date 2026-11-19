@@ -50,7 +50,7 @@ export default function AddExerciseForm({ onAdd, showCloseButton = true, exercis
   }
 
   const form = (
-    <div className="glass rounded-control px-4 pt-4 pb-4 lg:mb-0 rise-in">
+    <div className="bg-charcoal-surface border border-charcoal-border rounded-module px-4 pt-4 pb-4 lg:mb-0 rise-in">
       {/* Quiet caption only — the type-display directive ("Build your session")
           lives one level up on the page so the hero frames this action. Here
           "No exercises yet" is a low-weight status caption, NOT a second hero,

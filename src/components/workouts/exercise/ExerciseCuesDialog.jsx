@@ -16,7 +16,7 @@ export default function ExerciseCuesDialog({ showCues, setShowCues, exercise, ex
         </DialogHeader>
         <div className="mt-2 text-sm text-ink-secondary max-h-[60vh] overflow-y-auto space-y-3">
           {nudgeMessage && (
-            <div className="px-3 py-2.5 rounded-control glass-inset flex items-start gap-2.5">
+            <div className="px-3 py-2.5 rounded-control bg-charcoal-surface2 rounded-control flex items-start gap-2.5">
               <i className={`w-[26px] h-[26px] rounded-control flex items-center justify-center flex-shrink-0 not-italic ${
                 nudgeMessage.type === 'success' ? 'bg-teal/[0.16] text-teal' :
                 nudgeMessage.type === 'warning' ? 'bg-warn/[0.15] text-warn' :
@@ -36,7 +36,7 @@ export default function ExerciseCuesDialog({ showCues, setShowCues, exercise, ex
           )}
 
           {coachingChip && (
-            <div className="px-3 py-2.5 rounded-control glass-inset flex items-center gap-2.5">
+            <div className="px-3 py-2.5 rounded-control bg-charcoal-surface2 rounded-control flex items-center gap-2.5">
               <i className="w-[26px] h-[26px] rounded-control bg-coral/15 text-coral flex items-center justify-center flex-shrink-0 not-italic">
                 <TrendingUp className="w-3.5 h-3.5" />
               </i>
@@ -59,7 +59,7 @@ export default function ExerciseCuesDialog({ showCues, setShowCues, exercise, ex
           )}
 
           {showShotList && shotNote && (
-            <div className="px-3 py-2.5 rounded-control glass-inset flex items-start gap-2.5">
+            <div className="px-3 py-2.5 rounded-control bg-charcoal-surface2 rounded-control flex items-start gap-2.5">
               <i className="w-[26px] h-[26px] rounded-control bg-brand/[0.16] text-brand flex items-center justify-center flex-shrink-0 not-italic">
                 <Camera className="w-3.5 h-3.5" />
               </i>

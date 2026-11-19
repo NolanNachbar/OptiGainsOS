@@ -92,7 +92,7 @@ function StrengthEntryCard({ entry }) {
         </div>
         <div className="flex-1 min-w-0">
           <h4 className="text-emph font-semibold text-ink truncate">{entry.title}</h4>
-          <span className="section-label">{hero.label}</span>
+          <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">{hero.label}</span>
         </div>
         {/* Dominant figure — the row's one hero metric. */}
         <div className="flex items-baseline gap-1 shrink-0">
@@ -109,7 +109,7 @@ function StrengthEntryCard({ entry }) {
             key={cell.label}
             className={`flex flex-col ${i % 4 !== 0 ? 'border-l hairline pl-4' : ''}`}
           >
-            <span className="section-label">{cell.label}</span>
+            <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">{cell.label}</span>
             <div className="flex items-baseline gap-1 mt-1">
               <span className={`font-technical font-bold text-emph whitespace-nowrap ${cell.value === '—' ? 'text-ink-faint' : 'text-ink-secondary'}`}>{cell.value}</span>
               {cell.suffix && <span className="text-caption text-ink-muted uppercase">{cell.suffix}</span>}
@@ -187,7 +187,7 @@ function CardioEntryCard({ entry }) {
         </div>
         <div className="flex-1 min-w-0">
           <h4 className="text-emph font-semibold text-ink truncate">{entry.title}</h4>
-          <p className="section-label">{hero.label}</p>
+          <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">{hero.label}</p>
         </div>
         {/* Dominant figure — the row's one hero metric. */}
         <div className="flex items-baseline gap-1 shrink-0">
@@ -203,7 +203,7 @@ function CardioEntryCard({ entry }) {
               key={cell.label}
               className={`flex flex-col ${i % 3 !== 0 ? 'border-l hairline pl-4' : ''}`}
             >
-              <span className="section-label">{cell.label}</span>
+              <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">{cell.label}</span>
               <div className="flex items-baseline gap-1 mt-1">
                 <span className="font-technical font-bold text-emph text-ink-secondary">{cell.value}</span>
                 {cell.suffix && <span className="text-caption text-ink-muted uppercase">{cell.suffix}</span>}
@@ -224,11 +224,11 @@ export function ActivityLogTab({ workoutLogs, cardioSessions, workouts, isLoadin
 
   if (isLoading) {
     // Skeletons mirror the real surfaces they stand in for: the weekly summary is
-    // .glass-elevated, each entry is a .tile (train-activity-4) — not raw bg-track
+    // .bg-charcoal-surface2 border border-charcoal-border shadow-lg, each entry is a .tile (train-activity-4) — not raw bg-track
     // boxes — so the loading state reads as the page's own scaffold dimming in.
     return (
       <div className="space-y-3">
-        <div className="h-20 glass-elevated rounded-control pulse-loop" />
+        <div className="h-20 bg-charcoal-surface2 border border-charcoal-border shadow-lg rounded-control pulse-loop" />
         {[1, 2, 3, 4].map(i => (
           <div key={i} className="h-28 tile pulse-loop" />
         ))}
@@ -319,26 +319,26 @@ export function ActivityLogTab({ workoutLogs, cardioSessions, workouts, isLoadin
     <>
       {/* Weekly Summary — elevated above the tile feed so it reads as a header,
           not just another entry. */}
-      <div className="flex items-stretch gap-4 p-4 glass-elevated rounded-control mb-4">
+      <div className="flex items-stretch gap-4 p-4 bg-charcoal-surface2 border border-charcoal-border shadow-lg rounded-control mb-4">
         {/* Hero: This Week */}
         <div className="flex flex-col justify-center shrink-0 pr-4 border-r hairline">
-          <span className="section-label mb-1">This Week</span>
-          <span className="hero-metric text-display text-ink">
+          <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-1">This Week</span>
+          <span className="font-numeral tabular-nums font-bold leading-none tracking-tight text-display text-ink">
             {thisWeek.length}<span className="text-caption font-semibold text-ink-muted ml-1 align-baseline">sess</span>
           </span>
         </div>
         {/* Secondary cells — no redundant 'sess' suffix (the hero owns the unit). */}
         <div className="flex-1 grid grid-cols-3 gap-3">
           <div className="flex flex-col justify-center">
-            <span className="section-label mb-0.5">Strength</span>
+            <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-0.5">Strength</span>
             <span className="font-technical font-bold text-title text-ink">{weekStrength}</span>
           </div>
           <div className="flex flex-col justify-center">
-            <span className="section-label mb-0.5">Cardio</span>
+            <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-0.5">Cardio</span>
             <span className="font-technical font-bold text-title text-ink">{weekCardio}</span>
           </div>
           <div className="flex flex-col justify-center">
-            <span className="section-label mb-0.5">Distance</span>
+            <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-0.5">Distance</span>
             <span className="font-technical font-bold text-title text-ink">
               {weekMiles > 0 ? weekMiles.toFixed(1) : 0}<span className="text-caption font-semibold text-ink-muted ml-1 align-baseline">mi</span>
             </span>
@@ -379,8 +379,8 @@ export function ActivityLogTab({ workoutLogs, cardioSessions, workouts, isLoadin
             // var(--ease) rather than landing all at once.
             <section key={label} className={`${['rise-in', 'rise-in-2', 'rise-in-3'][Math.min(i, 2)]} ${i > 0 ? 'border-t hairline pt-3' : ''}`}>
               {/* Day header — its own tier (heavier + brighter) so it reads above
-                  the in-card stat captions that share .section-label. */}
-              <h3 className="section-label !font-extrabold text-ink mb-2.5">{label}</h3>
+                  the in-card stat captions that share text-micro. */}
+              <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted !font-extrabold text-ink mb-2.5">{label}</h3>
               <div className="space-y-2">
                 {entries.map(entry =>
                   entry.type === 'strength' ? (
@@ -410,12 +410,12 @@ export function ActivityLogTab({ workoutLogs, cardioSessions, workouts, isLoadin
   );
 }
 
-// One shared build-out prompt for the Library tab: the same glass card and
+// One shared build-out prompt for the Library tab: the same module card and
 // action pair backs both the empty state and the all-shown "fill the void"
 // prompt, so the two read as one unit instead of two near-twins.
 export function LibraryBuildPrompt({ title, subtitle, showActions = true }) {
   return (
-    <div className="glass px-4 py-12 text-center">
+    <div className="bg-charcoal-surface border border-charcoal-border rounded-module px-4 py-12 text-center">
       <div className="w-14 h-14 rounded-full bg-track flex items-center justify-center mx-auto mb-4">
         <Dumbbell className="w-7 h-7 text-ink-muted" />
       </div>
@@ -447,7 +447,7 @@ export function ProgramsEmptyState({ icon: Icon, title, subtitle, action }) {
   // prompt instead of a tall band with the CTA stranded at the bottom edge. Rises
   // in on the system easing.
   return (
-    <div className="rise-in glass px-4 py-12 text-center flex flex-col items-center">
+    <div className="rise-in bg-charcoal-surface border border-charcoal-border rounded-module px-4 py-12 text-center flex flex-col items-center">
       <div className="w-14 h-14 rounded-full bg-track flex items-center justify-center mx-auto mb-4">
         <Icon className="w-7 h-7 text-ink-muted" />
       </div>

@@ -24,22 +24,22 @@ export default function SessionCard({ chipsRow, cloneWorkoutMutation, handleStar
                 <p className="text-body font-semibold text-ink-muted mb-4">{workout.description}</p>
               )}
               {/* wd-5: one HERO figure (Exercises — always present, the core
-                  count for the session) reads as the hero-metric; Duration is
+                  count for the session) reads as the font-numeral tabular-nums font-bold leading-none tracking-tight; Duration is
                   subordinate (smaller, muted) so the two summary numbers form a
                   clear hierarchy instead of two equal-weight twins. */}
               <div className="flex flex-wrap items-end gap-x-8 gap-y-3 mb-6">
                   <div className="flex items-center gap-2.5">
                     <Target className="w-6 h-6 text-ink-muted" />
                     <div>
-                      <div className="section-label">Exercises</div>
-                      <div className="hero-metric text-display text-ink">{workout.exercises?.length || 0} <span className="text-caption font-semibold text-ink-muted">{(workout.exercises?.length || 0) === 1 ? 'exercise' : 'exercises'}</span></div>
+                      <div className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Exercises</div>
+                      <div className="font-numeral tabular-nums font-bold leading-none tracking-tight text-display text-ink">{workout.exercises?.length || 0} <span className="text-caption font-semibold text-ink-muted">{(workout.exercises?.length || 0) === 1 ? 'exercise' : 'exercises'}</span></div>
                     </div>
                   </div>
                   {workout.duration_minutes != null && (
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-ink-faint" />
                       <div>
-                        <div className="section-label">Duration</div>
+                        <div className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Duration</div>
                         <div className="font-technical font-bold text-body text-ink-secondary">{workout.duration_minutes} <span className="text-caption font-semibold text-ink-muted">min</span></div>
                       </div>
                     </div>

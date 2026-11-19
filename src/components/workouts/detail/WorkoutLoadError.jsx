@@ -9,7 +9,7 @@ export default function WorkoutLoadError({ navigate, programLoadError, refetchEn
       <div className="max-w-6xl mx-auto p-4 md:p-6 min-h-[calc(100dvh-var(--layout-header-height,56px)-var(--dock-clearance))] flex flex-col items-center justify-center">
         <Card className="w-full max-w-md mx-auto rise-in">
           <CardContent className="py-12 text-center">
-            <i className="w-10 h-10 rounded-control glass-inset text-ink-muted flex items-center justify-center not-italic mx-auto mb-3">
+            <i className="w-10 h-10 rounded-control bg-charcoal-surface2 rounded-control text-ink-muted flex items-center justify-center not-italic mx-auto mb-3">
               <Dumbbell className="w-5 h-5" />
             </i>
             {programLoadError ? (

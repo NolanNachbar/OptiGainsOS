@@ -16,9 +16,9 @@ export default function WorkoutViewMode({ CardioSessions, handleStartLogging, is
               {workout.exercises?.map((exercise, index) => {
                 const isLogFormat = Array.isArray(exercise.sets);
                 return (
-                  <div key={index} className="glass-inset px-4 py-3.5">
+                  <div key={index} className="bg-charcoal-surface2 rounded-control px-4 py-3.5">
                       <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-full glass-inset border border-charcoal-border flex items-center justify-center text-ink-secondary font-technical font-extrabold text-body flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-charcoal-surface2 rounded-control border border-charcoal-border flex items-center justify-center text-ink-secondary font-technical font-extrabold text-body flex-shrink-0">
                           {index + 1}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -86,7 +86,7 @@ export default function WorkoutViewMode({ CardioSessions, handleStartLogging, is
               Logging" reachable after scrolling the exercise list. Clears the
               floating dock via --dock-clearance + safe-area inset.
               wd-6: the CTA is its own teal action surface, so the wrapping
-              glass-elevated panel (a card around a button) is dropped — the
+              bg-charcoal-surface2 border border-charcoal-border shadow-lg panel (a card around a button) is dropped — the
               button rides directly in the sticky slot with no redundant chrome
               behind it. */}
           <div

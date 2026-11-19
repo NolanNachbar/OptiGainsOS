@@ -184,7 +184,7 @@ export default function WorkoutLoggingHeader({
     <>
       <div
         ref={topBarRef}
-        className="fixed top-0 left-0 right-0 z-[9998] border-x-0 glass-elevated glass-elevated--substacked"
+        className="fixed top-0 left-0 right-0 z-[9998] border-x-0 bg-charcoal-surface2 border border-charcoal-border shadow-lg border-t-0"
         style={{ top: 'var(--layout-header-height, 0px)' }}
       >
         {/* Safe-area fix (coordinator, r4f): pt-2 alone left the clock/Rest/
@@ -243,7 +243,7 @@ export default function WorkoutLoggingHeader({
                 disabled={!restActive}
                 className={`flex items-center gap-1.5 rounded-full px-2.5 min-h-[36px] font-technical border transition-colors ${
                   restActive
-                    ? `border-charcoal-border bg-[var(--glass-edge)] ${restUrgent ? 'rest-urgent' : ''}`
+                    ? `border-charcoal-border bg-[var(--color-border)] ${restUrgent ? 'rest-urgent' : ''}`
                     : 'border-transparent text-ink-faint'
                 }`}
                 aria-label={restActive ? `Rest, ${formatRestTime(restTimer)} remaining` : 'Rest timer idle'}
@@ -254,7 +254,7 @@ export default function WorkoutLoggingHeader({
                 </span>
               </button>
               {showRestPopover && restActive && (
-                <div className="absolute right-0 top-full mt-1 glass-elevated rounded-control overflow-hidden p-2 z-[10200] flex items-center gap-1.5 text-ink">
+                <div className="absolute right-0 top-full mt-1 bg-charcoal-surface2 border border-charcoal-border shadow-lg rounded-control overflow-hidden p-2 z-[10200] flex items-center gap-1.5 text-ink">
                   <Button
                     variant="ghost"
                     onClick={() => onAddRestTime?.(-10)}
@@ -369,7 +369,7 @@ export default function WorkoutLoggingHeader({
                     onClick={() => onSelectExercise?.(i)}
                     className={`flex-shrink-0 min-h-[32px] px-3 rounded-full text-xs font-bold whitespace-nowrap border transition-colors flex items-center gap-1 ${
                       focused
-                        ? 'border-white/90 text-ink bg-[var(--glass-edge)]'
+                        ? 'border-white/90 text-ink bg-[var(--color-border)]'
                         : ex.done
                         ? 'border-transparent text-ink-faint bg-track'
                         : 'border-transparent text-ink-muted bg-track'

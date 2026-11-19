@@ -128,22 +128,22 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
                   <MoreVertical className="w-4 h-4" />
                 </Button>
                 {openMenu && (
-                  <div className={`absolute right-0 glass-elevated rounded-control py-1 z-20 min-w-[140px] ${flipUp ? "bottom-12" : "top-12"}`}>
+                  <div className={`absolute right-0 bg-charcoal-surface2 border border-charcoal-border shadow-lg rounded-control py-1 z-20 min-w-[140px] ${flipUp ? "bottom-12" : "top-12"}`}>
                     <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(workout.id); setOpenMenu(false); }}
-                      className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-[var(--glass-bg)] flex items-center gap-2"
+                      className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-[var(--color-surface)] flex items-center gap-2"
                     >
                       <Edit className="w-3.5 h-3.5" />Edit
                     </button>
                     <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClone(workout.id); setOpenMenu(false); }}
-                      className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-[var(--glass-bg)] flex items-center gap-2"
+                      className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-[var(--color-surface)] flex items-center gap-2"
                     >
                       <Copy className="w-3.5 h-3.5" />Clone
                     </button>
                     <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleExport(); setOpenMenu(false); }}
-                      className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-[var(--glass-bg)] flex items-center gap-2"
+                      className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-[var(--color-surface)] flex items-center gap-2"
                     >
                       <Download className="w-3.5 h-3.5" />Export JSON
                     </button>
@@ -179,13 +179,13 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
               card's dominant element, not the two metrics under it. */}
           <div className="flex">
             <div className="flex-1 flex flex-col">
-              <span className="section-label">Duration</span>
+              <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Duration</span>
               <span className={`font-technical font-bold text-emph mt-0.5 ${validDuration ? "text-ink-secondary" : "text-ink-faint"}`}>
                 {validDuration ? `${validDuration} min` : "--"}
               </span>
             </div>
             <div className="flex-1 flex flex-col border-l hairline pl-4">
-              <span className="section-label">Exercises</span>
+              <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Exercises</span>
               <span className="font-technical font-bold text-emph text-ink-secondary mt-0.5">{workout.exercises?.length || 0}</span>
             </div>
           </div>

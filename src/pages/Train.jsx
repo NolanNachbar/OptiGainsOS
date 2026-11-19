@@ -3,7 +3,8 @@ import WeeklySchedule from "./WeeklySchedule";
 import Workouts from "./Workouts";
 import { SubTabs } from "@/components/ui";
 import { useEnrollments } from "@/hooks/useProgramQueries";
-import { CalendarDays, Dumbbell, BookOpen, Activity, PenLine } from "lucide-react";
+import { useActiveWorkoutSession, activeSessionPath } from "@/hooks/useActiveWorkoutSession";
+import { CalendarDays, Dumbbell, BookOpen, Activity, PenLine, Play, ChevronRight } from "lucide-react";
 
 const TABS = [
   { id: "schedule", label: "Schedule", icon: CalendarDays },
@@ -35,9 +36,30 @@ export default function Train() {
   const { enrollments } = useEnrollments();
   const activeEnrollment = enrollments.find((e) => e.status === "active");
 
+  // Hierarchy: the session is the one primary action, then the program row,
+  // then the library tabs. Read-only: an in-progress session resumes at its
+  // own URL; otherwise Today owns the prescription and the start flow.
+  const { activeSession } = useActiveWorkoutSession();
+  const resumePath = activeSession?.isFresh ? activeSessionPath(activeSession) : null;
+
   return (
     <div className="bg-charcoal min-h-full text-ink">
-      {/* Layout owns the page title; this row only carries the active program. */}
+      {/* Layout owns the page title. */}
+      <div className="max-w-5xl mx-auto px-gutter lg:px-0 pt-3">
+        <Link
+          to={resumePath || "/today"}
+          className="flex items-center gap-3 min-h-[56px] px-4 rounded-control bg-brand text-[var(--color-action-dark)] transition-transform duration-fast ease-out active:scale-[0.98]"
+        >
+          <Play className="w-4 h-4 shrink-0" aria-hidden="true" />
+          <span className="flex-1 min-w-0">
+            <span className="block text-emph truncate">{resumePath ? "Resume workout" : "Today's session"}</span>
+            <span className="block text-caption opacity-70 truncate">
+              {resumePath ? "Pick up where you left off." : "Check in, then start."}
+            </span>
+          </span>
+          <ChevronRight className="w-4 h-4 shrink-0" aria-hidden="true" />
+        </Link>
+      </div>
       {activeEnrollment?.program && (
         <div className="max-w-5xl mx-auto px-gutter lg:px-0 pt-2">
           <div className="flex items-center justify-between gap-3 py-row border-b border-charcoal-borderSoft">

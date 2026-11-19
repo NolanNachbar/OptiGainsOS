@@ -114,7 +114,7 @@ export default function WorkoutDetailDialogs({ allWorkoutLogs, exerciseLogs, han
           <div className="space-y-4 py-2">
             <FinishSummary exercises={exerciseLogs} allWorkoutLogs={allWorkoutLogs} weightUnit={weightUnit} />
             <div className="space-y-2">
-              <label className="section-label">Workout Notes</label>
+              <label className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Workout Notes</label>
               <Textarea
                 value={postWorkoutNotes}
                 onChange={(e) => setPostWorkoutNotes(e.target.value)}

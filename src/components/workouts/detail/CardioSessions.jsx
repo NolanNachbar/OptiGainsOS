@@ -22,7 +22,7 @@ export default function CardioSessions({ programWorkout }) {
   if (allCardio.length === 0) return null;
   return (
     <div className="space-y-2">
-      <p className="section-label">Conditioning</p>
+      <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Conditioning</p>
       {allCardio.map((c, i) => {
         const rtype = String(c.run_type || "").toLowerCase();
         const name = c._name || CARDIO_TYPE_LABEL[rtype] || (c.zone ? `${c.zone} ${c.activity_type || "run"}` : "Run");
@@ -34,7 +34,7 @@ export default function CardioSessions({ programWorkout }) {
           c.time_of_day && c.time_of_day !== "anytime" ? c.time_of_day.toUpperCase() : null,
         ].filter(Boolean).join(" · ");
         return (
-          <div key={`cardio-${i}`} className="flex items-start justify-between px-3.5 py-3 glass-inset">
+          <div key={`cardio-${i}`} className="flex items-start justify-between px-3.5 py-3 bg-charcoal-surface2 rounded-control">
             <div className="flex items-start gap-2.5">
               <Activity className="w-4 h-4 text-carb mt-0.5 shrink-0" />
               <div>

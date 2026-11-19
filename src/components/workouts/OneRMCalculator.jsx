@@ -74,16 +74,16 @@ export default function OneRMCalculator({ weightUnit }) {
               <CardContent className="pt-6 space-y-4">
                 <div className="text-center">
                   <div className="text-sm text-ink-muted mb-1">Estimated 1 Rep Max</div>
-                  <div className="hero-metric text-4xl text-ink">
+                  <div className="font-numeral tabular-nums font-bold leading-none tracking-tight text-4xl text-ink">
                     {oneRM} <span className="text-2xl text-ink-muted">{weightUnit}</span>
                   </div>
                 </div>
 
                 <div className="space-y-2 pt-3 border-t hairline">
-                  <p className="section-label">Weight for target reps</p>
+                  <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Weight for target reps</p>
                   <div className="grid grid-cols-3 gap-2">
                     {repRanges.map((targetReps) => (
-                      <div key={targetReps} className="text-center p-2 glass-inset">
+                      <div key={targetReps} className="text-center p-2 bg-charcoal-surface2 rounded-control">
                         <div className="text-xs text-ink-muted">{targetReps} rep{targetReps > 1 ? 's' : ''}</div>
                         <div className="font-semibold text-ink font-technical">
                           {calculateWeightForReps(oneRM, targetReps)} {weightUnit}
@@ -102,16 +102,16 @@ export default function OneRMCalculator({ weightUnit }) {
               <CardContent className="pt-6 space-y-4">
                 <div className="text-center">
                   <div className="text-sm text-ink-faint mb-1">Estimated 1 Rep Max</div>
-                  <div className="hero-metric text-4xl text-ink-faint">
+                  <div className="font-numeral tabular-nums font-bold leading-none tracking-tight text-4xl text-ink-faint">
                     --
                   </div>
                 </div>
 
                 <div className="space-y-2 pt-3 border-t hairline">
-                  <p className="section-label text-ink-faint">Weight for target reps</p>
+                  <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted text-ink-faint">Weight for target reps</p>
                   <div className="grid grid-cols-3 gap-2">
                     {repRanges.map((targetReps) => (
-                      <div key={targetReps} className="text-center p-2 glass-inset opacity-50">
+                      <div key={targetReps} className="text-center p-2 bg-charcoal-surface2 rounded-control opacity-50">
                         <div className="text-xs text-ink-faint">{targetReps} rep{targetReps > 1 ? 's' : ''}</div>
                         <div className="font-semibold text-ink-faint font-technical">--</div>
                       </div>

@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Combobox, ComboboxContent, ComboboxItem } from "@/components/ui/combobox";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
+import { PageHeader } from "@/components/ui";
 import { WORKOUT_TYPES } from "@/lib/constants";
 import { Plus, Trash2, Save, Repeat2 } from "lucide-react";
 import { toast } from "sonner";
@@ -267,17 +268,12 @@ export default function CreateWorkout() {
   return (
     <div className="p-4 md:p-6 bg-charcoal min-h-screen transition-colors duration-300">
       <div className="max-w-5xl mx-auto">
-        {/* Desktop-only page header. On mobile the shared Layout chrome already
-            prints the page name and the "Workout Details" CardTitle follows
-            immediately, so this in-file title+subtitle band is suppressed below
-            lg, it was the redundant third header stratum that pushed the first
-            input down the 390px viewport. */}
-        <div className="hidden lg:block mb-6">
-          <h1 className="text-2xl font-bold text-ink">{editId ? 'Edit Workout' : 'Create Workout'}</h1>
-          <p className="text-ink-muted text-sm mt-0.5">
-            {editId ? 'Edit structure and exercises' : 'Define structure. Save to library.'}
-          </p>
-        </div>
+        {/* Layout prints the page name below lg, so the h1 only shows on desktop. */}
+        <PageHeader
+          className="px-0 pt-0 mb-4 max-lg:hidden"
+          title={editId ? 'Edit Workout' : 'Create Workout'}
+          meta={editId ? 'Edit the structure and exercises.' : 'Set the structure. Save it to your library.'}
+        />
 
         <form onSubmit={handleSubmit}>
           <Card className="mb-4 md:mb-6">
@@ -315,7 +311,7 @@ export default function CreateWorkout() {
                 </div>
               ) : (
                 /* Disclosure, not a data field: a quiet inline toggle (auto
-                   width, no glass fill/edge/border) so it reads as a link-style
+                   width, no module fill/edge/border) so it reads as a link-style
                    affordance that reveals an optional field, never as another
                    empty input competing with the real Inputs above/below. Stays
                    neutral ink-muted (not coral) so it doesn't drift into a
@@ -334,7 +330,7 @@ export default function CreateWorkout() {
 
               {/* Quiet supporting row (create-workout-4): Folder / Type /
                   Duration are metadata under the prominent Title, so they wear
-                  the smaller .section-label eyebrow voice (uppercase, faint
+                  the smaller text-micro eyebrow voice (uppercase, faint
                   ink) and a tighter internal gap than the Title block — one
                   demoted group, not three peer fields competing with the
                   subject above. */}
@@ -457,7 +453,7 @@ export default function CreateWorkout() {
           </Card>
 
           {/* Mobile spacer: the action row below is `sticky bottom-0` and pins
-              its glass lid over whatever scrolls beneath it. Without this, the
+              its module lid over whatever scrolls beneath it. Without this, the
               last card's inputs can never scroll clear of the pinned bar, so
               they sit clipped behind it at the fold. The bar's full painted
               height is pt-3 (12px) + the 44px button + its bottom padding
@@ -473,14 +469,14 @@ export default function CreateWorkout() {
               so on mobile the coral Save must not live only at the bottom of the
               scroll: below lg the row is `sticky bottom-0`, pinned to the
               bottom edge (dock hidden on this route) with a safe-area inset, so it stays in the
-              thumb zone while the user scrolls the long form. A glass-sheet lid +
+              thumb zone while the user scrolls the long form. A bg-charcoal-surface2 border border-charcoal-border lid +
               hairline top edge separates it from the content scrolling beneath.
               At lg it returns to static flow (no dock, plenty of width), sitting
               at the natural end of the form. The negative inline margins let the
               sticky bar bleed to the page gutters on mobile while the lg:static
               state resets them. */}
           <div
-            className="sticky bottom-0 z-20 -mx-4 mt-2 flex gap-3 glass-sheet [border:0] border-t-[0.5px] [border-top-color:var(--color-border-soft)] px-4 pb-[calc(16px+env(safe-area-inset-bottom))] pt-3
+            className="sticky bottom-0 z-20 -mx-4 mt-2 flex gap-3 bg-charcoal-surface2 border border-charcoal-border [border:0] border-t-[0.5px] [border-top-color:var(--color-border-soft)] px-4 pb-[calc(16px+env(safe-area-inset-bottom))] pt-3
                        lg:static lg:z-auto lg:mx-0 lg:mt-0 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none lg:[backdrop-filter:none]"
           >
             <Button type="button" variant="ghost" size="lg" onClick={() => navigate("/workouts")} className="flex-1">
@@ -502,7 +498,7 @@ function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, o
     /* Inset padding tightens to p-3 below sm (create-workout-5) so the first
        exercise's Sets/Reps/Rest pull up within ~1.5 viewport heights on a
        390px screen; restores p-4 at sm+. */
-    <div className="glass-inset p-3 sm:p-4 rise-in">
+    <div className="bg-charcoal-surface2 rounded-control p-3 sm:p-4 rise-in">
         <div className="flex justify-between items-start mb-3 sm:mb-4">
           <h4 className="font-semibold text-ink">Exercise {index + 1}</h4>
           {canRemove && (
@@ -576,7 +572,7 @@ function StrengthExerciseCard({ index, exercise, canRemove, existingExercises, o
 
 function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep, onRemoveStep, onChangeStep }) {
   return (
-    <div className="glass-inset overflow-hidden rise-in">
+    <div className="bg-charcoal-surface2 rounded-control overflow-hidden rise-in">
       {/* Repeat header */}
       <div className="flex items-center gap-3 px-4 py-2.5 border-b border-charcoal-borderSoft">
         <Repeat2 className="w-4 h-4 text-ink-muted shrink-0" />
@@ -636,7 +632,7 @@ function RepeatBlockCard({ block, canRemove, onRemove, onChangeCount, onAddStep,
 
 function CardioStepCard({ index, step, canRemove, onRemove, onChange }) {
   return (
-    <div className="glass-inset p-3 sm:p-4 border-l-[3px] border-l-charcoal-border rise-in">
+    <div className="bg-charcoal-surface2 rounded-control p-3 sm:p-4 border-l-[3px] border-l-charcoal-border rise-in">
         <div className="flex justify-between items-start mb-3 sm:mb-4">
           <span className="text-xs font-bold uppercase tracking-[0.06em] text-ink-muted">
             Step {index + 1}

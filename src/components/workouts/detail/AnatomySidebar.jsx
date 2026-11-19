@@ -13,7 +13,7 @@ export default function AnatomySidebar({ isLogging, muscleView, setMuscleView, w
               className="hidden lg:flex flex-col items-center w-52 shrink-0 sticky"
               style={{ top: isLogging ? 'calc(var(--layout-header-height, 56px) + 8rem)' : 'calc(var(--layout-header-height, 56px) + 1.5rem)' }}
             >
-              <p className="section-label mb-2 self-start">Muscles worked</p>
+              <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-2 self-start">Muscles worked</p>
               <SegmentedControl
                 value={muscleView}
                 onChange={setMuscleView}

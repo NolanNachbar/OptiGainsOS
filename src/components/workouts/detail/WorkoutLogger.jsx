@@ -21,7 +21,7 @@ export default function WorkoutLogger({ CardioSessions, addExercise, addSet, all
                 lives after Phase A removed the header's own kebab) never
                 renders. Keep Cancel reachable here instead. */}
             {exerciseLogs.length === 0 && (
-              <div className="glass px-4 py-3 flex items-center justify-between gap-3">
+              <div className="bg-charcoal-surface border border-charcoal-border rounded-module px-4 py-3 flex items-center justify-between gap-3">
                 <p className="text-xs font-semibold text-ink-muted">No exercises in this workout yet.</p>
                 <button
                   type="button"
@@ -150,9 +150,9 @@ export default function WorkoutLogger({ CardioSessions, addExercise, addSet, all
                 below the logger so the focused exercise stays at the top of
                 the page. Pre-workout Notes still writes the same
                 preWorkoutNotes state either way. */}
-            <details className="glass-inset group mt-2">
+            <details className="bg-charcoal-surface2 rounded-control group mt-2">
               <summary className="flex items-center justify-between px-4 py-3 cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden min-h-[44px]">
-                <span className="section-label">Session details</span>
+                <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Session details</span>
                 <ChevronDown className="w-4 h-4 text-ink-muted transition-transform duration-200 group-open:rotate-180" />
               </summary>
               <div className="px-4 pb-4 space-y-4">
@@ -164,22 +164,22 @@ export default function WorkoutLogger({ CardioSessions, addExercise, addSet, all
                   <div className="flex items-center gap-2.5">
                     <Target className="w-5 h-5 text-ink-muted" />
                     <div>
-                      <div className="section-label">Exercises</div>
-                      <div className="hero-metric text-title text-ink">{workout.exercises?.length || 0}</div>
+                      <div className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Exercises</div>
+                      <div className="font-numeral tabular-nums font-bold leading-none tracking-tight text-title text-ink">{workout.exercises?.length || 0}</div>
                     </div>
                   </div>
                   {workout.duration_minutes != null && (
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-ink-faint" />
                       <div>
-                        <div className="section-label">Duration</div>
+                        <div className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Duration</div>
                         <div className="font-technical font-bold text-body text-ink-secondary">{workout.duration_minutes} <span className="text-caption font-semibold text-ink-muted">min</span></div>
                       </div>
                     </div>
                   )}
                 </div>
                 <div>
-                  <label className="section-label block mb-1.5">Pre-workout Notes</label>
+                  <label className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted block mb-1.5">Pre-workout Notes</label>
                   <Textarea
                     value={preWorkoutNotes}
                     onChange={(e) => setPreWorkoutNotes(e.target.value)}
