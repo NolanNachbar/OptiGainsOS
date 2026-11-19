@@ -144,9 +144,9 @@ export default function Coach() {
   return (
     <div className="flex flex-col px-4 py-6 md:px-8 bg-charcoal min-h-screen pb-[calc(var(--dock-total-height)+24px+env(safe-area-inset-bottom))]">
       <div className="max-w-3xl mx-auto w-full flex flex-col">
-        <PageHeader className="px-0 rise-in" eyebrow="Form review" title="Coach" meta="Upload a few reps for a critique. Side view works best." />
+        <PageHeader className="px-0 rise-in" title="Coach" />
         <p className="text-caption text-ink-muted mb-4">
-          Best on squat, deadlift or bench. One angle cannot see depth or load, so read it as a second set of eyes.
+          Upload a few reps from the side. Best on squat, deadlift or bench. One angle cannot see depth or load, so read it as a second set of eyes.
         </p>
 
         <input ref={fileInputRef} type="file" accept="video/*"

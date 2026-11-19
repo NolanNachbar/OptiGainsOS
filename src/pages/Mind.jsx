@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import QuickCapture from "@/components/QuickCapture";
-import { Button, PageHeader } from "@/components/ui";
+import { Button, PageHeader, EmptyState, ErrorState } from "@/components/ui";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -83,11 +83,7 @@ function TabQueryState({ isLoading, isError, onRetry }) {
   }
   if (isError) {
     return (
-      <div className="py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
-        <AlertTriangle className="w-7 h-7 text-muted-2 mx-auto mb-2" />
-        <p className="text-sm font-semibold text-muted-2 mb-3">Couldn't load data.</p>
-        <Button variant="ghost" size="sm" onClick={onRetry}>Retry</Button>
-      </div>
+      <ErrorState onRetry={onRetry} />
     );
   }
   return null;
@@ -286,7 +282,7 @@ function ReadingTab() {
             </div>
             <div>
               <Label className="text-xs text-ink-secondary mb-1.5 block">Notes</Label>
-              <Textarea size="default" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Key takeaways..." />
+              <Textarea size="default" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Key takeaways" />
             </div>
             <div className="flex gap-2 pt-1">
               <Button variant="ghost" size="lg" className="basis-1/3 shrink-0" onClick={() => { setShowAdd(false); resetForm(); }}>Cancel</Button>
@@ -454,10 +450,9 @@ function StudyTab() {
         <div className="space-y-2">
           <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
           {!isLoading && !isError && logs.length === 0 && (
-            <div className="py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
-              <GraduationCap className="w-7 h-7 text-faint mx-auto mb-2" />
-              <p className="text-sm font-semibold text-muted-2">Log your first session above to start the streak.</p>
-            </div>
+            <EmptyState icon={GraduationCap} title="No sessions yet">
+              Log a study session above and it shows up here.
+            </EmptyState>
           )}
           {logs.map(log => (
             <div key={log.id} className="flex items-center gap-3 px-4 py-3 bg-charcoal-surface2 rounded-control group">
@@ -642,11 +637,13 @@ function SkillsTab() {
       )}
 
       {!isLoading && !isError && skills.length === 0 && (
-        <div className="py-16 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
-          <Layers className="w-8 h-8 text-faint mx-auto mb-2" />
-          <p className="text-sm font-semibold text-muted-2 mb-3">Track what you're building, rate your level and keep skills warm.</p>
-          <Button variant="primary" size="lg" onClick={() => setShowAdd(true)}>Add your first skill</Button>
-        </div>
+        <EmptyState
+          icon={Layers}
+          title="No skills yet"
+          action={<Button variant="primary" size="lg" onClick={() => setShowAdd(true)}>Add your first skill</Button>}
+        >
+          Track what you're building, rate your level and keep skills warm.
+        </EmptyState>
       )}
 
       <ConfirmDialog
@@ -728,7 +725,7 @@ function CaptureTab() {
         <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3 flex items-center gap-2">
           <BookOpen className="w-3 h-3 text-violet" /> New Learning Log
         </h3>
-        <QuickCapture domain="mind" focusHue="violet" placeholder="What did you learn today? Notes on books, courses, or technical concepts..." />
+        <QuickCapture domain="mind" focusHue="violet" placeholder="What did you learn today? Notes on books, courses or technical concepts" />
       </div>
       {isEmpty && (
         <div>
@@ -798,7 +795,7 @@ export default function Mind({ hideHeader }) {
       `}</style>
       <div className="max-w-3xl mx-auto">
         {!hideHeader && (
-          <PageHeader className="px-0 rise-in" eyebrow="Notes, reading, study" title="Mind" />
+          <PageHeader className="px-0 rise-in" title="Mind" />
         )}
 
         <SubTabs

@@ -23,7 +23,6 @@ import { deriveInitials } from "@/lib/initials";
 import DataExport from "@/components/DataExport";
 import NotificationSettings from "@/components/NotificationSettings";
 import { toast } from "sonner";
-import { format } from "date-fns";
 import { workSets } from "@/utils/setTypes";
 
 function SectionHeader({ icon: Icon, title }) {
@@ -119,24 +118,8 @@ export default function Profile({ hideHeader }) {
           }
         }
       }
-      let streak = 0;
-      const uniqueDays = [...new Set(data.map(l => l.log_date))].sort().reverse();
-      const today = format(new Date(), 'yyyy-MM-dd');
-      const yesterdayDt = new Date();
-      yesterdayDt.setDate(yesterdayDt.getDate() - 1);
-      const yesterday = format(yesterdayDt, 'yyyy-MM-dd');
-      let expected = uniqueDays[0] === yesterday ? yesterday : today;
-      for (const d of uniqueDays) {
-        if (d === expected) {
-          streak++;
-          const dt = new Date(`${expected}T12:00:00`);
-          dt.setDate(dt.getDate() - 1);
-          expected = format(dt, 'yyyy-MM-dd');
-        } else {
-          break;
-        }
-      }
-      return { totalWorkouts, totalVolumeLbs: Math.round(totalVolumeLbs), streak };
+      const daysLogged = new Set(data.map(l => l.log_date)).size;
+      return { totalWorkouts, totalVolumeLbs: Math.round(totalVolumeLbs), daysLogged };
     },
   });
 
@@ -378,7 +361,7 @@ export default function Profile({ hideHeader }) {
                 stats={profileStats ? [
                   { value: profileStats.totalWorkouts, label: "Workouts" },
                   { value: formatVol(profileStats.totalVolumeLbs), label: `Vol (${formData.weight_unit || 'lbs'})` },
-                  { value: profileStats.streak, label: "Streak" },
+                  { value: profileStats.daysLogged, label: "Days logged" },
                 ] : null}
               />
 
@@ -412,7 +395,7 @@ export default function Profile({ hideHeader }) {
                 className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-left text-ink-muted hover:text-ink hover:bg-charcoal-elevated transition-colors"
               >
                 <LogOut className="w-4 h-4 shrink-0" />
-                Sign Out
+                Sign out
               </button>
             </div>
           </aside>
@@ -438,7 +421,7 @@ export default function Profile({ hideHeader }) {
                 stats={profileStats ? [
                   { value: profileStats.totalWorkouts, label: "Workouts" },
                   { value: formatVol(profileStats.totalVolumeLbs), label: `Vol (${formData.weight_unit || 'lbs'})` },
-                  { value: profileStats.streak, label: "Streak" },
+                  { value: profileStats.daysLogged, label: "Days logged" },
                 ] : null}
               />
               <Card>
@@ -458,7 +441,7 @@ export default function Profile({ hideHeader }) {
                 className="mt-3 w-full flex items-center justify-center gap-2 min-h-tap rounded-control bg-charcoal-surface2 border border-charcoal-border text-ink-muted font-semibold text-body active:bg-charcoal-elevated hover:text-ink hover:bg-charcoal-elevated transition-colors duration-base"
               >
                 <LogOut className="w-4 h-4" />
-                Sign Out
+                Sign out
               </button>
 
               <p className="mt-auto pt-10 text-center text-caption font-semibold text-ink-muted">OptiGains</p>
@@ -468,6 +451,7 @@ export default function Profile({ hideHeader }) {
               <PageHeader
                 className={activeSection === null ? 'px-0 hidden md:flex' : 'px-0'}
                 eyebrow={activeSection !== null ? 'Profile' : undefined}
+                mobileTitle={activeSection !== null}
                 title={NAV.find(n => n.id === resolvedSection)?.label}
                 meta={
                   resolvedSection === 'identity' ? 'Account details' :
