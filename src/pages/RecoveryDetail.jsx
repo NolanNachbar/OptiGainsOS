@@ -1,11 +1,9 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/api/supabaseClient";
+import { useQueryClient } from "@tanstack/react-query";
 import { getTodayString } from "@/utils/dateUtils";
 import { useRecoveryMetrics } from "@/hooks/useUserQueries";
-import { useTodayPrescription } from "@/hooks/useEngineQueries";
+import { useTodayPrescription, useAthleteState } from "@/hooks/useEngineQueries";
 import { calculateReadinessScore, getReadinessCategory, calculateACWR } from "@/utils/recoveryUtils";
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -50,7 +48,6 @@ const CHART_BODY_H = "h-[170px]";
 const CHART_BODY_PAD = "pt-2 pb-4";
 
 export default function RecoveryDetail() {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { recoveryMetrics, isLoading, error } = useRecoveryMetrics(60); // Get 60 days for chronic load
@@ -100,31 +97,33 @@ export default function RecoveryDetail() {
     : acwrSpectrum === "warn" ? "var(--warn)"
     : "var(--text-muted)";
 
-  // Prefer the engine's readiness score (athlete_state.recovery.score) so this
-  // page matches AthleteState; fall back to the local formula only when the
-  // engine hasn't computed today's state yet.
+  // Readiness comes from the SAME source as Today: useAthleteState, which
+  // falls back to the most recent athlete_state row on/before today. Querying
+  // only today's row made this page say "Unknown" while Today showed a score.
+  // The local formula is a last resort when the engine has never run.
   const today = getTodayString();
-  const { data: athleteState, isError: athleteStateError } = useQuery({
-    queryKey: ["athlete-state", today, user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("athlete_state")
-        .select("*")
-        .eq("created_by", user.id)
-        .eq("date", today)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user,
-    staleTime: 5 * 60 * 1000,
-  });
-
+  const { state: athleteState, error: athleteStateError } = useAthleteState(today);
+  const engineRecovery = athleteState?.recovery || null;
+  const engineScore = engineRecovery?.score ?? null;
   const score = useMemo(() => {
-    const engineScore = athleteState?.recovery?.score;
-    return engineScore != null ? engineScore : calculateReadinessScore(latest, null);
-  }, [athleteState, latest]);
-  const category = getReadinessCategory(score);
+    if (engineScore != null) return Math.round(engineScore);
+    return calculateReadinessScore(latest, null);
+  }, [engineScore, latest]);
+  const scoreSource = engineScore != null ? "engine" : score != null ? "local" : "none";
+  const stateDate = athleteState?.date;
+  const staleState = scoreSource === "engine" && stateDate && stateDate !== today;
+  // Basis line: the engine's own inputs when the score is the engine's (same
+  // line Today renders), else the raw biometrics the local formula used.
+  const basisSrc = scoreSource === "engine" ? engineRecovery : latest;
+  const basisLine = [
+    basisSrc?.hrv != null && `HRV ${Math.round(basisSrc.hrv)} ms`,
+    basisSrc?.resting_hr != null && `RHR ${Math.round(basisSrc.resting_hr)} bpm`,
+    basisSrc?.sleep_score != null && `Sleep ${Math.round(basisSrc.sleep_score)}`,
+    basisSrc?.body_battery != null && `Battery ${Math.round(basisSrc.body_battery)}%`,
+  ].filter(Boolean).join(" · ");
+  const category = score == null
+    ? { label: "No reading yet" }
+    : getReadinessCategory(score);
   // Keep readiness in its owned hue (teal) for the healthy tiers so it doesn't
   // collide with body-battery green; only degrade to warn/bad on low scores.
   const readinessColor =
@@ -211,8 +210,16 @@ export default function RecoveryDetail() {
                   {category.label}
                 </Badge>
                 <ReasonLine className="mb-2">
-                  {[latest?.hrv != null && `HRV ${Math.round(latest.hrv)} ms`, latest?.sleep_score != null && `Sleep ${latest.sleep_score}`, latest?.body_battery != null && `Battery ${latest.body_battery}%`].filter(Boolean).join(" · ") || "No check-in, using defaults."}
+                  {basisLine ? `Inputs: ${basisLine}` : score == null ? "No wearable data or check-in yet." : "No check-in, using defaults."}
                 </ReasonLine>
+                {staleState && (
+                  <p className="text-xs text-ink-muted mb-2 tabular-nums">
+                    Last computed {format(parseISO(stateDate), "MMM d")}
+                  </p>
+                )}
+                {scoreSource === "local" && !athleteStateError && (
+                  <p className="text-xs text-ink-muted mb-2">Estimated from biometrics. No engine reading yet.</p>
+                )}
                 {athleteStateError && (
                   <p className="text-xs text-warn mb-2">Estimated from raw biometrics. Engine unavailable.</p>
                 )}
@@ -347,7 +354,6 @@ export default function RecoveryDetail() {
           <EmptyState
             className="mb-6"
             title="No biometric trends yet"
-            action={<Button variant="secondary" size="sm" onClick={goToSync}>Sync</Button>}
           >
             Connect a wearable to populate HRV, steps and sleep. Charts draw after 3 days of data.
           </EmptyState>
@@ -410,9 +416,6 @@ export default function RecoveryDetail() {
                 {!hasHrv ? (
                   <div className="flex h-full flex-col items-start justify-center gap-2 text-xs font-semibold text-ink-muted">
                     <span className="flex items-center gap-2"><Info className="w-4 h-4 shrink-0" /> No HRV data yet.</span>
-                    <Button variant="coralGhost" size="sm" onClick={goToSync}>
-                      <Watch className="w-3.5 h-3.5 shrink-0" /> Sync wearable
-                    </Button>
                   </div>
                 ) : (
                 <ResponsiveContainer width="100%" height="100%">
@@ -453,9 +456,6 @@ export default function RecoveryDetail() {
                 {!hasSteps ? (
                   <div className="flex h-full flex-col items-start justify-center gap-2 text-xs font-semibold text-ink-muted">
                     <span className="flex items-center gap-2"><Info className="w-4 h-4 shrink-0" /> No step data yet.</span>
-                    <Button variant="coralGhost" size="sm" onClick={goToSync}>
-                      <Watch className="w-3.5 h-3.5 shrink-0" /> Sync wearable
-                    </Button>
                   </div>
                 ) : (
                 <ResponsiveContainer width="100%" height="100%">
@@ -491,9 +491,6 @@ export default function RecoveryDetail() {
                 {!hasSleep ? (
                   <div className="flex h-full flex-col items-start justify-center gap-2 text-xs font-semibold text-ink-muted">
                     <span className="flex items-center gap-2"><Info className="w-4 h-4 shrink-0" /> No sleep duration data yet.</span>
-                    <Button variant="coralGhost" size="sm" onClick={goToSync}>
-                      <Watch className="w-3.5 h-3.5 shrink-0" /> Sync wearable
-                    </Button>
                   </div>
                 ) : (
                 <ResponsiveContainer width="100%" height="100%">
