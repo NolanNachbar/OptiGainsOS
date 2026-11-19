@@ -263,7 +263,7 @@ export default function ExerciseCard({
   // still obvious. cellBase carries everything except bg/text color so the
   // RIR cell below can swap those two for its tint instead.
   const cellBase =
-    "h-11 w-full min-w-0 rounded-control text-center font-technical font-extrabold text-body " +
+    "h-10 w-full min-w-0 rounded-control text-center font-numeral font-semibold text-emph tabular-nums " +
     "placeholder:text-ink-faint placeholder:font-semibold border-0 touch-manipulation " +
     "focus:outline focus:outline-[1.5px] focus:outline-offset-0 focus:outline-white/90 focus:ring-0";
 
@@ -696,7 +696,7 @@ export default function ExerciseCard({
         <LoadWhy loadWhy={loadWhy} lastPerformance={lastPerformance} weightUnit={weightUnit} />
 
         {/* Column header */}
-        <div className={`${gridCols} gap-1 sm:gap-1.5 pb-1.5 text-micro text-ink-muted`}>
+        <div className={`${gridCols} gap-1 sm:gap-1.5 items-end pb-1 border-b border-charcoal-borderSoft mb-1 text-micro text-ink-muted`}>
           <span className="pl-0.5">Set</span>
           <span>Prev</span>
           <span className="text-center">{weightUnit}</span>
@@ -757,7 +757,7 @@ export default function ExerciseCard({
               </div>
             )}
             <div
-              className={`${gridCols} gap-1 sm:gap-1.5 items-center min-h-[48px] py-[5px] tabular-nums transition-colors [transition-timing-function:var(--ease)] duration-base motion-reduce:transition-none ${
+              className={`${gridCols} gap-1 sm:gap-1.5 items-center h-12 tabular-nums transition-colors [transition-timing-function:var(--ease)] duration-base motion-reduce:transition-none ${
                 isActive ? 'bg-charcoal-surface2 rounded-control -mx-2 px-2 shadow-[inset_2px_0_0_var(--text-primary)]' : ''
               } ${!set.completed && !isActive ? 'text-ink-faint' : ''}`}
               aria-current={isActive ? 'step' : undefined}
@@ -767,7 +767,7 @@ export default function ExerciseCard({
                 onClick={() => setMarkMenuIndex((cur) => (cur === setIndex ? null : setIndex))}
                 aria-expanded={markMenuIndex === setIndex}
                 aria-label={`Set ${set.set_number}${currentMark(set) ? `, ${SET_MARK_LABEL[currentMark(set)]}` : ''}. Change set type`}
-                className={`relative font-technical text-body font-extrabold pl-0.5 text-left touch-manipulation min-h-[44px] -my-3.5 after:content-[''] after:absolute after:inset-y-0 after:-left-2 after:right-0 ${
+                className={`relative font-numeral tabular-nums text-emph font-semibold pl-0.5 text-left touch-manipulation min-h-[44px] -my-3.5 after:content-[''] after:absolute after:inset-y-0 after:-left-2 after:right-0 ${
                   baseType(set) === 'daily_min' ? 'text-info' : currentMark(set) ? 'text-brand' : (set.completed || isActive) ? 'text-ink' : 'text-ink-faint'
                 }`}
               >
@@ -782,7 +782,7 @@ export default function ExerciseCard({
                   onUpdateSet(exerciseIndex, setIndex, 'reps', prevSet.reps);
                 }}
                 aria-label={prevSet ? `Previous set ${prevSet.weight} by ${prevSet.reps}, tap to use` : 'No previous set'}
-                className="font-technical text-caption font-semibold text-ink-faint pr-1 text-left tabular-nums disabled:cursor-default enabled:active:text-brand min-h-[44px] min-w-0 max-w-full overflow-hidden -my-3.5 flex items-center"
+                className="font-numeral text-caption text-ink-muted pr-1 text-left tabular-nums disabled:cursor-default enabled:active:text-brand min-h-[44px] min-w-0 max-w-full overflow-hidden -my-3.5 flex items-center"
               >
                 <span className="min-w-0 truncate whitespace-nowrap">{prevSet ? `${prevSet.weight}×${prevSet.reps}` : '—'}</span>
               </button>
