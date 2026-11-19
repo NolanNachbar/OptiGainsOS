@@ -20,7 +20,7 @@ export default function FinishSummary({ exercises, allWorkoutLogs, weightUnit = 
   if (!summary || summary.exercises.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-charcoal-border">
+    <div className="rounded-control border border-charcoal-border">
       <button
         type="button"
         aria-expanded={open}
@@ -34,12 +34,12 @@ export default function FinishSummary({ exercises, allWorkoutLogs, weightUnit = 
         </span>
       </button>
       {open && (
-        <div className="px-3 pb-3 space-y-2 text-[11px] font-technical text-ink-muted">
+        <div className="px-3 pb-3 space-y-2 text-caption font-technical text-ink-muted">
           {summary.exercises.map((e) => (
             <div key={e.name} className="flex justify-between gap-3">
               <span className="text-ink truncate">{e.name}</span>
               <span className="tabular-nums text-right shrink-0">
-                {e.best ? `${e.best.weight}×${e.best.reps}` : "—"}
+                {e.best ? `${e.best.weight}×${e.best.reps}` : "--"}
                 {e.e1rm != null && ` · e1RM ${Math.round(e.e1rm)}`}
                 {e.delta != null && ` (${e.delta > 0 ? "+" : ""}${e.delta})`}
               </span>

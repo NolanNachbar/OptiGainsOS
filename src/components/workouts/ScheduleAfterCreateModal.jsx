@@ -119,7 +119,7 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
 
           {/* Calendar Preview */}
           {scheduledWorkouts.length > 0 && (
-            <div className="border border-charcoal-border rounded-lg p-4 bg-charcoal-surface">
+            <div className="border border-charcoal-border rounded-control p-4 bg-charcoal-surface">
               <h3 className="section-label mb-3 flex items-center gap-2">
                 <BookOpen className="w-3.5 h-3.5 text-ink-muted" />
                 Cycle 1 Schedule Preview
@@ -129,7 +129,7 @@ export default function ScheduleAfterCreateModal({ program, workouts, open, onCl
                 {scheduledWorkouts.map((workout, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between bg-charcoal-surface2 rounded-lg px-3 py-2"
+                    className="flex items-center justify-between bg-charcoal-surface2 rounded-control px-3 py-2"
                   >
                     <div className="flex items-center gap-3">
                       <Badge variant="slate">

@@ -108,7 +108,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
         >
 
           {/* Split summary chips */}
-          <div className="flex flex-wrap gap-2 p-3 bg-charcoal-elevated bg-charcoal-surface rounded-xl border border-charcoal-border">
+          <div className="flex flex-wrap gap-2 p-3 bg-charcoal-elevated bg-charcoal-surface rounded-control border border-charcoal-border">
             {split.map((day, i) => (
               <Badge
                 key={i}
@@ -134,7 +134,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                     key={preset.weeks}
                     onClick={() => { setTotalWeeks(preset.weeks); setCustomWeeks(""); }}
                     className={[
-                      "p-3 rounded-xl border-2 text-left transition-all",
+                      "p-3 rounded-control border-2 text-left transition-all",
                       isActive
                         ? "border-brand/30 bg-brand/[8%]"
                         : "border-charcoal-border bg-charcoal-surface hover:border-brand/30",
@@ -224,7 +224,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                 <button
                   onClick={() => setDeloadMode("match_intro")}
                   className={[
-                    "w-full text-left p-3 rounded-xl border-2 transition-all",
+                    "w-full text-left p-3 rounded-control border-2 transition-all",
                     deloadMode === "match_intro"
                       ? "border-amber-400 bg-warn/10"
                       : "border-charcoal-border bg-charcoal-surface hover:border-warn/20",
@@ -245,7 +245,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                 <button
                   onClick={() => setDeloadMode("reduce")}
                   className={[
-                    "w-full text-left p-3 rounded-xl border-2 transition-all",
+                    "w-full text-left p-3 rounded-control border-2 transition-all",
                     deloadMode === "reduce"
                       ? "border-amber-400 bg-warn/10"
                       : "border-charcoal-border bg-charcoal-surface hover:border-warn/20",
@@ -290,7 +290,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
                 <div
                   key={w.week}
                   title={w.description}
-                  className={`px-3 py-2 rounded-lg border text-xs font-medium ${w.chipClass}`}
+                  className={`px-3 py-2 rounded-control border text-xs font-medium ${w.chipClass}`}
                 >
                   {w.type === "intro" ? "Intro" : w.type === "deload" ? "Deload" : `Wk ${w.week}`}
                 </div>
@@ -315,7 +315,7 @@ export default function ProgramDurationModal({ split, goal, onConfirm, onCancel 
           </div>
 
           {/* Info box */}
-          <div className="flex gap-3 p-3 bg-brand/[8%] border border-brand/30 rounded-xl text-sm text-brand text-brand">
+          <div className="flex gap-3 p-3 bg-brand/[8%] border border-brand/30 rounded-control text-sm text-brand text-brand">
             <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
             <p>
               Each week's workout will be generated with adjusted sets, reps, and rest

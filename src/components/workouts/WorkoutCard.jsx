@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MoreVertical, Edit, Copy, Trash2, FolderOpen, Download } from "lucide-react";
@@ -14,17 +14,14 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
   const [flipUp, setFlipUp] = useState(false);
   const menuRef = useRef(null);
   const triggerRef = useRef(null);
-  const navigate = useNavigate();
 
   // Rise-in only on the card's first mount. "Show 8 more" re-renders the whole
   // list; cards keyed by workout.id keep their instance, so this ref stays true
   // for them and they don't re-trigger the stagger — only the freshly revealed
   // batch (new instances) animates in.
-  const firstMount = useRef(true);
-  const riseClass = firstMount.current ? RISE[index % 3] : "";
-  useEffect(() => {
-    firstMount.current = false;
-  }, []);
+  // Lazy initial state: computed once on mount, and an animation class that
+  // stays applied does not replay.
+  const [riseClass] = useState(() => RISE[index % 3]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -88,7 +85,7 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
     a.download = `${workout.title.replace(/\s+/g, "_")}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success(`"${workout.title}" exported`);
+    toast.success(`Exported "${workout.title}".`);
   };
   return (
     <div className={riseClass}>
@@ -131,7 +128,7 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
                   <MoreVertical className="w-4 h-4" />
                 </Button>
                 {openMenu && (
-                  <div className={`absolute right-0 glass-elevated rounded-xl py-1 z-20 min-w-[140px] ${flipUp ? "bottom-12" : "top-12"}`}>
+                  <div className={`absolute right-0 glass-elevated rounded-control py-1 z-20 min-w-[140px] ${flipUp ? "bottom-12" : "top-12"}`}>
                     <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(workout.id); setOpenMenu(false); }}
                       className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-[var(--glass-bg)] flex items-center gap-2"
@@ -164,7 +161,7 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
           {/* Reserved title + description zone keeps every card the same height
               whether or not a description exists. */}
           <div className="min-h-[44px]">
-            <h3 className="text-[17px] font-extrabold text-ink line-clamp-2 mt-0.5 leading-snug pr-12">
+            <h3 className="text-title font-extrabold text-ink line-clamp-2 mt-0.5 leading-snug pr-12">
               {workout.title}
             </h3>
             {subtitle && (
@@ -178,18 +175,18 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
         <div className="pt-0 pb-4 px-4 md:px-6">
           {/* Stats row — both cells always render so columns stay stable. The
               two values are demoted below the title (train-library-5): smaller
-              (text-[15px]) and secondary ink so the workout NAME stays the
+              (text-emph) and secondary ink so the workout NAME stays the
               card's dominant element, not the two metrics under it. */}
           <div className="flex">
             <div className="flex-1 flex flex-col">
               <span className="section-label">Duration</span>
-              <span className={`font-technical font-bold text-[15px] mt-0.5 ${validDuration ? "text-ink-secondary" : "text-ink-faint"}`}>
-                {validDuration ? `${validDuration} min` : "—"}
+              <span className={`font-technical font-bold text-emph mt-0.5 ${validDuration ? "text-ink-secondary" : "text-ink-faint"}`}>
+                {validDuration ? `${validDuration} min` : "--"}
               </span>
             </div>
             <div className="flex-1 flex flex-col border-l hairline pl-4">
               <span className="section-label">Exercises</span>
-              <span className="font-technical font-bold text-[15px] text-ink-secondary mt-0.5">{workout.exercises?.length || 0}</span>
+              <span className="font-technical font-bold text-emph text-ink-secondary mt-0.5">{workout.exercises?.length || 0}</span>
             </div>
           </div>
         </div>

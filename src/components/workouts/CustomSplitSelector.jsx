@@ -118,7 +118,7 @@ export default function CustomSplitSelector({ daysPerWeek, duration, onSelectSpl
                   <button
                     key={preset.id}
                     onClick={() => handleSelectPreset(preset)}
-                    className={`w-full p-4 rounded-lg border-2 text-left transition-all ${
+                    className={`w-full p-4 rounded-control border-2 text-left transition-all ${
                       selectedPreset === preset.id && !isCustomMode
                         ? 'border-brand bg-brand/[5%]'
                         : 'border-charcoal-border  hover:border-brand/30 bg-charcoal-surface '
@@ -159,7 +159,7 @@ export default function CustomSplitSelector({ daysPerWeek, duration, onSelectSpl
             </div>
 
             {isCustomMode && (
-              <div className="p-4 border-2 border-brand/30 rounded-lg bg-brand/[5%]/50">
+              <div className="p-4 border-2 border-brand/30 rounded-control bg-brand/[5%]/50">
                 <p className="text-sm text-ink-muted  mb-3">
                   Choose the focus for each day of your split
                 </p>
@@ -210,7 +210,7 @@ export default function CustomSplitSelector({ daysPerWeek, duration, onSelectSpl
                   <button
                     key={n}
                     onClick={() => setExercisesPerDay(n)}
-                    className={`flex-1 py-2 rounded-lg text-sm font-semibold border-2 transition-all ${
+                    className={`flex-1 py-2 rounded-control text-sm font-semibold border-2 transition-all ${
                       exercisesPerDay === n
                         ? "border-brand/50 bg-brand text-[var(--color-action-dark)] font-bold"
                         : "border-charcoal-border text-ink-muted hover:border-brand/30  "

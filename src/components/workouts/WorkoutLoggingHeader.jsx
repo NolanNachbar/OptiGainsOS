@@ -169,13 +169,13 @@ export default function WorkoutLoggingHeader({
     <button
       type="button"
       onClick={() => onRetrySave?.()}
-      className="flex items-center gap-1.5 rounded-lg bg-warn/[0.15] px-2 py-1 text-left rise-in mt-1 mx-3 md:mx-8"
+      className="flex items-center gap-1.5 rounded-control bg-warn/[0.15] px-2 py-1 text-left rise-in mt-1 mx-3 md:mx-8"
       aria-label="Sets are saved on this device but not synced. Tap to retry."
     >
       <AlertTriangle className="w-3.5 h-3.5 text-warn flex-shrink-0" />
       <span className="flex flex-col leading-tight min-w-0">
-        <span className="text-[11px] font-bold text-warn">Not synced</span>
-        <span className="text-[11px] text-ink-muted truncate">Saved on this device. Tap to retry</span>
+        <span className="text-caption font-bold text-warn">Not synced</span>
+        <span className="text-caption text-ink-muted truncate">Saved on this device. Tap to retry</span>
       </span>
     </button>
   ) : null;
@@ -254,7 +254,7 @@ export default function WorkoutLoggingHeader({
                 </span>
               </button>
               {showRestPopover && restActive && (
-                <div className="absolute right-0 top-full mt-1 glass-elevated rounded-xl overflow-hidden p-2 z-[10200] flex items-center gap-1.5 text-ink">
+                <div className="absolute right-0 top-full mt-1 glass-elevated rounded-control overflow-hidden p-2 z-[10200] flex items-center gap-1.5 text-ink">
                   <Button
                     variant="ghost"
                     onClick={() => onAddRestTime?.(-10)}
@@ -328,7 +328,7 @@ export default function WorkoutLoggingHeader({
               type="button"
               onClick={onRenameTitle}
               aria-label="Rename session"
-              className="flex items-center gap-1.5 max-w-full min-h-[32px] text-left text-[11px] font-bold uppercase tracking-[0.02em] text-ink-muted touch-manipulation"
+              className="flex items-center gap-1.5 max-w-full min-h-[32px] text-left text-caption font-bold uppercase tracking-[0.02em] text-ink-muted touch-manipulation"
             >
               <span className="truncate">
                 {workoutTitle}
@@ -337,7 +337,7 @@ export default function WorkoutLoggingHeader({
               <Pencil className="w-3 h-3 flex-shrink-0 text-ink-faint" aria-hidden="true" />
             </button>
           ) : (
-            <div className="text-[11px] font-bold uppercase tracking-[0.02em] text-ink-muted truncate py-1">
+            <div className="text-caption font-bold uppercase tracking-[0.02em] text-ink-muted truncate py-1">
               {workoutTitle}
               {totalSets > 0 && <span className="text-ink-faint"> · {doneSets}/{totalSets} sets</span>}
             </div>
