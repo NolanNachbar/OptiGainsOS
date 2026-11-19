@@ -31,6 +31,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
   // Pre-fill from existing profile data when modal opens
   useEffect(() => {
     if (!open || !profile) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAge(profile.age ? String(profile.age) : "");
     setSex(profile.sex || "");
     setActivityLevel(profile.activity_level || "");

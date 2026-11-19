@@ -782,6 +782,7 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
   const isDay = !mealType;
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelected(entries.map(() => true));
   }, [entries]);
 
