@@ -9,6 +9,8 @@ import { ResponsiveContainer, LineChart, XAxis, YAxis, Tooltip, Line } from "rec
 import MealTemplates from "@/components/nutrition/MealTemplates";
 import RecipeBuilder from "@/components/nutrition/RecipeBuilder";
 import MealPlanIdeas from "@/components/nutrition/MealPlanIdeas";
+import { ReasonLine } from "@/components/ui";
+import { targetBasis } from "@/components/nutrition/tracker/targetBasis";
 
 // Extracted from FoodTracker.jsx (no behavior change).
 export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntries, calorieTrend, deleteFoodMutation, entriesError, entriesLoading, foodEntries, fuelNutritionView, intakeStats, mealGroups, openActionsId, planFit, plannedCount, profile, quickRelogFood, recentFoods, refetchEntries, selectedDate, setCopyFromDate, setCopySelection, setFuelNutritionViewPersist, setNewFood, setOpenActionsId, setSelectedDate, setShowAddDialog, setShowCopyDayDialog, setShowGoalsModal, setShowIntakeStats, setShowMoreSheet, setShowNewRecipe, setShowSaveTemplateDialog, setShowStatsModal, setSidebarTab, setStatsWindow, setSwapEntry, setTemplateEntries, setTemplateMealType, showIntakeStats, showNewRecipe, sidebarTab, startEditEntry, statsWindow, targets, tdee, togglePlannedMutation, totals }) {
@@ -131,6 +133,7 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
               const headCaption = showRemaining && kcalLeft != null
                 ? `kcal ${kcalLeft < 0 ? 'over' : 'left'} · goal ${Math.round(calsGoal).toLocaleString()}`
                 : `kcal eaten${calsGoal > 0 ? ` · goal ${Math.round(calsGoal).toLocaleString()}` : ''}`;
+              const basis = targetBasis(targets);
               const macroCols = [
                 { label: 'Protein', consumed: totals.protein, goal: targets.protein, hue: 'var(--hue-coral)' },
                 { label: 'Carbs', consumed: totals.carbs, goal: targets.carbs, hue: 'var(--hue-blue)' },
@@ -144,6 +147,7 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                         {headNum.toLocaleString()}
                       </div>
                       <div className="text-caption text-ink-muted mt-1.5 truncate">{headCaption}</div>
+                      {basis && <ReasonLine className="mt-1" detail={basis.detail}>{basis.line}</ReasonLine>}
                     </div>
                     {isToday && (
                       <SegmentedControl
@@ -165,7 +169,7 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                       const over = hasGoal && remainingRaw < 0;
                       const pct = hasGoal ? Math.min(100, (c.consumed / c.goal) * 100) : 0;
                       const caption = !hasGoal
-                        ? "—"
+                        ? "--"
                         : showRemaining
                           ? (over ? `${Math.abs(remainingRaw).toLocaleString()}g over` : `${remainingRaw.toLocaleString()}g left`)
                           : `${Math.round(c.consumed).toLocaleString()} / ${Math.round(c.goal).toLocaleString()}g`;
@@ -190,7 +194,6 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                     </span>
                     {totals.cost > 0 && <span>${totals.cost.toFixed(2)}</span>}
                     {isToday && calsConsumed === 0 && plannedCount > 0 && <span>{Math.round(planFit.plannedCal)} kcal planned</span>}
-                    {targets.engineSet && <span>Engine-set targets</span>}
                   </div>
                 </Module>
               );
@@ -232,7 +235,7 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                 <span className="w-5 h-5 rounded-full border-[1.5px] border-track shrink-0" />
                 <span className="text-ink-secondary flex-1 min-w-0">
                   <span className="font-semibold text-ink">
-                    {plannedCount} planned · <span className="text-gold font-technical tabular-nums">{planFit.plannedCal.toLocaleString()} kcal</span>
+                    {plannedCount} planned · <span className="text-ink font-technical tabular-nums">{planFit.plannedCal.toLocaleString()} kcal</span>
                   </span>{' '}
                   {planFit.rebalancing
                     ? 'adjusting portions to today’s target…'
@@ -553,7 +556,7 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                     </p>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       {[
-                        { label: 'Calories', value: intakeStats.avgCalories, unit: '', hue: 'text-gold' },
+                        { label: 'Calories', value: intakeStats.avgCalories, unit: '', hue: 'text-ink' },
                         { label: 'Protein', value: intakeStats.avgProtein, unit: 'g', hue: 'text-coral' },
                         { label: 'Carbs', value: intakeStats.avgCarbs, unit: 'g', hue: 'text-carb' },
                         { label: 'Fats', value: intakeStats.avgFats, unit: 'g', hue: 'text-fat' },
@@ -640,7 +643,7 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                           return (
                             <div className="glass-elevated rounded-lg px-2.5 py-1.5 text-caption text-ink-muted space-y-0.5">
                               <p className="font-semibold">{d.label}</p>
-                              <p className="text-gold font-technical">{d.calories} kcal eaten</p>
+                              <p className="text-ink font-technical">{d.calories} kcal eaten</p>
                               {d.goal > 0 && <p className="text-ink-muted">Goal: {d.goal} kcal</p>}
                             </div>
                           );

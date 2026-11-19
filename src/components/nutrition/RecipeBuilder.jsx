@@ -39,7 +39,7 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
     mutationFn: (id) => db.entities.Recipe.delete(id),
     onSuccess: () => {
       invalidateRecipes(queryClient);
-      toast.success("Recipe deleted");
+      toast.success("Recipe deleted.");
     },
     onError: () => toast.error("Recipe not deleted. Check your connection and try again."),
   });
@@ -100,7 +100,7 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
                 </div>
               </div>
               <div className="flex gap-3 text-caption font-technical tabular-nums">
-                <span className="text-gold font-semibold">{Math.round(perServing.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
+                <span className="text-ink font-semibold">{Math.round(perServing.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
                 <span className="text-coral">P{perServing.protein_grams}g</span>
                 <span className="text-carb">C{perServing.carbs_grams}g</span>
                 <span className="text-fat">F{perServing.fats_grams}g</span>
@@ -176,7 +176,7 @@ export default function RecipeBuilder({ showCreateDialog: externalShow, onCreate
                 {/* Macros */}
                 <div className="flex gap-4">
                   <div>
-                    <p className="text-body font-bold text-gold font-technical tabular-nums">{Math.round(perServing.calories)}</p>
+                    <p className="text-body font-bold text-ink font-technical tabular-nums">{Math.round(perServing.calories)}</p>
                     <p className="text-caption text-ink-muted">Cal</p>
                   </div>
                   <div>

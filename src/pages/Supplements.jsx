@@ -238,7 +238,7 @@ export default function Supplements({ embedded = false }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["supplement-types"] });
       setShowAddType(false);
-      toast.success("Supplement added");
+      toast.success("Supplement saved.");
     },
     onError: () => toast.error("Supplement not saved. Try again."),
   });
@@ -251,7 +251,7 @@ export default function Supplements({ embedded = false }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["supplement-types"] });
       setEditingType(null);
-      toast.success("Updated");
+      toast.success("Supplement updated.");
     },
     onError: () => toast.error("Supplement not updated. Try again."),
   });

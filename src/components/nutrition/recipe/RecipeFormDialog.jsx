@@ -185,7 +185,7 @@ export function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
     mutationFn: (data) => db.entities.Recipe.create(data),
     onSuccess: () => {
       invalidateRecipes(queryClient);
-      toast.success("Recipe created");
+      toast.success("Recipe saved.");
       onOpenChange(false);
     },
     onError: () => toast.error("Recipe not saved. Check your connection and try again."),
@@ -195,7 +195,7 @@ export function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
     mutationFn: ({ id, ...data }) => db.entities.Recipe.update(id, data),
     onSuccess: () => {
       invalidateRecipes(queryClient);
-      toast.success("Recipe updated");
+      toast.success("Recipe updated.");
       onOpenChange(false);
     },
     onError: () => toast.error("Recipe not updated. Check your connection and try again."),
@@ -426,7 +426,7 @@ export function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                                   key={"custom-" + food.id}
                                   food={food}
                                   onClick={() => addCustomFood(food)}
-                                  icon={<Star className="w-3.5 h-3.5 fill-gold text-gold" />}
+                                  icon={<Star className="w-3.5 h-3.5 fill-gold text-ink" />}
                                 />
                               ))}
                               {matchingCustomFoods.length > 0 && searchResults.length > 0 && (
@@ -451,7 +451,7 @@ export function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                               {customFoods.length > 0 && (
                                 <CollapsibleFoodSection
                                   label="My Foods"
-                                  icon={<Star className="w-3.5 h-3.5 fill-gold text-gold" />}
+                                  icon={<Star className="w-3.5 h-3.5 fill-gold text-ink" />}
                                   count={customFoods.length}
                                 >
                                   {customFoods.map((food) => (
@@ -459,7 +459,7 @@ export function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                                       key={"my-" + food.id}
                                       food={food}
                                       onClick={() => addCustomFood(food)}
-                                      icon={<Star className="w-3.5 h-3.5 fill-gold text-gold" />}
+                                      icon={<Star className="w-3.5 h-3.5 fill-gold text-ink" />}
                                     />
                                   ))}
                                 </CollapsibleFoodSection>

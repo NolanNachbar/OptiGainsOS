@@ -493,7 +493,7 @@ export default function FoodTracker() {
       setEstimateMeta({ kind: "AI estimate", confidence: est.confidence, detail: est.assumptions || null });
       setManualExpanded(true);
       setEstimateInput("");
-      toast.success(`Estimated ${est.food_name} · ${est.confidence} confidence — review & adjust`);
+      toast.success(`Estimated ${est.food_name} · ${est.confidence} confidence. Check the macros.`);
     } catch (err) {
       toast.error(err.message || "Could not estimate. Add detail and try again.");
     } finally {
@@ -632,7 +632,7 @@ export default function FoodTracker() {
       setManualExpanded(true);
       setShowLabelCapture(false);
       resetLabelCapture();
-      toast.success(`Read label · ${est.confidence} confidence — review & adjust`);
+      toast.success(`Read label · ${est.confidence} confidence. Check the macros.`);
     } catch (err) {
       toast.error(err.message || "Couldn't read the label");
     } finally {
@@ -667,7 +667,7 @@ export default function FoodTracker() {
 
   setMealItems((prev) => [...prev, item]);
   resetForm();
-  toast.success("Added to meal");
+  toast.success("Added to meal.");
 };
 
 const removeMealItem = (id) => {

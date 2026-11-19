@@ -110,7 +110,7 @@ export function LogRecipeDialog({ open, onOpenChange, recipe, userId }) {
 
           <div className="grid grid-cols-4 gap-3">
             <div className="glass-inset text-center p-3">
-              <div className="text-title font-bold text-gold font-technical tabular-nums">
+              <div className="text-title font-bold text-ink font-technical tabular-nums">
                 {scaled.calories}
               </div>
               <div className="text-caption text-ink-muted">Calories</div>

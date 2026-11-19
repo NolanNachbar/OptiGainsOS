@@ -65,7 +65,7 @@ export default function MealTemplates({ compact = false }) {
     mutationFn: (id) => db.entities.MealTemplate.delete(id),
     onSuccess: () => {
       invalidateMealTemplates(queryClient);
-      toast.success("Template deleted");
+      toast.success("Template deleted.");
     },
     onError: () => toast.error("Template not deleted. Check your connection and try again."),
   });
@@ -80,7 +80,7 @@ export default function MealTemplates({ compact = false }) {
     mutationFn: ({ id, ...data }) => db.entities.MealTemplate.update(id, data),
     onSuccess: () => {
       invalidateMealTemplates(queryClient);
-      toast.success("Template updated");
+      toast.success("Template updated.");
       setShowEditDialog(false);
       setEditingTemplate(null);
     },
@@ -143,7 +143,7 @@ export default function MealTemplates({ compact = false }) {
                   <div className="min-w-0">
                     <span className="text-body font-semibold text-ink truncate block">{template.name}</span>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      {template.is_favorite && <Star className="w-3 h-3 text-gold fill-gold shrink-0" />}
+                      {template.is_favorite && <Star className="w-3 h-3 text-ink fill-gold shrink-0" />}
                       <span className="text-caption text-ink-muted capitalize">{template.template_type === "day" ? "Full Day" : template.meal_type || "Meal"}</span>
                     </div>
                   </div>
@@ -153,7 +153,7 @@ export default function MealTemplates({ compact = false }) {
                       size="icon"
                       onClick={() => toggleFavoriteMutation.mutate({ id: template.id, is_favorite: !template.is_favorite })}
                       aria-label={template.is_favorite ? 'Unstar' : 'Star'}
-                      className={`h-11 w-11 border-0 bg-transparent shadow-none hover:bg-transparent transition-colors ${template.is_favorite ? 'text-gold hover:text-gold' : 'text-ink-muted hover:text-gold'}`}
+                      className={`h-11 w-11 border-0 bg-transparent shadow-none hover:bg-transparent transition-colors ${template.is_favorite ? 'text-ink hover:text-ink' : 'text-ink-muted hover:text-ink'}`}
                     >
                       <Star className="w-4 h-4" fill={template.is_favorite ? 'currentColor' : 'none'} />
                     </Button>
@@ -176,7 +176,7 @@ export default function MealTemplates({ compact = false }) {
                   </div>
                 </div>
                 <div className="flex gap-3 text-caption tabular-nums">
-                  <span className="text-gold font-semibold">{Math.round(totals.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
+                  <span className="text-ink font-semibold">{Math.round(totals.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
                   <span className="text-coral">P{Math.round(totals.protein)}g</span>
                   <span className="text-carb">C{Math.round(totals.carbs)}g</span>
                   <span className="text-fat">F{Math.round(totals.fats)}g</span>
@@ -217,8 +217,8 @@ export default function MealTemplates({ compact = false }) {
                       }
                       className={
                         template.is_favorite
-                          ? "text-gold hover:text-gold"
-                          : "text-ink-muted hover:text-gold"
+                          ? "text-ink hover:text-ink"
+                          : "text-ink-muted hover:text-ink"
                       }
                     >
                       <Star
@@ -234,7 +234,7 @@ export default function MealTemplates({ compact = false }) {
                   </div>
                   <div className="flex gap-4 text-body mb-4">
                     <div className="text-center">
-                      <div className="font-bold text-gold tabular-nums">
+                      <div className="font-bold text-ink tabular-nums">
                         {Math.round(totals.calories)}
                       </div>
                       <div className="text-caption text-ink-muted">Cal</div>
@@ -407,7 +407,7 @@ function ApplyTemplateDialog({ open, onOpenChange, template, userId }) {
             <div className="flex items-center justify-between gap-3 mt-2 px-3 py-2.5 rounded-lg glass-inset">
               <span className="text-caption text-ink-muted uppercase tracking-wide">Total</span>
               <div className="flex gap-3 text-caption tabular-nums">
-                <span className="text-gold font-semibold">{Math.round(totals.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
+                <span className="text-ink font-semibold">{Math.round(totals.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
                 <span className="text-coral font-semibold">P{Math.round(totals.protein)}g</span>
                 <span className="text-carb font-semibold">C{Math.round(totals.carbs)}g</span>
                 <span className="text-fat font-semibold">F{Math.round(totals.fats)}g</span>
@@ -431,7 +431,7 @@ function ApplyTemplateDialog({ open, onOpenChange, template, userId }) {
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <div className="text-caption text-gold font-semibold tabular-nums">
+                    <div className="text-caption text-ink font-semibold tabular-nums">
                       {Math.round(item.calories || 0)}<span className="text-ink-muted font-normal ml-0.5">cal</span>
                     </div>
                     <div className="text-caption tabular-nums mt-0.5 flex gap-1.5 justify-end">
@@ -604,7 +604,7 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
                     >
                       <p className="text-body font-medium text-ink truncate">{food.description}</p>
                       <p className="text-caption tabular-nums flex gap-2">
-                        <span className="text-gold">{Math.round(food.calories * (food.servingSize || 100) / 100)} cal</span>
+                        <span className="text-ink">{Math.round(food.calories * (food.servingSize || 100) / 100)} cal</span>
                         <span className="text-coral">P{Math.round(food.protein * (food.servingSize || 100) / 100)}g</span>
                         <span className="text-carb">C{Math.round(food.carbs * (food.servingSize || 100) / 100)}g</span>
                         <span className="text-fat">F{Math.round(food.fats * (food.servingSize || 100) / 100)}g</span>
@@ -622,7 +622,7 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
               <div className="sticky top-0 z-10 -mx-6 px-6 py-2 glass-sheet border-b border-charcoal-border/50 flex items-center justify-between gap-3">
                 <span className="text-caption text-ink-muted uppercase tracking-wide">Total</span>
                 <div className="flex gap-3 text-caption tabular-nums">
-                  <span className="text-gold font-semibold">{Math.round(editTotals.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
+                  <span className="text-ink font-semibold">{Math.round(editTotals.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
                   <span className="text-coral font-semibold">P{Math.round(editTotals.protein)}g</span>
                   <span className="text-carb font-semibold">C{Math.round(editTotals.carbs)}g</span>
                   <span className="text-fat font-semibold">F{Math.round(editTotals.fats)}g</span>
@@ -652,7 +652,7 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
                     <div className="flex-1 min-w-0">
                       <p className="text-body font-semibold text-ink truncate">{item.food_name || <span className="text-ink-muted italic">Unnamed</span>}</p>
                       <p className="text-caption tabular-nums truncate flex gap-2">
-                        <span className="text-gold">{Math.round(item.calories || 0)} cal</span>
+                        <span className="text-ink">{Math.round(item.calories || 0)} cal</span>
                         <span className="text-coral">P{Math.round(item.protein_grams || 0)}g</span>
                         <span className="text-carb">C{Math.round(item.carbs_grams || 0)}g</span>
                         <span className="text-fat">F{Math.round(item.fats_grams || 0)}g</span>
@@ -697,7 +697,7 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
                         </div>
                         <div className="grid grid-cols-4 gap-2">
                           {[
-                            { field: 'calories', label: 'Cal', hue: 'text-gold' },
+                            { field: 'calories', label: 'Cal', hue: 'text-ink' },
                             { field: 'protein_grams', label: 'P', hue: 'text-coral' },
                             { field: 'carbs_grams', label: 'C', hue: 'text-carb' },
                             { field: 'fats_grams', label: 'F', hue: 'text-fat' },
@@ -809,7 +809,7 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
     mutationFn: (data) => db.entities.MealTemplate.create(data),
     onSuccess: () => {
       invalidateMealTemplates(queryClient);
-      toast.success("Template saved");
+      toast.success("Template saved.");
       onOpenChange(false);
       setName("");
     },
@@ -871,7 +871,7 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
               that matters leads. */}
           <div className="glass-inset px-4 py-3.5">
             <div className="flex items-baseline gap-2">
-              <span className="hero-metric text-display text-gold">{Math.round(totals.calories)}</span>
+              <span className="hero-metric text-display text-ink">{Math.round(totals.calories)}</span>
               <span className="text-caption text-ink-muted">cal</span>
             </div>
             <div className="flex gap-4 text-caption tabular-nums mt-1.5">
@@ -900,7 +900,7 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
                   aria-label={`Include ${e.food_name}`}
                 />
                 <span className={`flex-1 truncate ${selected[idx] ? 'text-ink' : 'text-ink-muted line-through'}`}>{e.food_name}</span>
-                <span className="text-gold font-semibold tabular-nums shrink-0">{Math.round(e.calories || 0)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
+                <span className="text-ink font-semibold tabular-nums shrink-0">{Math.round(e.calories || 0)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
               </label>
             ))}
           </div>

@@ -19,7 +19,7 @@ export default function TrackerOverlays({ copyDayMutation, copyFromDate, copySel
           <DialogHeader>
             <DialogTitle>Copy a day to {selectedDate}</DialogTitle>
             <DialogDescription>
-              Pick a day, then pick what carries over. Nothing is moved — the source day keeps its entries.
+              Pick a day, then pick what carries over. Nothing is moved; the source day keeps its entries.
             </DialogDescription>
           </DialogHeader>
 
@@ -73,7 +73,7 @@ export default function TrackerOverlays({ copyDayMutation, copyFromDate, copySel
                         {entry.meal_type} · {formatEntryServing(entry)}
                       </span>
                     </span>
-                    <span className="font-technical text-caption font-semibold text-gold shrink-0">
+                    <span className="font-technical text-caption font-semibold text-ink shrink-0">
                       {Math.round(entry.calories || 0)}
                     </span>
                   </label>

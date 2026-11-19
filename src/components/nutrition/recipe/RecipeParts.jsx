@@ -116,7 +116,7 @@ export function StickyMacroBar({ ingredients, servings }) {
           figures so the macro bar has a clear primary readout. */}
       <div className="flex items-end justify-between gap-4">
         <div>
-          <div className="hero-metric text-display text-gold transition-[color,opacity] duration-200 [transition-timing-function:var(--ease)]">
+          <div className="hero-metric text-display text-ink transition-[color,opacity] duration-200 [transition-timing-function:var(--ease)]">
             {Math.round(totals.total_calories)}
           </div>
           <div className="text-caption font-medium text-ink-muted uppercase tracking-wide mt-0.5">
@@ -182,7 +182,7 @@ export function FoodSearchResult({ food, onClick, icon }) {
             <div className="text-caption text-ink-muted">{food.brandOwner}</div>
           )}
           <div className="flex gap-3 mt-1 text-caption">
-            <span className="text-gold font-medium">
+            <span className="text-ink font-medium">
               {Math.round(food.calories ?? food.cal ?? 0)} cal
             </span>
             <span className="text-coral">
@@ -249,7 +249,7 @@ export function IngredientCard({ ingredient, index, onUpdateServing, onUpdateUni
           </div>
           <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1 text-caption font-technical tabular-nums">
             <span className="text-ink-muted font-medium">Per serving:</span>
-            <span className="text-gold font-medium">{ingredient.calories} cal</span>
+            <span className="text-ink font-medium">{ingredient.calories} cal</span>
             <span className="text-coral">{ingredient.protein_grams}g P</span>
             <span className="text-carb">{ingredient.carbs_grams}g C</span>
             <span className="text-fat">{ingredient.fats_grams}g F</span>
@@ -451,7 +451,7 @@ export function ManualIngredientForm({ onAdd, onCancel, userId }) {
               min="0"
               className="h-11 text-body text-center rounded-lg"
             />
-            <div className="text-caption text-gold font-medium text-center mt-0.5">
+            <div className="text-caption text-ink font-medium text-center mt-0.5">
               Calories
             </div>
           </div>

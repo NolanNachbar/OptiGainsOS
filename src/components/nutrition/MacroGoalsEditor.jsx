@@ -117,7 +117,7 @@ export function MacroGoalsEditor({ values, onChange }) {
       <div>
         <div className="flex items-baseline justify-between gap-2">
           <Label htmlFor="macro-calorie-target">Calorie target</Label>
-          <span className="text-micro font-semibold uppercase tracking-wider text-gold/80">kcal/day</span>
+          <span className="text-micro font-semibold uppercase tracking-wider text-ink/80">kcal/day</span>
         </div>
         <Input
           id="macro-calorie-target"
@@ -126,7 +126,7 @@ export function MacroGoalsEditor({ values, onChange }) {
           value={values.daily_calorie_goal}
           onChange={(e) => handleCaloriesChange(e.target.value)}
           min="0"
-          className="mt-1 font-technical text-gold"
+          className="mt-1 font-technical text-ink"
         />
         <p className="mt-1 text-caption text-ink-faint">Drives the daily calorie goal shown on Fuel.</p>
       </div>

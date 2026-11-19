@@ -23,33 +23,16 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
         }}>
           <DialogContent sheetMinHeight="min-h-[85dvh]" className="max-w-lg flex flex-col p-0 overflow-hidden">
             <DialogHeader className="px-6 pt-6 pb-4 border-b border-charcoal-border shrink-0">
-              <DialogTitle>{editingEntry ? "Edit Food Entry" : "Add Food Entry"}</DialogTitle>
+              <DialogTitle>{editingEntry ? "Edit entry" : "Log food"}</DialogTitle>
               <DialogDescription>
                 Logging to <span className="font-technical font-semibold text-ink tabular-nums">{format(new Date(selectedDate + 'T00:00:00'), 'EEE, MMM d')}</span>
               </DialogDescription>
             </DialogHeader>
 
               <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-4 space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
-                {/* Quick-meal: describe or photograph a whole meal and split it
-                    into items. Sits above search as the fast path for travel /
-                    restaurants where weighing each item isn't possible. */}
-                {!editingEntry && (
-                  <button
-                    type="button"
-                    onClick={() => { resetMealEstimator(); setShowMealEstimator(true); }}
-                    className="w-full flex items-center gap-2.5 rounded-lg border border-charcoal-border bg-charcoal-elevated px-4 py-3 text-left hover:bg-[var(--glass-bg)] transition-colors min-h-[44px]"
-                  >
-                    <Sparkles className="w-4 h-4 text-brand shrink-0" />
-                    <span className="flex-1 min-w-0">
-                      <span className="block text-body font-semibold text-ink">Log a whole meal</span>
-                      <span className="block text-caption text-ink-muted">Describe it or snap a photo — splits into items</span>
-                    </span>
-                    <Camera className="w-4 h-4 text-ink-muted shrink-0" />
-                  </button>
-                )}
                 {!editingEntry && (
                 <div>
-                  <Label htmlFor="search">Search USDA Database</Label>
+                  <Label htmlFor="search">Search foods</Label>
                   <div className="flex gap-2 mt-1">
                     <div className="relative flex-1">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
@@ -58,7 +41,7 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
                         ref={searchRef}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search for a food..."
+                        placeholder="Chicken breast, oats, brand name"
                         className="pl-10 pr-3"
                       />
                       {isSearching && (
@@ -81,7 +64,7 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
 
                       {/* Search results: My Foods → Generic → Branded */}
                       {fuzzyFallback && (genericResults.length > 0 || brandedResults.length > 0) && (
-                        <p className="mt-1.5 text-caption text-ink-muted px-1">Showing approximate results for "{searchQuery}"</p>
+                        <p className="mt-1.5 text-caption text-ink-muted px-1">Approximate matches for "{searchQuery}"</p>
                       )}
                       {(matchingCustomFoods.length > 0 || genericResults.length > 0) && (
                         /* add-food-dialog-4: cap the results list on MOBILE too
@@ -109,7 +92,7 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
                           {genericResults.length > 0 && (
                             <>
                               <div className="px-3 py-1.5 bg-charcoal-elevated text-caption font-semibold text-ink-muted sticky top-0">
-                                Generic Foods
+                                Generic
                               </div>
                               {genericResults.map((food) => (
                                 <button key={food.fdcId} onClick={() => selectFood(food)} className="w-full text-left px-4 py-3 min-h-[44px] hover:bg-charcoal-elevated transition-colors duration-200 [transition-timing-function:var(--ease)]">
@@ -127,7 +110,7 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
                                 onClick={() => setShowBranded(v => !v)}
                                 className="w-full px-3 py-1.5 bg-charcoal-elevated text-caption font-semibold text-ink-muted flex items-center justify-between sticky top-0 hover:bg-charcoal-surface2 transition-colors duration-200 [transition-timing-function:var(--ease)]"
                               >
-                                <span>Branded Foods ({brandedResults.length})</span>
+                                <span>Branded ({brandedResults.length})</span>
                                 {showBranded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                               </button>
                               {showBranded && brandedResults.map((food) => (
@@ -185,7 +168,7 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
                               className="w-full min-h-[44px] cta-ghost active:scale-[0.99] transition-transform duration-200 [transition-timing-function:var(--ease)]"
                             >
                               <Sparkles className="w-4 h-4" />
-                              Estimate it with AI instead
+                              Describe it for an estimate
                             </button>
                           </div>
                         )
@@ -203,7 +186,8 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
                               onClick={() => setRecentExpanded(!recentExpanded)}
                               className="w-full px-3 min-h-[44px] py-2 bg-charcoal-elevated text-caption font-semibold text-ink-muted flex items-center justify-between hover:bg-charcoal-surface2 transition-colors duration-200 [transition-timing-function:var(--ease)]"
                             >
-                              <span>Recent</span>
+                              <span className="section-label">Recent</span>
+                              <span className="ml-auto mr-2 text-caption font-normal text-ink-faint">+ logs at last serving</span>
                               {recentExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                             </button>
                             {recentExpanded && recentFoods.map((entry, i) => (
@@ -284,6 +268,23 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
                       </div>
                     )}
 
+                {/* Quick-meal: describe or photograph a whole meal and split it
+                    into items. Sits below recents as the fast path for travel /
+                    restaurants where weighing each item isn't possible. */}
+                {!editingEntry && (
+                  <button
+                    type="button"
+                    onClick={() => { resetMealEstimator(); setShowMealEstimator(true); }}
+                    className="w-full flex items-center gap-2.5 rounded-lg border border-charcoal-border bg-charcoal-elevated px-4 py-3 text-left hover:bg-[var(--glass-bg)] transition-colors min-h-[44px]"
+                  >
+                    <Sparkles className="w-4 h-4 text-brand shrink-0" />
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-body font-semibold text-ink">Log a whole meal</span>
+                      <span className="block text-caption text-ink-muted">Describe it or take a photo. Splits into items.</span>
+                    </span>
+                    <Camera className="w-4 h-4 text-ink-muted shrink-0" />
+                  </button>
+                )}
                     {/* AI estimate — describe a food when exact macros aren't in the DB */}
                     {!editingEntry && (
                     <div className="border-t border-charcoal-border pt-4">
@@ -312,10 +313,10 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
                       </div>
                       {isEstimatedFood ? (
                         <p className="mt-1.5 text-caption text-brand flex items-center gap-1">
-                          <Sparkles className="w-3 h-3" /> AI estimate filled in below — review the macros and adjust before logging.
+                          <Sparkles className="w-3 h-3" /> Estimate filled in below. Check the macros before logging.
                         </p>
                       ) : (
-                        <p className="mt-1 text-caption text-ink-muted">Estimated from the name + portion. Best with an explicit amount (oz, g, cups).</p>
+                        <p className="mt-1 text-caption text-ink-muted">Estimated from the name and portion. Best with an amount (oz, g, cups).</p>
                       )}
                     </div>
                     )}
@@ -539,7 +540,7 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
                           <p className="section-label">Total for {newFood.serving_amount} {newFood.serving_unit}</p>
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                             {[
-                              { label: 'Calories', value: Math.round(newFood.calories), unit: '', hue: 'text-gold' },
+                              { label: 'Calories', value: Math.round(newFood.calories), unit: '', hue: 'text-ink' },
                               { label: 'Protein', value: newFood.protein_grams, unit: 'g', hue: 'text-coral' },
                               { label: 'Carbs', value: newFood.carbs_grams, unit: 'g', hue: 'text-carb' },
                               { label: 'Fats', value: newFood.fats_grams, unit: 'g', hue: 'text-fat' },

@@ -50,7 +50,7 @@ export default function Fuel() {
                 aria-expanded={showWeekPlan}
                 className="w-full glass glass-interactive px-4 py-3 flex items-center gap-3 text-left"
               >
-                <CalendarRange className="w-4 h-4 text-gold shrink-0" />
+                <CalendarRange className="w-4 h-4 text-ink shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="text-body font-semibold text-ink">Week plan</div>
                   <div className="text-caption font-semibold text-ink-muted truncate">

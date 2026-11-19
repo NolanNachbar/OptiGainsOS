@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { ReasonLine } from "@/components/ui";
+import { targetBasis } from "@/components/nutrition/tracker/targetBasis";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
@@ -489,14 +491,34 @@ export default function WeeklyPlanCard({ bare = false }) {
           <h3 className="text-title font-semibold text-ink leading-tight mt-1">{planLabel}</h3>
         </div>
         <div className="text-right shrink-0">
-          <div className="text-display font-technical text-gold leading-none">
-            {calTarget ? Math.round(calTarget).toLocaleString() : "—"}
+          <div className="text-display font-technical text-ink leading-none">
+            {calTarget ? Math.round(calTarget).toLocaleString() : "--"}
           </div>
           <div className="text-micro uppercase tracking-widest text-ink-muted font-semibold mt-1">
             kcal / day{manualOverride ? " · manual" : engineSet ? " · engine-set" : ""}
           </div>
         </div>
       </div>
+
+      {(() => {
+        // Diff against the athlete's saved goal: old, new, delta, and the
+        // inputs the engine emitted. Nothing shown when the engine is silent.
+        const basis = targetBasis({ calories: calTarget, manualOverride, phasePending, engineSet, recommended: rec });
+        const saved = profile?.daily_calorie_goal ? Math.round(profile.daily_calorie_goal) : null;
+        const now = Math.round(calTarget);
+        const delta = saved != null && engineSet && !manualOverride ? now - saved : 0;
+        return (
+          <div className="mx-5 mb-3 -mt-1">
+            {delta !== 0 && (
+              <p className="text-caption text-ink-secondary tabular-nums">
+                Saved goal {saved.toLocaleString()} kcal, engine {now.toLocaleString()} kcal{" "}
+                <span className={delta > 0 ? "text-leaf" : "text-ink"}>({delta > 0 ? "+" : ""}{delta.toLocaleString()})</span>
+              </p>
+            )}
+            {basis && <ReasonLine detail={basis.detail}>{basis.line}</ReasonLine>}
+          </div>
+        );
+      })()}
 
       {phasePending && !manualOverride && (
         <p className="mx-5 mb-3 text-caption text-ink-muted">
@@ -514,7 +536,7 @@ export default function WeeklyPlanCard({ bare = false }) {
             <span className="text-micro uppercase tracking-widest text-ink-muted font-semibold">Manual target</span>
           </div>
           <p className="text-caption text-ink-secondary leading-relaxed mt-1">
-            You set this week's target by hand — the engine's recovery-gated number is
+            You set this week's target by hand. The engine's recovery-gated number is
             overridden until you clear it.
           </p>
         </div>
@@ -598,7 +620,7 @@ export default function WeeklyPlanCard({ bare = false }) {
                     day-detail panel). Eaten-out days keep the gold figure and swap
                     only the sub-line to a muted tag, so the gold/viz-3 hue mapping
                     stays uniform across all 7 cells. */}
-                <div className="font-technical text-caption text-gold leading-none">{d.totals.calories ? d.totals.calories.toLocaleString() : "—"}</div>
+                <div className="font-technical text-caption text-ink leading-none">{d.totals.calories ? d.totals.calories.toLocaleString() : "--"}</div>
                 {!d.rows.length && (
                   <div className="text-micro uppercase tracking-wider font-semibold text-ink-faint leading-none mt-1">logged</div>
                 )}
@@ -611,7 +633,7 @@ export default function WeeklyPlanCard({ bare = false }) {
           {/* Carb-cycle range is the headline datum of the strip — promote it to
               font-technical + secondary ink; the lift/rest tally stays muted. */}
           <span className="font-technical text-ink-secondary">
-            carb cycle {restDay && trainDay ? `${Math.round(restDay.totals.carbs)}–${Math.round(trainDay.totals.carbs)}g` : trainDay ? `${Math.round(trainDay.totals.carbs)}g` : "—"}
+            carb cycle {restDay && trainDay ? `${Math.round(restDay.totals.carbs)}–${Math.round(trainDay.totals.carbs)}g` : trainDay ? `${Math.round(trainDay.totals.carbs)}g` : "--"}
           </span>
         </div>
       </div>
@@ -685,7 +707,7 @@ export default function WeeklyPlanCard({ bare = false }) {
                         </span>
                       )}
                       <span className="font-technical text-ink-muted w-12 text-right">{r.serving_size} g</span>
-                      <span className="font-technical text-gold w-12 text-right">{r.calories}</span>
+                      <span className="font-technical text-ink w-12 text-right">{r.calories}</span>
                     </div>
                   ))}
                 </div>
@@ -818,12 +840,12 @@ export default function WeeklyPlanCard({ bare = false }) {
           <div className="px-5 pb-5 space-y-5">
             {!maintenanceKnown && (
               <p className="text-caption text-ink-muted">
-                Maintenance estimate pending — using today&apos;s target as the midpoint until the engine has one.
+                Maintenance estimate pending. Using today&apos;s target as the midpoint until the engine has one.
               </p>
             )}
 
             <div className="text-center">
-              <div className="text-display font-technical text-gold leading-none [font-variant-numeric:tabular-nums]">
+              <div className="text-display font-technical text-ink leading-none [font-variant-numeric:tabular-nums]">
                 {sliderValue.toLocaleString()} <span className="text-emph text-ink-muted">kcal</span>
               </div>
               <div className="text-caption text-ink-secondary mt-1.5">

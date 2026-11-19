@@ -45,7 +45,7 @@ export const LoggingModeToggle = ({ value, onChange }) => (
         type="button"
         onClick={() => onChange(id)}
         className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
-          value === id ? "bg-gold/15 text-gold" : "text-ink-muted"
+          value === id ? "bg-gold/15 text-ink" : "text-ink-muted"
         }`}
       >
         {label}
@@ -59,7 +59,7 @@ export const LoggingModeToggle = ({ value, onChange }) => (
 // color grammar as the summary tiles. Dot separators stay faint ink.
 export const MacroResultLine = ({ cal, p, c, f, per100g = false }) => (
   <div className="flex flex-wrap gap-x-1.5 mt-0.5 text-caption font-technical tabular-nums">
-    <span className="text-gold">{Math.round(cal)} kcal{per100g ? ' / 100g' : ''}</span>
+    <span className="text-ink">{Math.round(cal)} kcal{per100g ? ' / 100g' : ''}</span>
     <span className="text-ink-faint">·</span>
     <span className="text-coral">P {Math.round(p)}g</span>
     <span className="text-ink-faint">·</span>
@@ -95,9 +95,9 @@ export const FavoriteToggle = ({ food, onToggle }) => (
     onClick={(e) => { e.stopPropagation(); onToggle({ id: food.id, is_favorite: !food.is_favorite }); }}
     aria-label={food.is_favorite ? `Unfavorite ${food.food_name}` : `Favorite ${food.food_name}`}
     aria-pressed={!!food.is_favorite}
-    className="min-h-[44px] min-w-[44px] shrink-0 flex items-center justify-center text-ink-faint hover:text-gold transition-colors duration-200 [transition-timing-function:var(--ease)]"
+    className="min-h-[44px] min-w-[44px] shrink-0 flex items-center justify-center text-ink-faint hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
   >
-    <Star className={`w-4 h-4 ${food.is_favorite ? "fill-gold text-gold" : ""}`} />
+    <Star className={`w-4 h-4 ${food.is_favorite ? "fill-gold text-ink" : ""}`} />
   </button>
 );
 
@@ -201,7 +201,7 @@ export function GoalsFormContent({
                 {/* One hero number: the saved Daily Calories goal (kcal owns
                     gold). The phase target demotes to a muted reference line. */}
                 <div className="mt-2 flex items-baseline gap-1.5">
-                  <span className="type-display text-gold text-display tabular-nums">
+                  <span className="type-display text-ink text-display tabular-nums">
                     {(profile?.daily_calorie_goal || goalForm?.calories || phaseCalories).toLocaleString()}
                   </span>
                   <span className="text-caption font-semibold text-ink-muted">cal/day</span>
