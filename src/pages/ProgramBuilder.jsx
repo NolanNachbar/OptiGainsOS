@@ -6,8 +6,8 @@ import { getSmartRestDuration } from "@/utils/fatigueManagement";
 import { parseProgramJson } from "@/utils/programIO";
 import { DndContext, DragOverlay, pointerWithin } from "@dnd-kit/core";
 import DraggableWorkoutCard from "@/components/programs/DraggableWorkoutCard";
-import { Button, IconButton, PageHeader, LoadingState, ErrorState, cn } from "@/components/ui";
-import { ArrowLeft, ArrowRight, Save, X } from "lucide-react";
+import { Button, IconButton, PageHeader, LoadingState, ErrorState, ListRow, Sheet, cn } from "@/components/ui";
+import { ArrowLeft, ArrowRight, Save, X, MoreHorizontal, Upload } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import ScheduleAfterCreateModal from "@/components/workouts/ScheduleAfterCreateModal";
@@ -44,6 +44,7 @@ export default function ProgramBuilder() {
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [createdProgram, setCreatedProgram] = useState(null);
   const importFileRef = useRef(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const wasImported = useRef(false);
 
   const handleImportJson = (e) => {
@@ -438,15 +439,24 @@ export default function ProgramBuilder() {
                     className="hidden"
                     onChange={handleImportJson}
                   />
-                  <Button variant="outline" size="sm" onClick={() => importFileRef.current?.click()}>
-                    Import JSON
-                  </Button>
+                  <IconButton icon={MoreHorizontal} label="More options" onClick={() => setMenuOpen(true)} />
                 </>
               )}
               <IconButton icon={X} label="Cancel" onClick={() => navigate("/workouts")} />
             </div>
           }
         />
+        <Sheet open={menuOpen} onOpenChange={setMenuOpen} title="More options">
+          <ListRow
+            leading={<Upload className="h-4 w-4" aria-hidden="true" />}
+            title="Import from JSON"
+            detail="Load a program file into the builder"
+            onClick={() => {
+              setMenuOpen(false);
+              importFileRef.current?.click();
+            }}
+          />
+        </Sheet>
         <div className="flex gap-1 px-gutter pb-3" role="presentation">
           {STEPS.map((s, i) => (
             <div

@@ -493,7 +493,6 @@ export default function ProgramDetail() {
                     <Card key={name} variant="inset" className="overflow-hidden">
                       <ListRow
                         title={name}
-                        detail={`${sessions} session${sessions === 1 ? "" : "s"}${bodyweight ? "" : " at current weight"}${effortVal != null ? ` · avg ${effortVal.toFixed(1)} RIR` : ""}`}
                         value={bodyweight ? "Bodyweight" : state.working_weight}
                         unit={bodyweight ? undefined : "lb"}
                         trailing={
@@ -503,7 +502,11 @@ export default function ProgramDetail() {
                             <Badge variant="outline">Ready to progress</Badge>
                           ) : null
                         }
-                      />
+                      >
+                        <span className="block text-caption text-ink-muted">
+                          {`${sessions} session${sessions === 1 ? "" : "s"}${bodyweight ? "" : " at current weight"}${effortVal != null ? ` · avg ${effortVal.toFixed(1)} RIR` : ""}`}
+                        </span>
+                      </ListRow>
                       {isStalled(state) && state.stall_suggestion && !sharedKeys.has(adviceKey(state.stall_suggestion)) && (
                         <p className="px-gutter pb-3 text-caption text-warn tabular-nums flex items-start gap-2">
                           <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
