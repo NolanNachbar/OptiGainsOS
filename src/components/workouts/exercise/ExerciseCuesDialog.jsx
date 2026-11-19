@@ -1,6 +1,9 @@
 import { AlertTriangle, TrendingUp, X, Camera } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
+// Engine copy can say "Staying at 0 lbs" for bodyweight lifts; present it as a hold.
+const cleanHint = (m) => (m || "").replace(/Staying at 0(\.0+)? (lbs|kg)\.?/i, "Holding steady at bodyweight.");
+
 export default function ExerciseCuesDialog({ showCues, setShowCues, exercise, exerciseIndex, cuesInfo, nudgeMessage, setNudgeMessage, coachingChip, setCoachingChip, onApplyCoachingSuggestion, showShotList, shotNote }) {
   return (
     <>
@@ -28,7 +31,7 @@ export default function ExerciseCuesDialog({ showCues, setShowCues, exercise, ex
                   <TrendingUp className="w-3.5 h-3.5" />
                 )}
               </i>
-              <span className="text-xs font-semibold text-ink-muted leading-relaxed pt-1">{nudgeMessage.message}</span>
+              <span className="text-xs font-semibold text-ink-muted leading-relaxed pt-1">{cleanHint(nudgeMessage.message)}</span>
               <button onClick={() => setNudgeMessage(null)} aria-label="Dismiss" className="ml-auto flex-shrink-0 flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 -mr-2 text-ink-faint hover:text-ink-muted">
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -40,7 +43,7 @@ export default function ExerciseCuesDialog({ showCues, setShowCues, exercise, ex
               <i className="w-[26px] h-[26px] rounded-control bg-coral/15 text-coral flex items-center justify-center flex-shrink-0 not-italic">
                 <TrendingUp className="w-3.5 h-3.5" />
               </i>
-              <span className="text-xs font-semibold text-ink-muted leading-relaxed flex-1">{coachingChip.message}</span>
+              <span className="text-xs font-semibold text-ink-muted leading-relaxed flex-1">{cleanHint(coachingChip.message)}</span>
               {coachingChip.suggestedWeight && coachingChip.targetSetIndex != null && (
                 <button
                   className="text-caption font-bold text-brand bg-brand/10 border border-brand/30 rounded-full px-2.5 py-1 hover:bg-brand/15"
