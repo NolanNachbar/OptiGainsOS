@@ -143,15 +143,21 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                 <Module bleed className="rise-in" data-tutorial="nutrition-rings">
                   <div className="flex items-end justify-between gap-3 mb-3">
                     <div className="min-w-0">
+                      <div className="section-label mb-1.5">Kcal</div>
+                      {/* Consumed view reads "eaten/goal" (goal quieter), the
+                          same N/goal shape as the macro captions and Today. */}
                       <div className="font-technical text-display leading-none font-bold tabular-nums text-ink">
                         {headNum.toLocaleString()}
+                        {!showRemaining && calsGoal > 0 && (
+                          <span className="text-body font-semibold text-ink-muted">/{Math.round(calsGoal).toLocaleString()}</span>
+                        )}
                       </div>
                       <div className="text-caption text-ink-muted mt-1.5 truncate">{headCaption}</div>
                       {basis && <ReasonLine className="mt-1" detail={basis.detail}>{basis.line}</ReasonLine>}
                     </div>
                     {isToday && (
                       <SegmentedControl
-                        options={[{ value: "remaining", label: "Left" }, { value: "consumed", label: "Eaten" }]}
+                        options={[{ value: "remaining", label: "Remaining" }, { value: "consumed", label: "Consumed" }]}
                         value={fuelNutritionView}
                         onChange={setFuelNutritionViewPersist}
                         size="sm"
@@ -172,7 +178,7 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                         ? "--"
                         : showRemaining
                           ? (over ? `${Math.abs(remainingRaw).toLocaleString()}g over` : `${remainingRaw.toLocaleString()}g left`)
-                          : `${Math.round(c.consumed).toLocaleString()} / ${Math.round(c.goal).toLocaleString()}g`;
+                          : `${Math.round(c.consumed).toLocaleString()}/${Math.round(c.goal).toLocaleString()}g`;
                       return (
                         <div key={c.label} className="min-w-0">
                           <div className="flex items-baseline justify-between gap-1 mb-1.5">
@@ -389,7 +395,7 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                               {(formatEntryServing(entry) || entry.planned) && (
                                 <span>{formatEntryServing(entry)}{entry.planned ? `${formatEntryServing(entry) ? ' · ' : ''}planned` : ''}</span>
                               )}
-                              <MacroInline p={entry.protein_grams ?? 0} c={entry.carbs_grams ?? 0} f={entry.fats_grams ?? 0} />
+                              <MacroInline p={entry.protein_grams ?? 0} c={entry.carbs_grams ?? 0} f={entry.fats_grams ?? 0} fields />
                             </span>
                           </div>
                           {/* Edit/delete/swap — same handlers and aria-labels as
@@ -478,6 +484,10 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                   key={id}
                   type="button"
                   onClick={() => { setSidebarTab(id); setShowMoreSheet(true); }}
+                  // All three open the one "Templates, recipes & ideas" sheet on
+                  // their tab; Recipes (the old single entry's landing tab)
+                  // keeps that sheet's name after its own word.
+                  aria-label={id === 'recipes' ? 'Recipes: Templates, recipes & ideas' : undefined}
                   className="glass glass-interactive min-h-[68px] flex flex-col items-center justify-center gap-1.5 text-body font-semibold text-ink-secondary hover:text-ink active:scale-[0.98] transition-[color,transform] duration-200 [transition-timing-function:var(--ease)]"
                 >
                   <Icon className="w-4 h-4 text-brand" />

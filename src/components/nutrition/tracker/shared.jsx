@@ -157,13 +157,18 @@ export async function fnErrorMessage(error) {
 }
 
 // Quiet "119P 0C 16F" line used under food names and meal headers.
-export const MacroInline = ({ p, c, f }) => (
-  <span className="font-technical text-caption font-semibold tabular-nums whitespace-nowrap">
-    <span className="text-coral">{Math.round(p)}P</span>{" "}
-    <span className="text-carb">{Math.round(c)}C</span>{" "}
-    <span className="text-fat">{Math.round(f)}F</span>
-  </span>
-);
+// `fields` tags each number with data-field (protein/carbs/fats) so a food
+// row's numeric columns stay addressable (e2e fuel-null-macros-render-zero).
+export const MacroInline = ({ p, c, f, fields = false }) => {
+  const n = (v, key) => (fields ? <span data-field={key}>{Math.round(v)}</span> : Math.round(v));
+  return (
+    <span className="font-technical text-caption font-semibold tabular-nums whitespace-nowrap">
+      <span className="text-coral">{n(p, "protein")}P</span>{" "}
+      <span className="text-carb">{n(c, "carbs")}C</span>{" "}
+      <span className="text-fat">{n(f, "fats")}F</span>
+    </span>
+  );
+};
 
 export function GoalsFormContent({
   activePhase, tdee, profile, latestWeight,
