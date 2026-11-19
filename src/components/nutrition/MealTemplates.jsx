@@ -65,7 +65,7 @@ export default function MealTemplates({ compact = false }) {
     mutationFn: (id) => db.entities.MealTemplate.delete(id),
     onSuccess: () => {
       invalidateMealTemplates(queryClient);
-      toast.success("Template deleted");
+      toast.success("Template deleted.");
     },
     onError: () => toast.error("Template not deleted. Check your connection and try again."),
   });
@@ -80,7 +80,7 @@ export default function MealTemplates({ compact = false }) {
     mutationFn: ({ id, ...data }) => db.entities.MealTemplate.update(id, data),
     onSuccess: () => {
       invalidateMealTemplates(queryClient);
-      toast.success("Template updated");
+      toast.success("Template updated.");
       setShowEditDialog(false);
       setEditingTemplate(null);
     },
@@ -120,18 +120,18 @@ export default function MealTemplates({ compact = false }) {
     <div className="space-y-4">
       {!compact && (
         <div>
-          <h2 className="text-xl font-bold text-left text-ink">Meal Templates</h2>
-          <p className="text-sm text-left text-ink-muted">
+          <h2 className="text-title font-semibold text-left text-ink">Meal Templates</h2>
+          <p className="text-body text-left text-ink-muted">
             Save meals from your Daily Log and quickly reapply them
           </p>
         </div>
       )}
 
       {sortedTemplates.length === 0 ? (
-        <div className="text-center py-6 text-ink-muted text-sm">
+        <div className="text-center py-6 text-ink-muted text-body">
           <UtensilsCrossed className="w-8 h-8 mx-auto mb-2 opacity-40" />
           <p>No templates yet.</p>
-          <p className="text-xs mt-1">Meals you save from the daily log appear here.</p>
+          <p className="text-caption mt-1">Meals you save from the daily log appear here.</p>
         </div>
       ) : compact ? (
         <div className="space-y-2">
@@ -141,10 +141,10 @@ export default function MealTemplates({ compact = false }) {
               <div key={template.id} className="p-3 rounded-xl border border-charcoal-border/50 bg-charcoal-surface/60 space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <span className="text-sm font-semibold text-ink truncate block">{template.name}</span>
+                    <span className="text-body font-semibold text-ink truncate block">{template.name}</span>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      {template.is_favorite && <Star className="w-3 h-3 text-gold fill-gold shrink-0" />}
-                      <span className="text-xs text-ink-muted capitalize">{template.template_type === "day" ? "Full Day" : template.meal_type || "Meal"}</span>
+                      {template.is_favorite && <Star className="w-3 h-3 text-ink fill-gold shrink-0" />}
+                      <span className="text-caption text-ink-muted capitalize">{template.template_type === "day" ? "Full Day" : template.meal_type || "Meal"}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
@@ -153,7 +153,7 @@ export default function MealTemplates({ compact = false }) {
                       size="icon"
                       onClick={() => toggleFavoriteMutation.mutate({ id: template.id, is_favorite: !template.is_favorite })}
                       aria-label={template.is_favorite ? 'Unstar' : 'Star'}
-                      className={`h-11 w-11 border-0 bg-transparent shadow-none hover:bg-transparent transition-colors ${template.is_favorite ? 'text-gold hover:text-gold' : 'text-ink-muted hover:text-gold'}`}
+                      className={`h-11 w-11 border-0 bg-transparent shadow-none hover:bg-transparent transition-colors ${template.is_favorite ? 'text-ink hover:text-ink' : 'text-ink-muted hover:text-ink'}`}
                     >
                       <Star className="w-4 h-4" fill={template.is_favorite ? 'currentColor' : 'none'} />
                     </Button>
@@ -169,14 +169,14 @@ export default function MealTemplates({ compact = false }) {
                     <Button
                       variant="primary"
                       onClick={() => handleApply(template)}
-                      className="h-11 px-3 text-xs"
+                      className="h-11 px-3 text-caption"
                     >
                       <Play className="w-3 h-3" />Apply
                     </Button>
                   </div>
                 </div>
-                <div className="flex gap-3 text-xs tabular-nums">
-                  <span className="text-gold font-bold">{Math.round(totals.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
+                <div className="flex gap-3 text-caption tabular-nums">
+                  <span className="text-ink font-semibold">{Math.round(totals.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
                   <span className="text-coral">P{Math.round(totals.protein)}g</span>
                   <span className="text-carb">C{Math.round(totals.carbs)}g</span>
                   <span className="text-fat">F{Math.round(totals.fats)}g</span>
@@ -194,7 +194,7 @@ export default function MealTemplates({ compact = false }) {
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div>
-                      <CardTitle className="text-lg">{template.name}</CardTitle>
+                      <CardTitle className="text-title">{template.name}</CardTitle>
                       <div className="flex items-center gap-2 mt-1">
                         <Badge variant="secondary">
                           {template.template_type === "day" ? "Full Day" : "Meal"}
@@ -217,8 +217,8 @@ export default function MealTemplates({ compact = false }) {
                       }
                       className={
                         template.is_favorite
-                          ? "text-gold hover:text-gold"
-                          : "text-ink-muted hover:text-gold"
+                          ? "text-ink hover:text-ink"
+                          : "text-ink-muted hover:text-ink"
                       }
                     >
                       <Star
@@ -229,33 +229,33 @@ export default function MealTemplates({ compact = false }) {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-xs text-ink-muted mb-3">
+                  <div className="text-caption text-ink-muted mb-3">
                     {template.items?.length || 0} items
                   </div>
-                  <div className="flex gap-4 text-sm mb-4">
+                  <div className="flex gap-4 text-body mb-4">
                     <div className="text-center">
-                      <div className="font-bold text-gold tabular-nums">
+                      <div className="font-bold text-ink tabular-nums">
                         {Math.round(totals.calories)}
                       </div>
-                      <div className="text-xs text-ink-muted">Cal</div>
+                      <div className="text-caption text-ink-muted">Cal</div>
                     </div>
                     <div className="text-center">
                       <div className="font-bold text-coral tabular-nums">
                         {Math.round(totals.protein)}g
                       </div>
-                      <div className="text-xs text-ink-muted">Protein</div>
+                      <div className="text-caption text-ink-muted">Protein</div>
                     </div>
                     <div className="text-center">
                       <div className="font-bold text-carb tabular-nums">
                         {Math.round(totals.carbs)}g
                       </div>
-                      <div className="text-xs text-ink-muted">Carbs</div>
+                      <div className="text-caption text-ink-muted">Carbs</div>
                     </div>
                     <div className="text-center">
                       <div className="font-bold text-fat tabular-nums">
                         {Math.round(totals.fats)}g
                       </div>
-                      <div className="text-xs text-ink-muted">Fats</div>
+                      <div className="text-caption text-ink-muted">Fats</div>
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -405,9 +405,9 @@ function ApplyTemplateDialog({ open, onOpenChange, template, userId }) {
             <p className="section-label">Items to add ({template.items?.length || 0})</p>
             {/* Template total summary */}
             <div className="flex items-center justify-between gap-3 mt-2 px-3 py-2.5 rounded-lg glass-inset">
-              <span className="text-xs text-ink-muted uppercase tracking-wide">Total</span>
-              <div className="flex gap-3 text-xs tabular-nums">
-                <span className="text-gold font-bold">{Math.round(totals.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
+              <span className="text-caption text-ink-muted uppercase tracking-wide">Total</span>
+              <div className="flex gap-3 text-caption tabular-nums">
+                <span className="text-ink font-semibold">{Math.round(totals.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
                 <span className="text-coral font-semibold">P{Math.round(totals.protein)}g</span>
                 <span className="text-carb font-semibold">C{Math.round(totals.carbs)}g</span>
                 <span className="text-fat font-semibold">F{Math.round(totals.fats)}g</span>
@@ -423,18 +423,18 @@ function ApplyTemplateDialog({ open, onOpenChange, template, userId }) {
                   className="flex items-center justify-between gap-3 p-3 bg-charcoal-surface/60 border border-charcoal-border/50 rounded-lg"
                 >
                   <div className="min-w-0">
-                    <div className="font-medium text-sm text-ink truncate">
+                    <div className="font-medium text-body text-ink truncate">
                       {item.food_name}
                     </div>
-                    <div className="text-xs text-ink-muted capitalize">
+                    <div className="text-caption text-ink-muted capitalize">
                       {item.meal_type || template.meal_type}
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <div className="text-xs text-gold font-semibold tabular-nums">
+                    <div className="text-caption text-ink font-semibold tabular-nums">
                       {Math.round(item.calories || 0)}<span className="text-ink-muted font-normal ml-0.5">cal</span>
                     </div>
-                    <div className="text-xs tabular-nums mt-0.5 flex gap-1.5 justify-end">
+                    <div className="text-caption tabular-nums mt-0.5 flex gap-1.5 justify-end">
                       <span className="text-coral">P{Math.round(item.protein_grams || 0)}g</span>
                       <span className="text-carb">C{Math.round(item.carbs_grams || 0)}g</span>
                       <span className="text-fat">F{Math.round(item.fats_grams || 0)}g</span>
@@ -602,9 +602,9 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
                       onClick={() => addFromSearch(food)}
                       className="w-full text-left px-4 py-3 min-h-11 hover:bg-charcoal-elevated/60 active:bg-charcoal-elevated transition-colors duration-200 [transition-timing-function:var(--ease)] border-b border-charcoal-border/50 last:border-0"
                     >
-                      <p className="text-sm font-medium text-ink truncate">{food.description}</p>
-                      <p className="text-xs tabular-nums flex gap-2">
-                        <span className="text-gold">{Math.round(food.calories * (food.servingSize || 100) / 100)} cal</span>
+                      <p className="text-body font-medium text-ink truncate">{food.description}</p>
+                      <p className="text-caption tabular-nums flex gap-2">
+                        <span className="text-ink">{Math.round(food.calories * (food.servingSize || 100) / 100)} cal</span>
                         <span className="text-coral">P{Math.round(food.protein * (food.servingSize || 100) / 100)}g</span>
                         <span className="text-carb">C{Math.round(food.carbs * (food.servingSize || 100) / 100)}g</span>
                         <span className="text-fat">F{Math.round(food.fats * (food.servingSize || 100) / 100)}g</span>
@@ -620,9 +620,9 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
                 owns its hue: calories=gold, P=coral, C=carb, F=fat. */}
             {items.length > 0 && (
               <div className="sticky top-0 z-10 -mx-6 px-6 py-2 glass-sheet border-b border-charcoal-border/50 flex items-center justify-between gap-3">
-                <span className="text-xs text-ink-muted uppercase tracking-wide">Total</span>
-                <div className="flex gap-3 text-xs tabular-nums">
-                  <span className="text-gold font-bold">{Math.round(editTotals.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
+                <span className="text-caption text-ink-muted uppercase tracking-wide">Total</span>
+                <div className="flex gap-3 text-caption tabular-nums">
+                  <span className="text-ink font-semibold">{Math.round(editTotals.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
                   <span className="text-coral font-semibold">P{Math.round(editTotals.protein)}g</span>
                   <span className="text-carb font-semibold">C{Math.round(editTotals.carbs)}g</span>
                   <span className="text-fat font-semibold">F{Math.round(editTotals.fats)}g</span>
@@ -633,7 +633,7 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
             {/* Items */}
             <div className="space-y-2">
               {items.length === 0 && (
-                <p className="text-sm text-ink-muted text-center py-6">No items yet. Search above or add manually.</p>
+                <p className="text-body text-ink-muted text-center py-6">No items yet. Search above or add manually.</p>
               )}
               {items.map((item, idx) => {
                 const isOpen = expandedIndex === idx;
@@ -650,9 +650,9 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedIndex(isOpen ? null : idx); } }}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-ink truncate">{item.food_name || <span className="text-ink-muted italic">Unnamed</span>}</p>
-                      <p className="text-xs tabular-nums truncate flex gap-2">
-                        <span className="text-gold">{Math.round(item.calories || 0)} cal</span>
+                      <p className="text-body font-semibold text-ink truncate">{item.food_name || <span className="text-ink-muted italic">Unnamed</span>}</p>
+                      <p className="text-caption tabular-nums truncate flex gap-2">
+                        <span className="text-ink">{Math.round(item.calories || 0)} cal</span>
                         <span className="text-coral">P{Math.round(item.protein_grams || 0)}g</span>
                         <span className="text-carb">C{Math.round(item.carbs_grams || 0)}g</span>
                         <span className="text-fat">F{Math.round(item.fats_grams || 0)}g</span>
@@ -688,27 +688,27 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
                     <div className="overflow-hidden">
                       <div className="px-3 pb-3 pt-2 border-t border-charcoal-border bg-charcoal-surface/50 space-y-2">
                         <div>
-                          <Label className="text-xs text-ink-muted">Food Name</Label>
-                          <Input value={item.food_name} onChange={(e) => updateItem(idx, 'food_name', e.target.value)} className="mt-1 text-sm" />
+                          <Label className="text-caption text-ink-muted">Food Name</Label>
+                          <Input value={item.food_name} onChange={(e) => updateItem(idx, 'food_name', e.target.value)} className="mt-1 text-body" />
                         </div>
                         <div>
-                          <Label className="text-xs text-ink-muted">Serving</Label>
-                          <Input value={item.serving_size} onChange={(e) => updateItem(idx, 'serving_size', e.target.value)} className="mt-1 text-sm" placeholder="e.g. 100 g" />
+                          <Label className="text-caption text-ink-muted">Serving</Label>
+                          <Input value={item.serving_size} onChange={(e) => updateItem(idx, 'serving_size', e.target.value)} className="mt-1 text-body" placeholder="e.g. 100 g" />
                         </div>
                         <div className="grid grid-cols-4 gap-2">
                           {[
-                            { field: 'calories', label: 'Cal', hue: 'text-gold' },
+                            { field: 'calories', label: 'Cal', hue: 'text-ink' },
                             { field: 'protein_grams', label: 'P', hue: 'text-coral' },
                             { field: 'carbs_grams', label: 'C', hue: 'text-carb' },
                             { field: 'fats_grams', label: 'F', hue: 'text-fat' },
                           ].map(({ field, label, hue }) => (
                             <div key={field}>
-                              <Label className={`text-xs font-semibold ${hue}`}>{label}</Label>
+                              <Label className={`text-caption font-semibold ${hue}`}>{label}</Label>
                               <Input
                                 type="number" inputMode="decimal"
                                 value={item[field]}
                                 onChange={(e) => updateItem(idx, field, parseFloat(e.target.value) || 0)}
-                                className="mt-1 text-sm px-2"
+                                className="mt-1 text-body px-2"
                                 min={0}
                               />
                             </div>
@@ -726,7 +726,7 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
             <button
               type="button"
               onClick={addManual}
-              className="w-full min-h-11 flex items-center justify-center gap-1.5 py-2 text-sm font-semibold text-ink-muted hover:text-ink border border-dashed border-charcoal-border rounded-lg hover:border-coral/40 transition-colors duration-200 [transition-timing-function:var(--ease)]"
+              className="w-full min-h-11 flex items-center justify-center gap-1.5 py-2 text-body font-semibold text-ink-muted hover:text-ink border border-dashed border-charcoal-border rounded-lg hover:border-coral/40 transition-colors duration-200 [transition-timing-function:var(--ease)]"
             >
               <Plus className="w-3.5 h-3.5" />
               Add manually
@@ -782,6 +782,7 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
   const isDay = !mealType;
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelected(entries.map(() => true));
   }, [entries]);
 
@@ -808,7 +809,7 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
     mutationFn: (data) => db.entities.MealTemplate.create(data),
     onSuccess: () => {
       invalidateMealTemplates(queryClient);
-      toast.success("Template saved");
+      toast.success("Template saved.");
       onOpenChange(false);
       setName("");
     },
@@ -870,10 +871,10 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
               that matters leads. */}
           <div className="glass-inset px-4 py-3.5">
             <div className="flex items-baseline gap-2">
-              <span className="hero-metric text-3xl text-gold">{Math.round(totals.calories)}</span>
-              <span className="text-xs text-ink-muted">cal</span>
+              <span className="hero-metric text-display text-ink">{Math.round(totals.calories)}</span>
+              <span className="text-caption text-ink-muted">cal</span>
             </div>
-            <div className="flex gap-4 text-xs tabular-nums mt-1.5">
+            <div className="flex gap-4 text-caption tabular-nums mt-1.5">
               <span className="text-coral font-semibold">P{Math.round(totals.protein)}g</span>
               <span className="text-carb font-semibold">C{Math.round(totals.carbs)}g</span>
               <span className="text-fat font-semibold">F{Math.round(totals.fats)}g</span>
@@ -890,7 +891,7 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
             {entries.map((e, idx) => (
               <label
                 key={idx}
-                className="flex items-center gap-3 p-2.5 min-h-11 row-stripe rounded-lg text-sm cursor-pointer"
+                className="flex items-center gap-3 p-2.5 min-h-11 row-stripe rounded-lg text-body cursor-pointer"
               >
                 <Checkbox
                   checked={selected[idx]}
@@ -899,12 +900,12 @@ export function SaveAsTemplateDialog({ open, onOpenChange, entries, mealType, us
                   aria-label={`Include ${e.food_name}`}
                 />
                 <span className={`flex-1 truncate ${selected[idx] ? 'text-ink' : 'text-ink-muted line-through'}`}>{e.food_name}</span>
-                <span className="text-gold font-semibold tabular-nums shrink-0">{Math.round(e.calories || 0)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
+                <span className="text-ink font-semibold tabular-nums shrink-0">{Math.round(e.calories || 0)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
               </label>
             ))}
           </div>
           {hiddenCount > 0 && (
-            <p className="text-xs text-ink-muted text-center tabular-nums pt-0.5">
+            <p className="text-caption text-ink-muted text-center tabular-nums pt-0.5">
               +{hiddenCount} more below
             </p>
           )}

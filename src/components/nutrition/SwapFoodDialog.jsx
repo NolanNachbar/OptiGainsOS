@@ -47,19 +47,19 @@ export default function SwapFoodDialog({ open, onOpenChange, entry, customFoods 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-sm">
+          <DialogTitle className="flex items-center gap-2 text-body">
             <ArrowLeftRight className="w-4 h-4 text-brand" />
             Swap out {original}
           </DialogTitle>
         </DialogHeader>
-        <p className="text-[11px] text-ink-muted -mt-2">
+        <p className="text-caption text-ink-muted -mt-2">
           Today only. The rest of the day re-fits around whatever you pick.
         </p>
         {displaced && (
           <button
             disabled={pending}
             onClick={() => onRevert(displaced)}
-            className="mt-1 w-full text-left px-3 py-2 glass-inset text-[11px] font-semibold text-ink-secondary hover:text-brand transition-colors duration-200 [transition-timing-function:var(--ease)]"
+            className="mt-1 w-full text-left px-3 py-2 glass-inset text-caption font-semibold text-ink-secondary hover:text-brand transition-colors duration-200 [transition-timing-function:var(--ease)]"
           >
             Put {displaced} back
           </button>
@@ -73,7 +73,7 @@ export default function SwapFoodDialog({ open, onOpenChange, entry, customFoods 
         />
         <div className="max-h-[46vh] overflow-y-auto -mx-2 mt-1">
           {options.length === 0 && (
-            <p className="px-4 py-6 text-center text-xs text-ink-muted">No food matches that.</p>
+            <p className="px-4 py-6 text-center text-caption text-ink-muted">No food matches that.</p>
           )}
           {options.map((o) => (
             <button
@@ -85,8 +85,8 @@ export default function SwapFoodDialog({ open, onOpenChange, entry, customFoods 
               }`}
             >
               <div className="min-w-0 flex-1">
-                <div className="text-[14px] font-bold tracking-tight truncate text-ink">{o.name}</div>
-                <div className="text-[11px] font-technical font-semibold text-ink-muted">{o.sub}</div>
+                <div className="text-body font-semibold tracking-tight truncate text-ink">{o.name}</div>
+                <div className="text-caption font-technical font-semibold text-ink-muted">{o.sub}</div>
               </div>
               {o.ready && <Check className="w-3.5 h-3.5 shrink-0 text-ink-faint" />}
             </button>

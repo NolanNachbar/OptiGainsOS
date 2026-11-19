@@ -31,6 +31,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
   // Pre-fill from existing profile data when modal opens
   useEffect(() => {
     if (!open || !profile) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAge(profile.age ? String(profile.age) : "");
     setSex(profile.sex || "");
     setActivityLevel(profile.activity_level || "");
@@ -120,7 +121,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
     onSuccess: () => {
       invalidateProfile(queryClient);
       if (weight) invalidateBodyWeight(queryClient);
-      toast.success("Stats saved, goals calculated");
+      toast.success("Stats saved. Targets updated.");
       onOpenChange(false);
     },
     onError: () => {
@@ -185,7 +186,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
                     }
                     setHeightUnit("in");
                   }}
-                  className={`px-3 py-1 rounded-md text-sm transition-colors duration-200 [transition-timing-function:var(--ease)] ${
+                  className={`px-3 py-1 rounded-md text-body transition-colors duration-200 [transition-timing-function:var(--ease)] ${
                     heightUnit === "in" ? "bg-charcoal-surface shadow-dark-card text-ink font-semibold" : "text-ink-muted"
                   }`}
                 >ft/in</button>
@@ -198,7 +199,7 @@ export default function StatsSetupModal({ open, onOpenChange }) {
                     }
                     setHeightUnit("cm");
                   }}
-                  className={`px-3 py-1 rounded-md text-sm transition-colors duration-200 [transition-timing-function:var(--ease)] ${
+                  className={`px-3 py-1 rounded-md text-body transition-colors duration-200 [transition-timing-function:var(--ease)] ${
                     heightUnit === "cm" ? "bg-charcoal-surface shadow-dark-card text-ink font-semibold" : "text-ink-muted"
                   }`}
                 >cm</button>
@@ -289,12 +290,12 @@ export default function StatsSetupModal({ open, onOpenChange }) {
                 onChange={e => setProteinPerLb(e.target.value)}
                 className="w-24"
               />
-              <span className="font-technical text-sm text-ink-muted">
+              <span className="font-technical text-body text-ink-muted">
                 g / lb
                 {proteinGrams ? ` = ${proteinGrams}g/day` : ""}
               </span>
             </div>
-            <p className="text-xs text-ink-muted mt-1">
+            <p className="text-caption text-ink-muted mt-1">
               Typical range: 0.7–1.2 g/lb. Higher end for muscle gain or cutting.
             </p>
           </div>

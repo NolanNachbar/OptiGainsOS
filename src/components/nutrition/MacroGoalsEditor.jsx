@@ -117,7 +117,7 @@ export function MacroGoalsEditor({ values, onChange }) {
       <div>
         <div className="flex items-baseline justify-between gap-2">
           <Label htmlFor="macro-calorie-target">Calorie target</Label>
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-gold/80">kcal/day</span>
+          <span className="text-micro font-semibold uppercase tracking-wider text-ink/80">kcal/day</span>
         </div>
         <Input
           id="macro-calorie-target"
@@ -126,9 +126,9 @@ export function MacroGoalsEditor({ values, onChange }) {
           value={values.daily_calorie_goal}
           onChange={(e) => handleCaloriesChange(e.target.value)}
           min="0"
-          className="mt-1 font-technical text-gold"
+          className="mt-1 font-technical text-ink"
         />
-        <p className="mt-1 text-[11px] text-ink-faint">Drives the daily calorie goal shown on Fuel.</p>
+        <p className="mt-1 text-caption text-ink-faint">Drives the daily calorie goal shown on Fuel.</p>
       </div>
 
       {/* Stacked colour bar — segment fills animate width only, on the system
@@ -144,11 +144,11 @@ export function MacroGoalsEditor({ values, onChange }) {
         {macros.map(({ label, pct, g, bar, text, thumb, onSlide, max }) => (
           <div key={label}>
             <div className="flex items-center justify-between mb-1.5">
-              <span className={`text-sm font-semibold ${text}`}>{label}</span>
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-ink-muted text-xs font-technical">{pct}%</span>
+              <span className={`text-body font-semibold ${text}`}>{label}</span>
+              <div className="flex items-center gap-2 text-body">
+                <span className="text-ink-muted text-caption font-technical">{pct}%</span>
                 <span className={`font-bold font-technical ${text}`}>{g}g</span>
-                {!onSlide && <span className="text-[11px] text-ink-muted uppercase tracking-wider">auto</span>}
+                {!onSlide && <span className="text-micro text-ink-muted uppercase tracking-wider">auto</span>}
               </div>
             </div>
             {onSlide ? (

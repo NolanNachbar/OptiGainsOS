@@ -129,7 +129,7 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
       invalidateDietPhases(queryClient);
       invalidateProfile(queryClient);
       setShowNewPhase(false);
-      toast.success("New diet phase started");
+      toast.success("Diet phase started.");
     },
     onError: (error) => {
       toast.error(error.message || "Phase not started. Check your connection and try again.");
@@ -213,14 +213,14 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
       <Card className="">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2">
+            <CardTitle className="text-emph flex items-center gap-2">
               <Dumbbell className="w-4 h-4 text-brand" />
               Diet Phase
             </CardTitle>
             <Button
               variant="outline"
               size="sm"
-              className="h-7 text-xs"
+              className="h-7 text-caption"
               onClick={() => openNewPhaseDialog(null)}
             >
               <Play className="w-3 h-3 mr-1" />
@@ -236,12 +236,12 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
                 <div className="p-2.5 bg-warn/10 border border-warn/20 rounded-lg">
                   <div className="flex items-center gap-2">
                     <Trophy className="w-4 h-4 text-warn" />
-                    <span className="font-semibold text-sm text-amber-800">
+                    <span className="font-semibold text-body text-amber-800">
                       Target reached
                     </span>
                     <Button
                       size="sm"
-                      className="ml-auto h-6 text-xs bg-amber-600 hover:bg-amber-700 text-ink"
+                      className="ml-auto h-6 text-caption bg-amber-600 hover:bg-amber-700 text-ink"
                       onClick={() => openNewPhaseDialog("maintain")}
                     >
                       Switch to Maintenance
@@ -258,17 +258,17 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-1.5">
                         {getPhaseIcon(activePhase.phase_type)}
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${colors.badge}`}>
+                        <span className={`px-2 py-0.5 rounded-full text-caption font-semibold ${colors.badge}`}>
                           {activePhase.phase_type.charAt(0).toUpperCase() + activePhase.phase_type.slice(1)}
                         </span>
                       </div>
-                      <span className="text-xs text-ink-muted">Day {daysInPhase}</span>
+                      <span className="text-caption text-ink-muted">Day {daysInPhase}</span>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-caption">
                       <div>
                         <div className="text-ink-muted">Rate</div>
-                        <div className="font-semibold text-sm text-ink">
+                        <div className="font-semibold text-body text-ink">
                           {activePhase.phase_type === "reverse"
                             ? `+${activePhase.weekly_rate} cal/wk`
                             : `${activePhase.weekly_rate > 0 ? "+" : ""}${activePhase.weekly_rate} ${weightUnit}/wk`}
@@ -276,26 +276,26 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
                       </div>
                       <div>
                         <div className="text-ink-muted">Started</div>
-                        <div className="font-semibold text-sm text-ink">
+                        <div className="font-semibold text-body text-ink">
                           {format(parseISO(activePhase.start_date), "MMM d")}
                         </div>
                       </div>
                       {phaseCalories && (
                         <div>
                           <div className="text-ink-muted">Calories</div>
-                          <div className="font-semibold text-sm text-ink">{phaseCalories}</div>
+                          <div className="font-semibold text-body text-ink">{phaseCalories}</div>
                         </div>
                       )}
                       {activePhase.target_weight && (
                         <div>
                           <div className="text-ink-muted">Goal</div>
-                          <div className="font-semibold text-sm text-ink">{activePhase.target_weight} {weightUnit}</div>
+                          <div className="font-semibold text-body text-ink">{activePhase.target_weight} {weightUnit}</div>
                         </div>
                       )}
                     </div>
 
                     {activePhase.phase_type === "reverse" && activePhase.starting_calories && tdeeResult?.tdee && (
-                      <div className="mt-2 pt-2 border-t border-charcoal-border/50 border-charcoal-border text-xs">
+                      <div className="mt-2 pt-2 border-t border-charcoal-border/50 border-charcoal-border text-caption">
                         <div className="flex justify-between text-ink-muted mb-1">
                           <span>Metabolic recovery</span>
                           <span>{activePhase.starting_calories} → {phaseCalories} / {tdeeResult.tdee} cal</span>
@@ -314,7 +314,7 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
                       </div>
                     )}
                     {activePhase.phase_type !== "reverse" && activePhase.starting_weight && trendWeight && (
-                      <div className="mt-2 pt-2 border-t border-charcoal-border/50 border-charcoal-border text-xs text-ink-muted">
+                      <div className="mt-2 pt-2 border-t border-charcoal-border/50 border-charcoal-border text-caption text-ink-muted">
                         {activePhase.starting_weight} → {trendWeight} {weightUnit} ({(trendWeight - activePhase.starting_weight) > 0 ? "+" : ""}{(trendWeight - activePhase.starting_weight).toFixed(1)})
                       </div>
                     )}
@@ -327,7 +327,7 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
                 <div>
                   <button
                     onClick={() => setShowHistory(!showHistory)}
-                    className="flex items-center gap-1 text-xs text-ink-muted hover:text-ink-muted transition-colors"
+                    className="flex items-center gap-1 text-caption text-ink-muted hover:text-ink-muted transition-colors"
                   >
                     History ({completedPhases.length})
                     {showHistory ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -338,9 +338,9 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
                         const colors = getPhaseColor(phase.phase_type);
                         const days = phase.end_date ? differenceInDays(parseISO(phase.end_date), parseISO(phase.start_date)) : 0;
                         return (
-                          <div key={phase.id} className="flex items-center justify-between p-2 bg-charcoal-surface bg-charcoal-elevated rounded text-xs">
+                          <div key={phase.id} className="flex items-center justify-between p-2 bg-charcoal-surface bg-charcoal-elevated rounded text-caption">
                             <div className="flex items-center gap-1.5">
-                              <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${colors.badge}`}>
+                              <span className={`px-1.5 py-0.5 rounded text-caption font-medium ${colors.badge}`}>
                                 {phase.phase_type.charAt(0).toUpperCase() + phase.phase_type.slice(1)}
                               </span>
                               <span className="text-ink-muted text-ink-muted">
@@ -361,8 +361,8 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
           ) : (
             <div className="text-center py-3">
               <Dumbbell className="w-8 h-8 text-ink-muted mx-auto mb-2" />
-              <p className="text-ink-muted font-medium text-sm">No active diet phase</p>
-              <p className="text-xs text-ink-muted mt-0.5 mb-3">
+              <p className="text-ink-muted font-medium text-body">No active diet phase</p>
+              <p className="text-caption text-ink-muted mt-0.5 mb-3">
                 Start a phase for coached check-ins and auto macro adjustments.
               </p>
               <div className="flex gap-2 justify-center">
@@ -371,7 +371,7 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
                     key={pt.value}
                     variant="outline"
                     size="sm"
-                    className="h-7 text-xs"
+                    className="h-7 text-caption"
                     onClick={() => openNewPhaseDialog(pt.value)}
                   >
                     {getPhaseIcon(pt.value)}
@@ -401,7 +401,7 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
             {/* Phase type selector */}
             <div>
-              <Label className="text-sm font-medium mb-2 block">
+              <Label className="text-body font-medium mb-2 block">
                 Phase Type
               </Label>
               <div className="grid grid-cols-2 gap-2">
@@ -428,8 +428,8 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
                       <div className="flex justify-center mb-1">
                         {getPhaseIcon(pt.value)}
                       </div>
-                      <div className="font-semibold text-sm">{pt.label}</div>
-                      <div className="text-xs text-ink-muted mt-0.5">
+                      <div className="font-semibold text-body">{pt.label}</div>
+                      <div className="text-caption text-ink-muted mt-0.5">
                         {pt.description}
                       </div>
                     </button>
@@ -440,7 +440,7 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
 
             {/* Rate / Aggressiveness selector */}
             <div>
-              <Label className="text-sm font-medium mb-2 block">
+              <Label className="text-body font-medium mb-2 block">
                 Aggressiveness
               </Label>
               <div className="space-y-2">
@@ -457,8 +457,8 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
                         : "border-charcoal-border border-charcoal-border hover:border-charcoal-border"
                     }`}
                   >
-                    <span className="font-medium text-sm">{preset.label}</span>
-                    <span className="text-sm text-ink-muted">{preset.desc}</span>
+                    <span className="font-medium text-body">{preset.label}</span>
+                    <span className="text-body text-ink-muted">{preset.desc}</span>
                   </button>
                 ))}
 
@@ -472,11 +472,11 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
                     onChange={(e) => setCustomRate(e.target.value)}
                     className="flex-1"
                   />
-                  <span className="text-sm text-ink-muted whitespace-nowrap">
+                  <span className="text-body text-ink-muted whitespace-nowrap">
                     {newPhaseType === "reverse" ? "cal/wk" : `${weightUnit}/wk`}
                   </span>
                 </div>
-                <p className="text-xs text-ink-muted">
+                <p className="text-caption text-ink-muted">
                   {newPhaseType === "cut"
                     ? "Negative values for cutting (e.g., -0.6)"
                     : newPhaseType === "bulk"
@@ -490,7 +490,7 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
 
             {/* Target weight (optional) */}
             <div>
-              <Label className="text-sm font-medium mb-1 block">
+              <Label className="text-body font-medium mb-1 block">
                 Target Weight{" "}
                 <span className="text-ink-muted font-normal">(optional)</span>
               </Label>
@@ -505,20 +505,20 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
                   onChange={(e) => setTargetWeight(e.target.value)}
                   className="flex-1"
                 />
-                <span className="text-sm text-ink-muted">{weightUnit}</span>
+                <span className="text-body text-ink-muted">{weightUnit}</span>
               </div>
-              <p className="text-xs text-ink-muted mt-1">
+              <p className="text-caption text-ink-muted mt-1">
                 You'll be notified when you reach this weight.
               </p>
             </div>
 
             {/* Preview */}
             {previewCalories && (
-              <div className="p-3 bg-charcoal-surface bg-charcoal-elevated rounded-lg text-sm">
+              <div className="p-3 bg-charcoal-surface bg-charcoal-elevated rounded-lg text-body">
                 {newPhaseType === "reverse" ? (
                   <div className="text-ink-muted text-ink-muted">
                     Calorie progression:{" "}
-                    <span className="font-bold text-ink">
+                    <span className="font-semibold text-ink">
                       {previewCalories}
                     </span>
                   </div>
@@ -526,11 +526,11 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
                   <>
                     <div className="text-ink-muted text-ink-muted">
                       Estimated daily target:{" "}
-                      <span className="font-bold text-ink">
+                      <span className="font-semibold text-ink">
                         {previewCalories} cal
                       </span>
                     </div>
-                    <div className="text-xs text-ink-muted mt-0.5">
+                    <div className="text-caption text-ink-muted mt-0.5">
                       TDEE ({tdeeResult.tdee}){" "}
                       {(customRate ? parseFloat(customRate) : newRate) < 0
                         ? ""
@@ -550,7 +550,7 @@ export default function DietPhaseCard({ tdeeResult, trendWeight }) {
           <div className="px-6 py-4 border-t border-charcoal-border flex-shrink-0 flex gap-2">
             <Button
               onClick={handleStartPhase}
-              className="flex-1 bg-brand hover:bg-brand text-[var(--color-action-dark)] font-bold"
+              className="flex-1 bg-brand hover:bg-brand text-[var(--color-action-dark)] font-semibold"
               disabled={startPhaseMutation.isPending}
             >
               {startPhaseMutation.isPending
