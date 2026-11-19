@@ -11,6 +11,7 @@ import { getTodayString } from "@/utils/dateUtils";
 // Deliberately wide: the point is to catch a slipped digit, not to police a
 // range. Rejecting shows the value back rather than silently clamping it,
 // because a clamped weight is a lie the trend estimator cannot detect.
+// eslint-disable-next-line react-refresh/only-export-components
 export const BOUNDS = { lbs: [50, 700], kg: [25, 320] };
 
 // How stale is stale. Under a week reads as a normal gap and gets a neutral
@@ -69,7 +70,7 @@ export default function WeighInPrompt({
   if (isSheet && todayWeight?.weight != null) {
     return (
       <div className="glass px-4 sm:px-5 py-4">
-        <p className="text-[14px] font-semibold text-secondary">
+        <p className="text-body font-semibold text-secondary">
           Already logged today: <span className="tabular-nums text-ink">{todayWeight.weight} {unit}</span>
         </p>
         <Button
@@ -77,7 +78,7 @@ export default function WeighInPrompt({
           variant="volt"
           size="lg"
           onClick={() => onLogged?.()}
-          className="mt-3 min-h-[50px] w-full text-[15px]"
+          className="mt-3 min-h-[50px] w-full text-emph"
         >
           Continue to the session
         </Button>
@@ -138,10 +139,10 @@ export default function WeighInPrompt({
           <Scale className="h-[18px] w-[18px]" aria-hidden="true" />
         </div>
         <div className="min-w-0 flex-1">
-          <h3 id="weigh-in-prompt-title" className="type-display text-[17px] sm:text-[17px]">
+          <h3 id="weigh-in-prompt-title" className="type-display text-title sm:text-title">
             Step on the scale
           </h3>
-          <p className={`mt-1 text-[12px] font-semibold ${isStale ? "text-warn" : "text-muted-2"}`}>
+          <p className={`mt-1 text-caption font-semibold ${isStale ? "text-warn" : "text-muted-2"}`}>
             {staleLine}
           </p>
         </div>
@@ -183,15 +184,15 @@ export default function WeighInPrompt({
             onFocus={(e) => e.target.select()}
             aria-label={`Bodyweight in ${unit}`}
             aria-invalid={!!error}
-            className="hero-metric w-full bg-transparent px-4 py-3 text-[28px] text-ink outline-none placeholder:text-ink-faint placeholder:font-semibold"
+            className="hero-metric w-full bg-transparent px-4 py-3 text-display text-ink outline-none placeholder:text-ink-faint placeholder:font-semibold"
           />
-          <span className="pointer-events-none pr-4 text-[15px] font-bold text-muted-2" aria-hidden="true">
+          <span className="pointer-events-none pr-4 text-emph font-bold text-muted-2" aria-hidden="true">
             {unit}
           </span>
         </div>
 
         {error && (
-          <p role="alert" className="mt-2 text-[12px] font-semibold text-warn">
+          <p role="alert" className="mt-2 text-caption font-semibold text-warn">
             {error}
           </p>
         )}
@@ -201,7 +202,7 @@ export default function WeighInPrompt({
           variant="volt"
           size="lg"
           disabled={logWeight.isPending || !typed.trim()}
-          className="mt-3 min-h-[50px] w-full text-[15px]"
+          className="mt-3 min-h-[50px] w-full text-emph"
         >
           {logWeight.isPending ? "Saving…" : "Log weight"}
         </Button>
@@ -210,7 +211,7 @@ export default function WeighInPrompt({
           <button
             type="button"
             onClick={onSkip}
-            className="mt-1 min-h-[44px] w-full text-[12px] font-semibold text-ink-muted transition-colors duration-200 hover:text-ink [transition-timing-function:var(--ease)]"
+            className="mt-1 min-h-[44px] w-full text-caption font-semibold text-ink-muted transition-colors duration-200 hover:text-ink [transition-timing-function:var(--ease)]"
           >
             {skipLabel}
           </button>

@@ -120,9 +120,10 @@ export default function TodayActions({ today, briefActions = [], isError = false
         action: {
           label: "Undo",
           onClick: () => {
+            // eslint-disable-next-line no-unused-vars
             const rows = deletedRows.map(({ id, created_at, ...rest }) => rest);
             supabase.from("todos").insert(rows).then(({ error }) => {
-              if (error) toast.error("Couldn't restore the task. Check your connection and add it again.");
+              if (error) toast.error("Could not restore the task. Check your connection and add it again.");
               else queryClient.invalidateQueries({ queryKey: ["todos", todayStr, user.id] });
             });
           },
@@ -162,7 +163,7 @@ export default function TodayActions({ today, briefActions = [], isError = false
   return (
     <div className="glass glass-interactive px-4 pt-3 pb-3">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[14px] font-semibold text-muted-2">
+        <span className="text-body font-semibold text-muted-2">
           {total > 0 ? `To do · ${total - completed} open` : "To do"}
         </span>
         <Button

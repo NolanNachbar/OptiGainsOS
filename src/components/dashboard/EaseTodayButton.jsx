@@ -30,6 +30,7 @@ export default function EaseTodayButton() {
     if (ov?.action === "ease") setDone(true);
   }, [user, today]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, [load]);
 
   if (!isCut) return null;

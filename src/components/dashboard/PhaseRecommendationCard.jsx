@@ -31,6 +31,7 @@ export default function PhaseRecommendationCard() {
     if (r) { setRec(r); setCurrentPhase(r.current_phase); }
   }, [user, profile?.timezone]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, [load]);
 
   if (!rec || dismissed) return null;
@@ -54,7 +55,7 @@ export default function PhaseRecommendationCard() {
       <div className="flex items-center gap-2 mb-1">
         <Brain className="w-3.5 h-3.5 text-gold" />
         <span className="section-label">Coach: diet phase</span>
-        <span className={`font-technical text-[11px] font-bold ml-auto ${confColor}`}>{rec.confidence} confidence</span>
+        <span className={`font-technical text-caption font-bold ml-auto ${confColor}`}>{rec.confidence} confidence</span>
       </div>
 
       <div className="type-display text-lg">
@@ -65,7 +66,7 @@ export default function PhaseRecommendationCard() {
         )}
       </div>
       {rec.reverse_diet && (
-        <div className="mt-1 inline-block px-2 py-0.5 rounded-full bg-warn/10 text-warn text-[11px] font-bold uppercase tracking-wide">
+        <div className="mt-1 inline-block px-2 py-0.5 rounded-full bg-warn/10 text-warn text-micro font-bold uppercase tracking-wide">
           End the cut · reverse diet
         </div>
       )}

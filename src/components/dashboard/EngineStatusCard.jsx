@@ -16,7 +16,7 @@ function computedAgo(computedAt) {
 }
 
 function acwrZone(acwr) {
-  if (acwr == null) return { label: "—", color: "text-muted-2" };
+  if (acwr == null) return { label: "--", color: "text-muted-2" };
   if (acwr > 1.5) return { label: "Overload", color: "text-bad" };
   if (acwr > 1.3) return { label: "High", color: "text-warn" };
   if (acwr < 0.8) return { label: "Detraining", color: "text-info" };
@@ -44,7 +44,7 @@ export default function EngineStatusCard({ today }) {
             const ago = computedAgo(prescription.computed_at);
             if (!ago) return null;
             return (
-              <span className={`ml-auto font-technical text-[11px] font-bold uppercase tracking-wider ${ago.stale ? "text-warn/80" : "text-faint"}`}>
+              <span className={`ml-auto font-technical text-micro font-bold uppercase tracking-wider ${ago.stale ? "text-warn/80" : "text-faint"}`}>
                 {ago.stale ? "Stale: " : ""}Computed {ago.label}
               </span>
             );
@@ -55,25 +55,25 @@ export default function EngineStatusCard({ today }) {
           {/* ACWR */}
           <div className="glass-inset px-2 py-2.5" title="Acute:Chronic Workload Ratio, last 7 days of load vs your 28-day average. 0.8–1.3 is the sweet spot; above 1.5 spikes injury risk.">
 
-            <div className="flex items-center justify-center gap-1 text-[11px] uppercase tracking-[0.08em] text-muted-2 font-bold mb-1">
+            <div className="flex items-center justify-center gap-1 text-micro uppercase tracking-[0.08em] text-muted-2 font-bold mb-1">
               <Shield className="w-3 h-3" /> Load (ACWR)
             </div>
             <div className="text-lg font-technical font-extrabold text-ink leading-none">
-              {acwr != null ? Number(acwr).toFixed(2) : "—"}
+              {acwr != null ? Number(acwr).toFixed(2) : "--"}
             </div>
-            <div className={`text-[11px] font-bold mt-0.5 ${zone.color}`}>{zone.label}</div>
+            <div className={`text-caption font-bold mt-0.5 ${zone.color}`}>{zone.label}</div>
           </div>
 
           {/* Interference */}
           <div className="glass-inset px-2 py-2.5" title="Concurrent-training interference (mTORC1 vs AMPK). LOW means today's running won't blunt strength/hypertrophy adaptation; an open anabolic window favors lifting.">
 
-            <div className="flex items-center justify-center gap-1 text-[11px] uppercase tracking-[0.08em] text-muted-2 font-bold mb-1">
+            <div className="flex items-center justify-center gap-1 text-micro uppercase tracking-[0.08em] text-muted-2 font-bold mb-1">
               <GitBranch className="w-3 h-3" /> Interference
             </div>
             <div className="text-lg font-technical font-extrabold text-ink leading-none">
-              {interference.interference_level || "—"}
+              {interference.interference_level || "--"}
             </div>
-            <div className="text-[11px] font-semibold mt-0.5 text-muted-2">
+            <div className="text-caption font-semibold mt-0.5 text-muted-2">
               {interference.anabolic_window ? "Anabolic window" : " "}
             </div>
           </div>
@@ -81,20 +81,20 @@ export default function EngineStatusCard({ today }) {
           {/* Overreach */}
           <div className="glass-inset px-2 py-2.5" title="Overreaching early-warning: fires when 3-day HRV drops and resting HR rises together. Needs wearable recovery data to compute.">
 
-            <div className="flex items-center justify-center gap-1 text-[11px] uppercase tracking-[0.08em] text-muted-2 font-bold mb-1">
+            <div className="flex items-center justify-center gap-1 text-micro uppercase tracking-[0.08em] text-muted-2 font-bold mb-1">
               <HeartPulse className="w-3 h-3" /> Overreach
             </div>
             {overreachUnavailable ? (
               <>
                 <div className="text-sm font-bold text-muted-2 leading-none mt-1">No data</div>
-                <div className="text-[11px] font-semibold mt-1 text-warn/80">Sync recovery</div>
+                <div className="text-caption font-semibold mt-1 text-warn/80">Sync recovery</div>
               </>
             ) : (
               <>
                 <div className={`text-lg font-technical font-extrabold leading-none ${overreach.overreaching ? "text-bad" : "text-ok"}`}>
                   {overreach.overreaching ? "Flag" : "Clear"}
                 </div>
-                <div className="text-[11px] font-semibold mt-0.5 text-muted-2">
+                <div className="text-caption font-semibold mt-0.5 text-muted-2">
                   {overreach.fatigue_state && overreach.fatigue_state !== "UNKNOWN" ? overreach.fatigue_state : " "}
                 </div>
               </>
@@ -103,7 +103,7 @@ export default function EngineStatusCard({ today }) {
         </div>
 
         {prescription.interference_warning && (
-          <p className="text-[11px] font-semibold text-warn/90 mt-3 leading-relaxed">
+          <p className="text-caption font-semibold text-warn/90 mt-3 leading-relaxed">
             {prescription.interference_warning}
           </p>
         )}

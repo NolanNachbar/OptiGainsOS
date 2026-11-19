@@ -46,15 +46,16 @@ import PrescribedSessionCard from "@/components/dashboard/PrescribedSessionCard"
 import DailyBriefCard from "@/components/dashboard/DailyBriefCard";
 import TodayActions from "@/components/dashboard/TodayActions";
 import { MetricTile, SectionLabel, SegmentedControl, Module, MiniRing } from "@/components/ui/system";
+import { PageHeader, Stat } from "@/components/ui";
 import { Activity, AlertTriangle, ChevronRight, Apple, ChevronDown, Flame, Check } from "lucide-react";
 import { format, parseISO, addDays } from "date-fns";
 
-const fmt = (n, d = 0) => (n == null || Number.isNaN(Number(n)) ? "—" : Number(n).toFixed(d));
+const fmt = (n, d = 0) => (n == null || Number.isNaN(Number(n)) ? "--" : Number(n).toFixed(d));
 // Full thousands-separated integer — used for the kcal ring's TARGET caption so
 // it reads non-lossy ("/2,800 · 7d"), distinct from the compact in-ring average
 // value (which abbreviates to "2.8k" to fit the 50px ring).
 const withThousands = (n) =>
-  n == null || Number.isNaN(Number(n)) ? "—" : Math.round(Number(n)).toLocaleString("en-US");
+  n == null || Number.isNaN(Number(n)) ? "--" : Math.round(Number(n)).toLocaleString("en-US");
 const sentence = (s) => {
   const t = String(s || "").replace(/_/g, " ").trim();
   return t ? t.charAt(0).toUpperCase() + t.slice(1) : "";
@@ -133,13 +134,13 @@ function WeighInRow({ today, weightUnit }) {
     <div className="mt-2">
       {already ? (
         <div className="flex items-center justify-between gap-3">
-          <span className="text-[14px] font-semibold text-muted-2">Logged today</span>
+          <span className="text-body font-semibold text-muted-2">Logged today</span>
           <Check className="w-4 h-4 text-leaf shrink-0" />
         </div>
       ) : (
         <form onSubmit={submit}>
           <div className="flex items-center gap-3">
-            <span className="text-[14px] font-semibold text-muted-2 shrink-0">Weigh in</span>
+            <span className="text-body font-semibold text-muted-2 shrink-0">Weigh in</span>
             <input
               type="text"
               inputMode="decimal"
@@ -154,17 +155,17 @@ function WeighInRow({ today, weightUnit }) {
               onFocus={(e) => e.target.select()}
               aria-label={`Bodyweight in ${weightUnit}`}
               aria-invalid={!!error}
-              className={`min-w-0 flex-1 min-h-[44px] bg-transparent border-b text-[15px] font-semibold tabular-nums text-ink outline-none px-1 ${error ? "border-warn" : "border-charcoal-border"}`}
+              className={`min-w-0 flex-1 min-h-[44px] bg-transparent border-b text-emph font-semibold tabular-nums text-ink outline-none px-1 ${error ? "border-warn" : "border-charcoal-border"}`}
             />
             <button
               type="submit"
               disabled={logWeight.isPending || !typed.trim()}
-              className="cta-action shrink-0 px-4 min-h-[44px] text-[14px]"
+              className="cta-action shrink-0 px-4 min-h-[44px] text-body"
             >
               {logWeight.isPending ? "…" : "Log"}
             </button>
           </div>
-          {error && <p className="text-[11px] font-semibold text-warn mt-1">{error}</p>}
+          {error && <p className="text-caption font-semibold text-warn mt-1">{error}</p>}
         </form>
       )}
     </div>
@@ -436,7 +437,7 @@ export default function Today() {
   const briefActions = todayBrief?.brief_json?.today_actions;
   const detailOpenResolved = detailOpen ?? (todayBrief !== undefined && !briefActions?.length);
 
-  const recovery = state?.recovery || {};
+  const recovery = useMemo(() => state?.recovery || {}, [state?.recovery]);
   const fatigue = state?.fatigue || {};
   const nutrition = state?.nutrition || {};
   const vdot = state?.vdot_zones || {};
@@ -476,9 +477,9 @@ export default function Today() {
         toast.success(`Logged "${session.name}"`);
         invalidateWorkoutLogs(queryClient);
       } else if (result === "cancelled") {
-        toast.info(`"${session.name}" had no sets logged — discarded instead`);
+        toast.info(`"${session.name}" had no sets logged. Discarded instead.`);
       } else {
-        toast.error("Couldn't log that session — try again");
+        toast.error("Could not log that session. Retry.");
       }
       invalidateStale();
     } finally {
@@ -532,14 +533,25 @@ export default function Today() {
   // answers "what do I do": rest, train, or the engine doesn't know yet.
   const verdict = useMemo(() => {
     const action = prescription?.mpc_action;
-    if (action === "REST") return "Rest today. The engine calls recovery, honor it.";
+    if (action === "REST") return "Rest day. Recovery is the call.";
     if (action) {
       return intensity != null
-        ? `Train as planned, cleared for ${intensity.toFixed(2)}× intensity.`
+        ? `Train as planned at ${intensity.toFixed(2)}x intensity.`
         : "Train as planned.";
     }
-    return "Calibrating — needs a few more days of data for a verdict.";
+    return "No verdict yet. The engine needs a few more days of data.";
   }, [prescription, intensity]);
+
+  // Readiness basis: the inputs behind the score, or the default-state line.
+  const readinessBasis = useMemo(() => {
+    const parts = [
+      recovery?.hrv != null && `HRV ${fmt(recovery.hrv)} ms`,
+      recovery?.resting_hr != null && `RHR ${fmt(recovery.resting_hr)} bpm`,
+      recovery?.sleep_score != null && `Sleep ${fmt(recovery.sleep_score)}`,
+      recovery?.body_battery != null && `Battery ${fmt(recovery.body_battery)}%`,
+    ].filter(Boolean);
+    return parts.length ? `Inputs: ${parts.join(" · ")}` : "No check-in, using defaults.";
+  }, [recovery]);
 
   // The consolidated detail card's segmented control — Brief leads (the Daily
   // Brief headline is the IA priority). Muscle is offered even on error/empty so
@@ -606,7 +618,7 @@ export default function Today() {
       : Math.abs(trendPerWkLbs) <= 0.5; // maintenance: holding is on-goal (lbs threshold)
   })();
   const trend = {
-    value: trendPerWk == null ? "—"
+    value: trendPerWk == null ? "--"
       : `${trendPerWk > 0 ? "+" : ""}${fmt(trendPerWk, 1)}`,
     caption: trendAligned == null ? `${weightUnit}/wk` : trendAligned ? "on goal" : "off goal",
   };
@@ -675,16 +687,14 @@ export default function Today() {
 
   return (
     <div
-      className="min-h-full px-4 sm:px-6 pt-2 lg:pt-6 max-w-[720px] mx-auto"
+      className="min-h-full px-4 sm:px-6 pt-2 max-w-2xl mx-auto"
       style={{ paddingBottom: "calc(var(--floating-chrome-bottom) + 64px)" }}
     >
-      {/* Desktop-only page header (mobile header already names the screen) */}
-      <div className="hidden lg:flex items-baseline justify-between mb-5 rise-in">
-        <div className="flex items-baseline gap-3.5">
-          <h1 className="type-display text-[28px]">Today</h1>
-          <span className="text-[14px] font-semibold text-muted-2">{format(nowInTz(profile?.timezone), "EEEE, MMMM d")}</span>
-        </div>
-      </div>
+      <PageHeader
+        className="px-0"
+        eyebrow={format(nowInTz(profile?.timezone), "EEE d MMM")}
+        title="Today"
+      />
 
       {/* Load-failure is an app condition, not a biometric — render it as
           neutral glass (muted icon + brand-colored retry), not warn-amber,
@@ -692,7 +702,7 @@ export default function Today() {
       {(prescriptionError || stateError) && (
         <div className="glass-inset flex items-center gap-2 px-4 py-3 mb-3 rounded-lg text-sm">
           <AlertTriangle className="w-4 h-4 shrink-0 text-muted-2" />
-          <span className="font-semibold text-muted-2">Could not load today&apos;s data</span>
+          <span className="font-semibold text-muted-2">Could not load today&apos;s data. Retry.</span>
           <button
             type="button"
             onClick={() => window.location.reload()}
@@ -710,6 +720,23 @@ export default function Today() {
           7. everything else (secondary / below the fold).
           Target: nutrition must be visible without scrolling at 428×926. */}
       <div className="space-y-2">
+        {/* Readiness hero: the one number on the screen, with its basis. */}
+        <Module label="Readiness">
+          {(prescriptionLoading || stateLoading) ? (
+            <div className="pulse-loop h-11 bg-track rounded-control w-1/2" />
+          ) : (
+            <Stat
+              size="lg"
+              hue={score == null ? "none" : "teal"}
+              value={score == null ? null : Math.round(score)}
+              reason={readinessBasis}
+            />
+          )}
+          {!(prescriptionLoading || stateLoading) && (
+            <p className="mt-2 text-body text-ink-secondary">{verdict}</p>
+          )}
+        </Module>
+
         {/* 1 — Nutrition: flat 4-column Kcal/Protein/Carbs/Fat, 8px bars,
             macro hues on the labels (DESIGN.md — calories own no hue), with
             the Consumed/Remaining toggle inline in the module's own header
@@ -717,7 +744,7 @@ export default function Today() {
             toggle, never a ring), not on its own line above the grid. */}
         <Module>
           <div className="flex items-center justify-between gap-2 mb-2">
-            <span className="text-[14px] font-semibold text-muted-2 truncate">Nutrition</span>
+            <span className="text-body font-semibold text-muted-2 truncate">Nutrition</span>
             <div className="flex items-center gap-2 shrink-0">
               <SegmentedControl
                 options={[{ value: "remaining", label: "Remaining" }, { value: "consumed", label: "Consumed" }]}
@@ -726,7 +753,7 @@ export default function Today() {
                 size="sm"
                 className="inline-flex [&_button]:min-h-[44px] [&_button]:px-3"
               />
-              <Link to="/fuel" className="flex items-center gap-0.5 text-[14px] font-semibold text-muted-2 min-h-[44px] -my-3">
+              <Link to="/fuel" className="flex items-center gap-0.5 text-body font-semibold text-muted-2 min-h-[44px] -my-3">
                 Detail<ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -745,7 +772,7 @@ export default function Today() {
               // "exactly at target" even when well over it. Remaining view now
               // says "N over"; Consumed view shows consumed/goal directly.
               const caption = !hasGoal
-                ? "—"
+                ? "--"
                 : nutritionView === "consumed"
                   ? `${withThousands(Math.round(c.consumed))}${c.unit}/${withThousands(c.goal)}${c.unit}`
                   : over
@@ -753,7 +780,7 @@ export default function Today() {
                     : `${withThousands(remainingRaw)}${c.unit} left`;
               return (
                 <div key={c.label} className="min-w-0">
-                  <div className="text-[11px] font-semibold mb-1.5 truncate" style={{ color: c.hue }}>{c.label}</div>
+                  <div className="text-caption font-semibold mb-1.5 truncate" style={{ color: c.hue }}>{c.label}</div>
                   <div className="h-2 rounded-full bg-track overflow-hidden">
                     <div className="h-full rounded-full opacity-90" style={{ width: `${pct}%`, background: c.hue }} />
                   </div>
@@ -761,7 +788,7 @@ export default function Today() {
                       columns the "N left" line and the caption underneath it
                       overlapped. The averages themselves aren't stranded —
                       AthleteState and Progress both still surface them. */}
-                  <div className="font-technical text-[11px] text-secondary tabular-nums mt-1.5 truncate">
+                  <div className="font-technical text-caption text-secondary tabular-nums mt-1.5 truncate">
                     {caption}
                   </div>
                 </div>
@@ -785,7 +812,7 @@ export default function Today() {
             >
               <span className="flex items-center gap-2">
                 <Activity className="w-4 h-4 shrink-0 text-muted-2" />
-                Workout in progress, tap to continue
+                Workout in progress. Continue
               </span>
               <ChevronRight className="w-4 h-4 shrink-0 text-muted-2" />
             </Link>
@@ -824,8 +851,8 @@ export default function Today() {
                   className="flex items-center justify-between gap-3 py-1"
                 >
                   <div className="min-w-0">
-                    <div className="text-[14px] font-semibold text-ink truncate">{session.name}</div>
-                    <div className="text-[11px] font-semibold text-muted-2 tabular-nums">
+                    <div className="text-body font-semibold text-ink truncate">{session.name}</div>
+                    <div className="text-caption font-semibold text-muted-2 tabular-nums">
                       Started {format(new Date(session.start_time || session.created_at), "MMM d")}
                     </div>
                   </div>
@@ -846,7 +873,7 @@ export default function Today() {
                       onClick={() => handleLogStale(session)}
                       disabled={loggingStaleId === session.id}
                     >
-                      {loggingStaleId === session.id ? "Logging…" : "Log"}
+                      {loggingStaleId === session.id ? "Logging" : "Log"}
                     </Button>
                   </div>
                 </div>
@@ -876,11 +903,11 @@ export default function Today() {
         <Module label="Weight trend · 30 days" detail="Detail" detailHref="/fuel?tab=body">
           <div className="flex items-baseline gap-1.5">
             <span className="type-display text-2xl font-semibold tabular-nums">
-              {latestWeight ? fmt(latestWeight.trendWeight, 1) : "—"}
+              {latestWeight ? fmt(latestWeight.trendWeight, 1) : "--"}
             </span>
-            <span className="text-[14px] font-semibold text-muted">{weightUnit}</span>
+            <span className="text-body font-semibold text-muted">{weightUnit}</span>
             {isWeightStale && (
-              <span className="ml-auto text-[11px] font-semibold text-muted-2">
+              <span className="ml-auto text-caption font-semibold text-muted-2">
                 as of {format(parseISO(latestWeight.recorded_date), "MMM d")}
               </span>
             )}
@@ -889,9 +916,9 @@ export default function Today() {
               rate line has nothing real to report: don't show a green
               "on goal" rate alongside a blank headline number. Show only the
               "log a few weigh-ins" hint instead. */}
-          {latestWeight && trend.value !== "—" ? (
+          {latestWeight && trend.value !== "--" ? (
             <p
-              className="text-[14px] font-semibold mt-1"
+              className="text-body font-semibold mt-1"
               style={{ color: trendAligned ? "var(--hue-green)" : "var(--text-secondary)" }}
             >
               {`${trend.value} ${weightUnit}/wk`}{" "}
@@ -903,7 +930,7 @@ export default function Today() {
               <WeightSpark {...weightSpark} />
             </div>
           ) : (
-            <p className="text-[12px] text-muted-2 font-semibold mt-2">Log a few weigh-ins to see a trend</p>
+            <p className="text-caption text-muted-2 font-semibold mt-2">No trend yet. It needs 2 weigh-ins in 30 days.</p>
           )}
           <WeighInRow today={today} weightUnit={weightUnit} />
         </Module>
@@ -921,7 +948,7 @@ export default function Today() {
         {!weeklyRingsUnknown && weeklyTarget > 0 && (
           <Module label="Weekly training">
             <div className="flex items-center justify-between gap-3 py-0.5">
-              <span className="text-[14px] font-semibold text-muted-2">This week</span>
+              <span className="text-body font-semibold text-muted-2">This week</span>
               <MiniRing
                 label="Workouts"
                 value={`${weeklyCompleted}/${weeklyTarget}`}
@@ -932,22 +959,6 @@ export default function Today() {
             </div>
           </Module>
         )}
-
-        {/* 5 — Readiness: compact one line (score + short verdict), no big
-            hero number/sparkline block — that detail still lives one tap
-            away in the State detail tab below. */}
-        <Module label="Readiness">
-          {(prescriptionLoading || stateLoading) ? (
-            <div className="pulse-loop h-5 bg-track rounded-lg w-2/3" />
-          ) : (
-            <p className="flex items-baseline gap-2 text-[14px] font-semibold">
-              <span className="type-display text-lg tabular-nums leading-none text-ink">
-                {score == null ? "—" : Math.round(score)}
-              </span>
-              <span className="font-technical text-secondary truncate">{verdict}</span>
-            </p>
-          )}
-        </Module>
 
         {/* 6 — To-do checklist. Self-hides when empty. */}
         <div className="-mx-4 sm:-mx-6 lg:mx-0">
@@ -961,7 +972,7 @@ export default function Today() {
             <div className="flex items-center gap-2 mb-1.5">
               <Flame className="w-3.5 h-3.5 text-ink-muted shrink-0" />
               <span className="section-label">
-                Carbs Around Today's Session{carbTimingToday.length > 1 ? "s" : ""}
+                Carbs around today's session{carbTimingToday.length > 1 ? "s" : ""}
               </span>
             </div>
             <div className="flex flex-wrap gap-x-5 gap-y-1.5">
@@ -1005,7 +1016,7 @@ export default function Today() {
             className="lg:hidden w-full flex items-center justify-between gap-2 px-4 min-h-[48px] py-3 mt-1 text-left"
           >
             <SectionLabel>Today&apos;s detail</SectionLabel>
-            <span className="flex items-center gap-1.5 text-[11px] font-semibold text-secondary">
+            <span className="flex items-center gap-1.5 text-caption font-semibold text-secondary">
               Brief · state · muscle
               <ChevronDown
                 className={`w-4 h-4 text-secondary transition-transform duration-200 [transition-timing-function:var(--ease)] ${detailOpenResolved ? "rotate-180" : ""}`}
@@ -1029,7 +1040,7 @@ export default function Today() {
                     label="Form · TSB"
                     value={fmt(fatigue?.tsb)}
                     accent={String(fatigue?.interpretation || "").includes("overreach") ? "var(--bad)" : "var(--hue-teal)"}
-                    sub={sentence(fatigue?.interpretation) || "—"}
+                    sub={sentence(fatigue?.interpretation) || "--"}
                   />
                   <MetricTile
                     label="ACWR"
@@ -1058,13 +1069,13 @@ export default function Today() {
               )}
               {detailTab === "muscle" && (
                 heatmapError ? (
-                  <p className="px-4 text-[12px] text-muted-2 font-semibold">Could not load muscle data</p>
+                  <p className="px-4 text-caption text-muted-2 font-semibold">Could not load muscle data.</p>
                 ) : fatigueData.length > 0 ? (
                   <div className="flex justify-center px-4">
                     <MuscleHeatMap data={fatigueData} view="anterior" className="h-[190px]" />
                   </div>
                 ) : (
-                  <p className="px-4 text-[12px] text-muted-2 font-semibold">No recent training load to map</p>
+                  <p className="px-4 text-caption text-muted-2 font-semibold">No recent training load to map.</p>
                 )
               )}
             </div>
@@ -1081,8 +1092,8 @@ export default function Today() {
             className="glass-inset tile-interactive flex items-center justify-center gap-2.5 min-h-[64px]"
           >
             <Apple className="w-[18px] h-[18px] text-muted-2" />
-            <span className="text-[14px] font-extrabold text-ink leading-none">Log food</span>
-            <span className="text-[11px] font-semibold text-secondary leading-none">Today&apos;s meals</span>
+            <span className="text-body font-extrabold text-ink leading-none">Log food</span>
+            
           </Link>
         </div>
       </div>

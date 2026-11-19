@@ -42,6 +42,7 @@ export default function HoldDeficitButton() {
     if (ov?.action === "push") setDone(true);
   }, [user, today]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, [load]);
 
   const gates = rec?.gates || [];
