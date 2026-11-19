@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import WorkoutLoggingHeader from "@/components/workouts/WorkoutLoggingHeader";
 import FinishSummary from "@/components/workouts/FinishSummary";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -20,14 +21,14 @@ export default function WorkoutDetailDialogs({ allWorkoutLogs, exerciseLogs, han
           <DialogHeader>
             <DialogTitle>Resume Workout?</DialogTitle>
           </DialogHeader>
-          <p className="text-body font-medium text-ink-secondary leading-relaxed">
-            You have an unfinished session started {formatTimeAgo(resumeSession?.start_time)}. Would you like to pick up where you left off?
-          </p>
-          <div className="flex gap-3 pt-2">
-            <Button variant="outline" className="flex-1" onClick={handleDismissResume}>
+          <DialogDescription>
+            Unfinished session from {formatTimeAgo(resumeSession?.start_time)}. Resume it or start fresh.
+          </DialogDescription>
+          <div className="flex gap-2 pt-2">
+            <Button variant="secondary" className="flex-1" onClick={handleDismissResume}>
               Start Fresh
             </Button>
-            <Button variant="volt" className="flex-1" onClick={handleResumeSession}>
+            <Button variant="primary" className="flex-1" onClick={handleResumeSession}>
               Resume
             </Button>
           </div>
@@ -42,14 +43,14 @@ export default function WorkoutDetailDialogs({ allWorkoutLogs, exerciseLogs, han
             <DialogTitle>All sets done. Finish workout?</DialogTitle>
           </DialogHeader>
           <DialogDescription>
-            That was the last set. Finish and save this session, or keep going if you want to add more.
+            Last set logged. Save the session now, or keep going.
           </DialogDescription>
-          <div className="flex gap-3 pt-2">
-            <Button variant="outline" className="flex-1" onClick={() => setShowAllDonePrompt(false)}>
+          <div className="flex gap-2 pt-2">
+            <Button variant="secondary" className="flex-1" onClick={() => setShowAllDonePrompt(false)}>
               Not yet
             </Button>
             <Button
-              variant="volt"
+              variant="primary"
               className="flex-1"
               onClick={() => { setShowAllDonePrompt(false); handleSaveWorkoutLog(); }}
             >
@@ -66,13 +67,13 @@ export default function WorkoutDetailDialogs({ allWorkoutLogs, exerciseLogs, han
             <DialogTitle>Incomplete Sets</DialogTitle>
           </DialogHeader>
           <DialogDescription>
-            Some sets haven't been checked off. Would you like to mark them all as complete?
+            Some sets are not checked off. Mark them all complete, or save them as they are.
           </DialogDescription>
-          <div className="flex gap-3 pt-2">
-            <Button variant="outline" className="flex-1" onClick={() => handleIncompleteResponse(false)}>
+          <div className="flex gap-2 pt-2">
+            <Button variant="secondary" className="flex-1" onClick={() => handleIncompleteResponse(false)}>
               Leave As-Is
             </Button>
-            <Button variant="volt" className="flex-1" onClick={() => handleIncompleteResponse(true)}>
+            <Button variant="primary" className="flex-1" onClick={() => handleIncompleteResponse(true)}>
               Complete All
             </Button>
           </div>
@@ -88,10 +89,10 @@ export default function WorkoutDetailDialogs({ allWorkoutLogs, exerciseLogs, han
             <DialogTitle>Cancel Workout?</DialogTitle>
           </DialogHeader>
           <DialogDescription>
-            Your progress for this workout will be lost. Are you sure you want to cancel?
+            Your progress for this workout will be lost.
           </DialogDescription>
-          <div className="flex gap-3 pt-2">
-            <Button variant="outline" className="flex-1" onClick={() => setShowCancelConfirm(false)}>
+          <div className="flex gap-2 pt-2">
+            <Button variant="secondary" className="flex-1" onClick={() => setShowCancelConfirm(false)}>
               Keep Going
             </Button>
             <Button
@@ -111,23 +112,24 @@ export default function WorkoutDetailDialogs({ allWorkoutLogs, exerciseLogs, han
           <DialogHeader>
             <DialogTitle>Finish Workout</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <div className="flex flex-col gap-4 pt-1">
             <FinishSummary exercises={exerciseLogs} allWorkoutLogs={allWorkoutLogs} weightUnit={weightUnit} />
             <div className="space-y-2">
-              <label className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Workout Notes</label>
+              <Label htmlFor="post-workout-notes" className="text-micro text-ink-muted">Workout Notes</Label>
               <Textarea
+                id="post-workout-notes"
                 value={postWorkoutNotes}
                 onChange={(e) => setPostWorkoutNotes(e.target.value)}
-                placeholder="What felt good/bad? Any injuries? Pump quality?"
+                placeholder="What felt good or bad, any pain, pump quality"
                 rows={4}
               />
             </div>
-            <div className="flex gap-3">
-              <Button variant="ghost" size="lg" className="flex-1" onClick={() => setShowPostWorkoutDialog(false)}>
+            <div className="flex gap-2">
+              <Button variant="secondary" size="lg" className="flex-1" onClick={() => setShowPostWorkoutDialog(false)}>
                 Go Back
               </Button>
               <Button
-                variant="volt"
+                variant="primary"
                 size="lg"
                 className="flex-[2]"
                 disabled={saveWorkoutLogMutation.isPending || saveWorkoutLogMutation.isSuccess}
