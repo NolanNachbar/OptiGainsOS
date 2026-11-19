@@ -887,7 +887,7 @@ export default function QuickWorkout() {
             </SortableContext>
           </DndContext>
 
-          {/* Add Exercise Form */}
+          {/* Add exercise form */}
           {exercises.length > 0 && !addRowOpen ? (
             <Button
               variant="outline"
@@ -895,7 +895,7 @@ export default function QuickWorkout() {
               className="w-full py-6 rounded-control border border-dashed border-charcoal-border bg-transparent font-bold"
             >
               <Plus className="w-5 h-5 mr-2" />
-              Add Exercise
+              Add exercise
             </Button>
           ) : (
           <AddExerciseForm

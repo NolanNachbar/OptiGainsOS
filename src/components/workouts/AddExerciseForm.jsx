@@ -44,7 +44,7 @@ export default function AddExerciseForm({ onAdd, showCloseButton = true, exercis
         className="w-full py-6 rounded-control border border-dashed border-charcoal-border bg-transparent font-bold lg:mb-0"
       >
         <Plus className="w-5 h-5 mr-2" />
-        Add Exercise
+        Add exercise
       </Button>
     );
   }

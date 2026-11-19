@@ -22,7 +22,8 @@ export default function FoodEntryDialog({ activeFoodId, activePortionLabels, act
           }
         }}>
           <DialogContent sheetMinHeight="min-h-[85dvh]" className="max-w-lg flex flex-col p-0 overflow-hidden">
-            <DialogHeader className="px-6 pt-6 pb-4 border-b border-charcoal-border shrink-0">
+            <div aria-hidden="true" className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-charcoal-border sm:hidden" />
+            <DialogHeader className="px-6 pt-4 pb-4 border-b border-charcoal-border shrink-0">
               <DialogTitle>{editingEntry ? "Edit entry" : "Log food"}</DialogTitle>
               <DialogDescription>
                 Logging to <span className="font-technical font-semibold text-ink tabular-nums">{format(new Date(selectedDate + 'T00:00:00'), 'EEE, MMM d')}</span>
