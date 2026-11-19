@@ -36,7 +36,6 @@ const Login = lazy(() => import('./pages/Login'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const Today = lazy(() => import('./pages/Today'));
-const FoodTracker = lazy(() => import('./pages/FoodTracker'));
 const CreateWorkout = lazy(() => import('./pages/CreateWorkout'));
 const Profile = lazy(() => import('./pages/Profile'));
 const WorkoutDetail = lazy(() => import('./pages/WorkoutDetail'));
@@ -47,7 +46,6 @@ const RecoveryDetail = lazy(() => import('./pages/RecoveryDetail'));
 const Mind = lazy(() => import('./pages/Mind'));
 const Career = lazy(() => import('./pages/Career'));
 const BriefHistory = lazy(() => import('./pages/BriefHistory'));
-const WeeklySchedule = lazy(() => import('./pages/WeeklySchedule'));
 const AthleteState = lazy(() => import('./pages/AthleteState'));
 const Lifts = lazy(() => import('./pages/Lifts'));
 const PhysiqueTracker = lazy(() => import('./pages/PhysiqueTracker'));
@@ -57,6 +55,13 @@ const Insights = lazy(() => import('./pages/Insights'));
 const Coach = lazy(() => import('./pages/Coach'));
 
 const queryClient = new QueryClient();
+
+// /food-tracker moved into Fuel's Nutrition tab. Forward the query string too,
+// so /food-tracker?addFood=true still opens the log dialog on Fuel.
+function FoodTrackerRedirect() {
+  const { search } = useLocation();
+  return <Navigate to={{ pathname: '/fuel', search }} replace />;
+}
 
 // /workout-detail?id=... (a library workout) or ?source=program&programWorkoutId=...
 // (a program workout -- see useActiveWorkoutSession.js, PrescribedSessionCard.jsx,
@@ -85,9 +90,7 @@ const protectedRoutes = [
   { path: "/fuel", name: "Fuel", component: Fuel },
   { path: "/train", name: "Train", component: Train },
   { path: "/insights", name: "Insights", component: Insights },
-  { path: "/weekly-schedule", name: "WeeklySchedule", component: WeeklySchedule },
   { path: "/program-builder", name: "ProgramBuilder", component: ProgramBuilder },
-  { path: "/food-tracker", name: "FoodTracker", component: FoodTracker },
   { path: "/create-workout", name: "CreateWorkout", component: CreateWorkout },
   { path: "/profile", name: "Profile", component: Profile },
   { path: "/quick-workout", name: "QuickWorkout", component: QuickWorkout },
@@ -230,7 +233,11 @@ function App() {
                   <Route path="/log" element={<Navigate to="/fuel?tab=body" replace />} />
                   <Route path="/supplements" element={<Navigate to="/fuel?tab=body" replace />} />
                   {/* Legacy Schedule page retired — WeeklySchedule is canonical */}
-                  <Route path="/schedule" element={<Navigate to="/weekly-schedule" replace />} />
+                  <Route path="/schedule" element={<Navigate to="/train?tab=schedule" replace />} />
+                  {/* WeeklySchedule now lives in Train's Schedule tab */}
+                  <Route path="/weekly-schedule" element={<Navigate to="/train?tab=schedule" replace />} />
+                  {/* FoodTracker now lives in Fuel's Nutrition tab */}
+                  <Route path="/food-tracker" element={<FoodTrackerRedirect />} />
                   {/* Standalone Workouts page merged into the Train hub */}
                   <Route path="/workouts" element={<Navigate to="/train?tab=library" replace />} />
                   <Route
