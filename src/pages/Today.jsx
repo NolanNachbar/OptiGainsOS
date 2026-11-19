@@ -157,13 +157,13 @@ function WeighInRow({ today, weightUnit }) {
               aria-invalid={!!error}
               className={`min-w-0 flex-1 min-h-[44px] bg-transparent border-b text-emph font-semibold tabular-nums text-ink outline-none px-1 ${error ? "border-warn" : "border-charcoal-border"}`}
             />
-            <button
+            <Button
               type="submit"
               disabled={logWeight.isPending || !typed.trim()}
-              className="cta-action shrink-0 px-4 min-h-[44px] text-body"
+              className="shrink-0 px-4 min-h-[44px]"
             >
               {logWeight.isPending ? "…" : "Log"}
-            </button>
+            </Button>
           </div>
           {error && <p className="text-caption font-semibold text-warn mt-1">{error}</p>}
         </form>

@@ -173,7 +173,7 @@ export function validate(schema, data) {
     if (error.issues) {
       // Zod validation error - format nicely
       const messages = error.issues.map(err => `${err.path.join('.')}: ${err.message}`);
-      throw new Error(`Validation failed: ${messages.join(', ')}`);
+      throw new Error(`Validation failed: ${messages.join(', ')}`, { cause: error });
     }
     throw error;
   }

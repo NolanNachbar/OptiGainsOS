@@ -97,8 +97,6 @@ export function getSmartRestDuration(exerciseName) {
 
   if (!dbEntry) return COMPOUND_REST_SECONDS; // default to longer rest
 
-  const isCompound =
-    dbEntry.type === 'Compound' || dbEntry.type === 'Machine';
   const isIsolation = dbEntry.type === 'Isolation';
 
   if (isIsolation) return ISOLATION_REST_SECONDS;

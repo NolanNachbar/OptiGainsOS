@@ -304,6 +304,8 @@ export default function Layout({ children, currentPageName }) {
     // 'Today' jump). The passive header date subtitle just duplicates it, so
     // suppress it here and let the functional pill own the date affordance.
     Fuel: null,
+    // Today's PageHeader eyebrow already prints the date; keep one.
+    Today: null,
   };
   const mobileSubtitle = Object.prototype.hasOwnProperty.call(pageSubtitle, currentPageName)
     ? pageSubtitle[currentPageName]

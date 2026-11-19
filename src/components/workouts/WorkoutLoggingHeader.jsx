@@ -261,7 +261,7 @@ export default function WorkoutLoggingHeader({
                 >
                   <div className="flex items-baseline justify-between pb-2">
                     <span className="text-micro font-technical font-bold uppercase tracking-wider text-ink-muted">Rest</span>
-                    <span className="font-technical text-[28px] leading-none font-extrabold tabular-nums">
+                    <span className="font-technical text-display leading-none font-extrabold tabular-nums">
                       {restTimer === 0 ? '0:00' : formatRestTime(restTimer)}
                     </span>
                   </div>

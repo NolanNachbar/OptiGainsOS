@@ -1,6 +1,7 @@
 const ACTIVITY_LABELS = { run: "Run", bike: "Ride", swim: "Swim", row: "Row" };
 const ZONE_NUMBER = { Z1: "1", Z2: "2", Z3: "3", Z4: "4", Z5: "5" };
 
+// eslint-disable-next-line no-unused-vars
 function migrateCardioSession(s) {
   const activity = ACTIVITY_LABELS[s.activity_type] || "Cardio";
   const zone = s.zone || "Z2";

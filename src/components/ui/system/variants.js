@@ -69,13 +69,13 @@ export const badgeVariants = cva(
   }
 );
 
-// Ledger module: flat full-bleed surface, hairline rule, radius 0 (`.glass`
+// Ledger module: flat full-bleed surface, hairline rule, radius 0 (`.surface`
 // forces radius 0 in index.css). `variant="inset"` for a card inside a card.
 export const cardVariants = cva("text-ink transition-colors duration-base", {
   variants: {
     variant: {
-      default: "glass",
-      inset: "bg-[var(--glass-inset-bg)] border border-charcoal-borderSoft rounded-control",
+      default: "surface",
+      inset: "bg-charcoal border border-charcoal-borderSoft rounded-control",
       plain: "",
     },
   },

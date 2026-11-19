@@ -569,11 +569,13 @@ function SkillsTab() {
             {stale.length} skill{stale.length > 1 ? "s" : ""} not practiced in 14+ days
           </div>
         )}
-        <div className="ml-auto">
-          <Button variant="primary" size="sm" onClick={() => setShowAdd(true)} className="gap-1.5">
-            <Plus className="w-3.5 h-3.5" /> Add Skill
-          </Button>
-        </div>
+        {skills.length > 0 && (
+          <div className="ml-auto">
+            <Button variant="primary" size="sm" onClick={() => setShowAdd(true)} className="gap-1.5">
+              <Plus className="w-3.5 h-3.5" /> Add Skill
+            </Button>
+          </div>
+        )}
       </div>
 
       <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
@@ -643,7 +645,7 @@ function SkillsTab() {
         <div className="py-16 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
           <Layers className="w-8 h-8 text-faint mx-auto mb-2" />
           <p className="text-sm font-semibold text-muted-2 mb-3">Track what you're building, rate your level and keep skills warm.</p>
-          <Button variant="ghost" size="sm" onClick={() => setShowAdd(true)}>Add your first skill</Button>
+          <Button variant="primary" size="lg" onClick={() => setShowAdd(true)}>Add your first skill</Button>
         </div>
       )}
 

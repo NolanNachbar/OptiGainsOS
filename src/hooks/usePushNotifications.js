@@ -15,11 +15,9 @@ export function usePushNotifications(userId) {
     typeof Notification !== "undefined" ? Notification.permission : "default"
   );
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const [isSupported, setIsSupported] = useState(false);
-
-  useEffect(() => {
-    setIsSupported("serviceWorker" in navigator && "PushManager" in window);
-  }, []);
+  const [isSupported] = useState(
+    () => typeof navigator !== "undefined" && "serviceWorker" in navigator && "PushManager" in window
+  );
 
   // Check if already subscribed
   useEffect(() => {

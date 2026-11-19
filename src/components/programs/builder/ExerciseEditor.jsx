@@ -39,7 +39,6 @@ export default function ExerciseEditor({
             <Button
               type="button"
               variant="secondary"
-              size="sm"
               aria-label="Remove exercise"
               size="icon" className="-my-2"
               onClick={() => removeExercise(dayIndex, index)}

@@ -111,7 +111,7 @@ export function VerdictBanner({ score, headline, detail, className = "" }) {
 
 /**
  * SegmentedControl — the og-segment. A small two-or-more option toggle rendered
- * as a single glass track with solid pills for the active option. The Front/Back
+ * as a single surface track with solid pills for the active option. The Front/Back
  * muscle-view toggle and any other "pick one of N" inline switch share this so
  * the track/edge/active treatment never diverges.
  *
@@ -126,7 +126,7 @@ export function SegmentedControl({ options, value, onChange, size = "sm", classN
   const pad = size === "md" ? "px-4" : "px-3";
   return (
     <div
-      className={`inline-flex rounded-full overflow-hidden bg-[var(--glass-bg)] border border-charcoal-border text-xs font-semibold ${className}`}
+      className={`inline-flex rounded-full overflow-hidden bg-charcoal-surface border border-charcoal-border text-xs font-semibold ${className}`}
     >
       {options.map(({ value: v, label }) => {
         const isActive = value === v;
@@ -139,7 +139,7 @@ export function SegmentedControl({ options, value, onChange, size = "sm", classN
             className={`${pad} min-h-[44px] inline-flex items-center justify-center transition-colors duration-200 [transition-timing-function:var(--ease)] ${
               isActive
                 ? "bg-track text-ink font-bold"
-                : "text-ink-muted hover:bg-[var(--glass-bg)] hover:text-ink"
+                : "text-ink-muted hover:bg-charcoal-surface2 hover:text-ink"
             }`}
           >
             {label}
@@ -153,7 +153,7 @@ export function SegmentedControl({ options, value, onChange, size = "sm", classN
 /**
  * PosePillRow — the og-pillrow. A horizontally-scrolling row of single-select
  * pills, with two DIFFERENTIATED roles driven by `variant`:
- *   variant="solid" — the upload selector. Filled glass pills; the active pill
+ *   variant="solid" — the upload selector. Filled surface pills; the active pill
  *                     reads as a solid track chip. (commits an action target)
  *   variant="chip"  — the history filter. Quieter text chips; the active chip is
  *                     a low-contrast track fill so a filter never competes with
@@ -171,20 +171,20 @@ export function PosePillRow({ options, value, onChange, variant = "solid", disab
         const isActive = value === v;
         const base =
           "shrink-0 whitespace-nowrap px-3 py-1.5 min-h-[44px] rounded-full text-micro font-bold border-[0.5px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand";
-        // Active pill is a neutral elevated chip (raised glass fill + hairline +
+        // Active pill is a neutral elevated chip (raised surface fill + hairline +
         // shadow) so the selected pose reads as "lifted" without spending the
         // single coral/brand action hue on a selector. Same active treatment
         // for both variants — only the inactive rest differs (chip = quieter).
         const activeTone =
-          "bg-[var(--glass-bg)] text-ink border-charcoal-border shadow-[var(--shadow-1)]";
+          "bg-charcoal-surface text-ink border-charcoal-border shadow-[var(--shadow-1)]";
         const tone =
           variant === "chip"
             ? isActive
               ? activeTone
-              : "bg-transparent text-ink-muted border-transparent hover:bg-[var(--glass-bg)] hover:text-ink"
+              : "bg-transparent text-ink-muted border-transparent hover:bg-charcoal-surface2 hover:text-ink"
             : isActive
               ? activeTone
-              : "bg-[var(--glass-inset-bg)] text-ink-muted border-charcoal-border hover:bg-[var(--glass-bg)]";
+              : "bg-charcoal text-ink-muted border-charcoal-border hover:bg-charcoal-surface2";
         return (
           <button
             key={String(v)}
