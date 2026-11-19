@@ -397,7 +397,7 @@ export function ActivityLogTab({ workoutLogs, cardioSessions, workouts, isLoadin
           {allEntries.length > visibleCount && (
             <div className="flex justify-center pt-4">
               <Button variant="dim" size="lg" className="min-h-[44px] active:scale-[0.97]" onClick={() => setVisibleCount(v => v + 8)}>
-                Load <span className="font-technical mx-1">{Math.min(8, allEntries.length - visibleCount)}</span> more
+                Load {Math.min(8, allEntries.length - visibleCount)} more
                 <span className="ml-1.5 text-ink-faint font-technical">· {allEntries.length - visibleCount} left</span>
               </Button>
             </div>

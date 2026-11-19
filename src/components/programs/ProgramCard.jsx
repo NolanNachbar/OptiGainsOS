@@ -13,11 +13,11 @@ const GOAL_LABELS = {
 const MAX_TAGS = 3;
 
 // Tags arrive as raw lowercase kebab strings (e.g. 'upper-body'). Humanize them
-// into Title Case so they read as labels, consistent with GOAL_LABELS.
+// into sentence case so they read as labels, consistent with GOAL_LABELS.
 const humanizeTag = (tag) =>
   String(tag)
     .replace(/-/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+    .replace(/^\w/, (c) => c.toUpperCase());
 
 export default function ProgramCard({ program, enrollment, inActiveTab }) {
   const isActive = enrollment?.status === "active";
@@ -60,7 +60,7 @@ export default function ProgramCard({ program, enrollment, inActiveTab }) {
           )}
 
           <div>
-            <h3 className="text-title text-ink">{program.title || program.name}</h3>
+            <h3 className="text-title font-semibold text-ink">{program.title || program.name}</h3>
             {program.description && (
               <p className="mt-1 text-caption text-ink-muted line-clamp-2">{program.description}</p>
             )}
