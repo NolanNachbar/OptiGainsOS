@@ -1,4 +1,8 @@
+import { useMemo } from "react";
 import { useSearchParams, Link } from "react-router-dom";
+import { getProgramSchedule } from "@/utils/programSchedule";
+import { useProfile } from "@/hooks/useUserQueries";
+import { getTodayString } from "@/utils/dateUtils";
 import WeeklySchedule from "./WeeklySchedule";
 import Workouts from "./Workouts";
 import { SubTabs } from "@/components/ui";
@@ -42,19 +46,33 @@ export default function Train() {
   const { activeSession } = useActiveWorkoutSession();
   const resumePath = activeSession?.isFresh ? activeSessionPath(activeSession) : null;
 
+  // Rest day: an enrolled program with nothing scheduled today. The session
+  // link stops being the primary (one primary per state) and becomes a quiet
+  // row pointing at Today, where recovery is logged.
+  const { profile } = useProfile();
+  const isRestDay = useMemo(() => {
+    if (resumePath || !activeEnrollment?.program?.workouts) return false;
+    const today = getTodayString(profile?.timezone);
+    return !getProgramSchedule(activeEnrollment, activeEnrollment.program.workouts, profile?.timezone).some((e) => e.date === today);
+  }, [resumePath, activeEnrollment, profile?.timezone]);
+
   return (
     <div className="bg-charcoal min-h-full text-ink">
       {/* Layout owns the page title. */}
       <div className="max-w-5xl mx-auto px-gutter lg:px-0 pt-3">
         <Link
           to={resumePath || "/today"}
-          className="flex items-center gap-3 min-h-[56px] px-4 rounded-control bg-brand text-[var(--color-action-dark)] transition-transform duration-fast ease-out active:scale-[0.98]"
+          className={`flex items-center gap-3 min-h-[56px] px-4 rounded-control transition-transform duration-fast ease-out active:scale-[0.98] ${
+            isRestDay
+              ? "border border-charcoal-border bg-charcoal-surface2 text-ink"
+              : "bg-brand text-[var(--color-action-dark)]"
+          }`}
         >
           <Play className="w-4 h-4 shrink-0" aria-hidden="true" />
           <span className="flex-1 min-w-0">
-            <span className="block text-emph truncate">{resumePath ? "Resume workout" : "Today's session"}</span>
+            <span className="block text-emph truncate">{resumePath ? "Resume workout" : isRestDay ? "Rest day" : "Today's session"}</span>
             <span className="block text-caption opacity-70 truncate">
-              {resumePath ? "Pick up where you left off." : "Check in, then start."}
+              {resumePath ? "Pick up where you left off." : isRestDay ? "Nothing scheduled. Log recovery on Today." : "Check in, then start."}
             </span>
           </span>
           <ChevronRight className="w-4 h-4 shrink-0" aria-hidden="true" />
