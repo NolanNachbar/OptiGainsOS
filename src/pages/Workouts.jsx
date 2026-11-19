@@ -482,7 +482,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                   {remainingWorkouts > 0 ? (
                     <div className="flex justify-center mt-6">
                       <Button variant="dim" size="sm" className="min-h-[44px] active:scale-[0.97]" onClick={() => setLibraryVisible(v => v + 8)}>
-                        Show <span className="font-technical mx-1">{Math.min(8, remainingWorkouts)}</span> more
+                        Show {Math.min(8, remainingWorkouts)} more
                         <span className="ml-1.5 text-ink-faint font-technical">· {remainingWorkouts} left</span>
                       </Button>
                     </div>
