@@ -412,10 +412,12 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                 value={trendNow != null ? trendNow.toFixed(1) : sessionBf}
                 unit="%"
                 delta={trendDeltaLabel}
-                reason={`Smoothed over ${bfTrend.length} sessions. Latest ${sessionBf}% (${
+              />
+              <p className="mt-1 text-caption text-ink-muted tabular-nums whitespace-normal break-words">
+                {`Smoothed over ${bfTrend.length} sessions. Latest ${sessionBf}% (${
                   latestSession.count > 1 ? `avg of ${latestSession.count} shots` : latest.analysis.bodyfat_range || "1 shot"
                 }), ${format(parseISO(latestSession.date), "MMM d, yyyy")}`}
-              />
+              </p>
               {Array.isArray(latest.analysis.focus_areas) && latest.analysis.focus_areas.length > 0 && (
                 <div className="mt-3">
                   <p className="mb-2 text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Focus</p>
@@ -586,8 +588,10 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                     >
                       {e.url && e.media_type === "photo"
                         ? <img src={e.url} alt={format(parseISO(e.taken_at), 'MMM d, yyyy')} className="w-full h-48 sm:h-44 object-cover" />
-                        : <div className="w-full h-14 flex items-center justify-center gap-2 text-caption text-ink-faint">
-                            <Film className="w-5 h-5" aria-hidden="true" /> Video
+                        : <div className="w-full min-h-tap flex items-center gap-2 px-3 text-caption text-ink-muted tabular-nums">
+                            <Film className="w-4 h-4 shrink-0 text-ink-faint" aria-hidden="true" />
+                            <span className="truncate">Video, {e.pose ? (POSE_LABEL[e.pose] || e.pose) : "no pose"}, {format(parseISO(e.taken_at), 'MMM d, yyyy')}</span>
+                            {e.bodyfat_estimate != null && <span className="ml-auto text-emph font-semibold text-ink">{e.bodyfat_estimate}%</span>}
                           </div>
                       }
 
@@ -621,13 +625,13 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                         </button>
                       )}
 
-                      <div className="px-2 py-2 text-caption text-ink-muted">
+                      {e.url && e.media_type === "photo" && <div className="px-2 py-2 text-caption text-ink-muted">
                         {e.pose && <div className="truncate">{POSE_LABEL[e.pose] || e.pose}</div>}
                         <div className="flex items-baseline justify-between gap-1 tabular-nums">
                           <span>{format(parseISO(e.taken_at), 'MMM d, yyyy')}</span>
                           {e.bodyfat_estimate != null && <span className="text-emph font-semibold text-ink">{e.bodyfat_estimate}%</span>}
                         </div>
-                      </div>
+                      </div>}
                     </div>
                   );
                 })}

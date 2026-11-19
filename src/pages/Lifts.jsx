@@ -18,6 +18,19 @@ import { ChevronDown, Search } from "lucide-react";
 // full history chart in place.
 const LIFTS_PAGE = 20;
 
+// The 4-week change is only shown when it is a believable like-for-like
+// comparison: at least two e1RM points, a nonzero change, and a move of no
+// more than 25% of the prior best (a bigger swing in 4 weeks means the prior
+// window was contaminated, e.g. a different set type, not real progress).
+function visibleChange(s) {
+  const c = s.change4w;
+  if (c == null || c === 0 || s.currentE1rm == null) return null;
+  if ((s.history?.length || 0) < 2) return null;
+  const prior = s.currentE1rm - c;
+  if (prior <= 0 || Math.abs(c) / prior > 0.25) return null;
+  return c;
+}
+
 export default function Lifts() {
   const { user } = useAuth();
   const { profile } = useProfile();
@@ -119,6 +132,7 @@ export default function Lifts() {
           value = s.bodyweightReps;
           unit = "reps";
         }
+        const change = visibleChange(s);
         return (
           <div key={s.name} className="border-b border-charcoal-borderSoft last:border-b-0">
             <ListRow
@@ -134,11 +148,11 @@ export default function Lifts() {
                 <span className="flex items-center gap-2">
                   <span
                     className={cn(
-                      "w-16 text-right text-caption font-semibold tabular-nums",
-                      s.change4w != null && s.change4w > 0 ? "text-leaf" : "text-ink-muted"
+                      "min-w-16 text-right text-caption font-semibold tabular-nums",
+                      change != null && change > 0 ? "text-leaf" : "text-ink-muted"
                     )}
                   >
-                    {s.change4w == null ? "" : `${s.change4w > 0 ? "+" : ""}${s.change4w} / 4wk`}
+                    {change == null ? "" : `${change > 0 ? "+" : ""}${change} / 4wk`}
                   </span>
                   <ChevronDown
                     aria-hidden="true"
