@@ -1,125 +1,66 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCw, UtensilsCrossed, X, Plus, Search, Bookmark } from "lucide-react";
+import { RefreshCw, UtensilsCrossed, X, Bookmark } from "lucide-react";
 import { SaveAsTemplateDialog } from "@/components/nutrition/MealTemplates";
-import { eatenOnly } from "@/utils/nutritionUtils";
+import { buildDayEntries } from "@/config/dietPlans";
 import { useAuth } from "@/contexts/AuthContext";
 
-const MEAL_ALLOC  = { breakfast: 0.25, lunch: 0.35, dinner: 0.30, snack: 0.10 };
 const MEAL_LABELS = { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", snack: "Snack" };
 const MEAL_ORDER  = ["breakfast", "lunch", "dinner", "snack"];
+const PLAN_DAYS   = 3;
 
-function isSuspicious(entry) {
-  // Use either serving_amount or parse numeric part from serving_size string
-  const amt = entry.serving_amount ?? parseFloat(String(entry.serving_size || ""));
-  const unit = entry.serving_unit ?? (String(entry.serving_size || "").split(' ')[1] || "serving");
-  const calories = entry.calories;
-  
-  if (amt > 0 && (unit === "g" || unit === "oz")) {
-    const calPerG = unit === "oz" ? calories / (amt * 28.35) : calories / amt;
-    if (calPerG > 10) return true; // physically impossible (fat = 9 cal/g max)
-  }
-  return false;
-}
-
-// Group food log entries into meal "instances" — all foods eaten together on one date+slot.
-// Each instance is what the user actually ate for that meal on a real day.
-function buildMealPool(entries, excluded, additions) {
-  const byKey = {};
-  for (const e of entries) {
-    if (!e.calories || e.calories <= 0 || isSuspicious(e)) continue;
-    if (!e.meal_type || !e.date) continue;
-    const key = `${e.date}|${e.meal_type}`;
-    if (excluded.has(key)) continue;
-    if (!byKey[key]) byKey[key] = { key, date: e.date, meal_type: e.meal_type, foods: [] };
-    
-    // Format serving size for display
-    let displayServing = e.serving_size;
-    if (typeof e.serving_size === 'number') {
-      displayServing = `${e.serving_size} ${e.serving_unit || 'serving'}`;
-    }
-
-    byKey[key].foods.push({
-      name: e.food_name,
-      calories: e.calories,
-      protein: e.protein_grams || 0,
-      carbs:   e.carbs_grams   || 0,
-      fats:    e.fats_grams    || 0,
-      serving_size: displayServing || "1 serving",
-    });
-  }
-
-  // Synthetic instances from manual additions
-  for (const a of additions) {
-    const key = `addition|${a.name}|${a.meal_type}`;
-    if (!excluded.has(key)) {
-      byKey[key] = {
-        key,
-        date: null,
-        meal_type: a.meal_type,
-        foods: [{ name: a.name, calories: a.calories, protein: a.protein, carbs: a.carbs, fats: a.fats, serving_size: a.serving_size }],
-      };
-    }
-  }
-
-  // Compute totals and group by meal_type
-  const pool = { breakfast: [], lunch: [], dinner: [], snack: [] };
-  for (const inst of Object.values(byKey)) {
-    const total = inst.foods.reduce(
-      (acc, f) => ({ calories: acc.calories + f.calories, protein: acc.protein + f.protein, carbs: acc.carbs + f.carbs, fats: acc.fats + f.fats }),
-      { calories: 0, protein: 0, carbs: 0, fats: 0 }
-    );
-    if (pool[inst.meal_type]) pool[inst.meal_type].push({ ...inst, total });
-  }
-  return pool;
-}
-
-function scoreMeal(inst, calTarget, protTarget, carbTarget, fatTarget) {
-  const { calories: cal, protein: prot, carbs, fats } = inst.total;
-  const calErr  = Math.abs(cal  - calTarget)  / Math.max(calTarget,  1);
-  const protErr = protTarget > 0 ? Math.abs(prot  - protTarget)  / protTarget  : 0;
-  const carbErr = carbTarget > 0 ? Math.abs(carbs - carbTarget)  / carbTarget  : 0;
-  const fatErr  = fatTarget  > 0 ? Math.abs(fats  - fatTarget)   / fatTarget   : 0;
-  return calErr * 0.35 + protErr * 0.30 + carbErr * 0.25 + fatErr * 0.10;
-}
-
-function generateDay(pool, calGoal, protGoal, carbGoal, fatGoal, usedKeys) {
+// One idea day = the same optimizer the Fuel page plans with, so the totals land
+// on the calorie / protein / fat targets instead of depending on whichever past
+// meals happened to be in the log. Variety comes from taking a different main
+// protein off the menu each day.
+function buildIdeaDay(dayNo, { cal, prot, fat, aggressiveCut, excludeFoods }) {
+  const rows = buildDayEntries({
+    date: null,
+    trainingDay: true,
+    calorieTarget: cal,
+    proteinTarget: prot || null,
+    fatTarget: fat || null,
+    aggressiveCut,
+    excludeFoods,
+    floorBufferPct: 0.01,
+  });
   const day = {};
   for (const mt of MEAL_ORDER) {
-    const calTarget  = Math.round(calGoal  * MEAL_ALLOC[mt]);
-    const protTarget = protGoal ? Math.round(protGoal * MEAL_ALLOC[mt]) : 0;
-    const carbTarget = carbGoal ? Math.round(carbGoal * MEAL_ALLOC[mt]) : 0;
-    const fatTarget  = fatGoal  ? Math.round(fatGoal  * MEAL_ALLOC[mt]) : 0;
-
-    // Prefer unused instances; fall back to all if exhausted
-    let candidates = pool[mt].filter((i) => !usedKeys.has(i.key));
-    if (!candidates.length) candidates = [...pool[mt]];
-    if (!candidates.length) { day[mt] = null; continue; }
-
-    // Sort by macro score, randomly pick from top 3 for variety on regenerate
-    candidates.sort((a, b) => scoreMeal(a, calTarget, protTarget, carbTarget, fatTarget) - scoreMeal(b, calTarget, protTarget, carbTarget, fatTarget));
-    const topN = candidates.slice(0, Math.min(3, candidates.length));
-    const chosen = topN[Math.floor(Math.random() * topN.length)];
-
-    usedKeys.add(chosen.key);
-    day[mt] = chosen;
+    const foods = rows
+      .filter((r) => r.meal_type === mt)
+      .map((r) => ({
+        name: r.food_name,
+        calories: r.calories,
+        protein: r.protein_grams,
+        carbs: r.carbs_grams,
+        fats: r.fats_grams,
+        serving_size: `${r.serving_size} g`,
+        role: r.role,
+      }));
+    if (!foods.length) continue;
+    const total = foods.reduce(
+      (a, f) => ({ calories: a.calories + f.calories, protein: a.protein + f.protein, carbs: a.carbs + f.carbs, fats: a.fats + f.fats }),
+      { calories: 0, protein: 0, carbs: 0, fats: 0 }
+    );
+    day[mt] = { key: `${dayNo}|${mt}`, meal_type: mt, foods, total };
   }
   return day;
 }
 
-function generatePlan(pool, calGoal, protGoal, carbGoal, fatGoal, days = 3) {
-  const usedKeys = new Set();
-  return Array.from({ length: days }, () =>
-    generateDay(pool, calGoal, protGoal, carbGoal, fatGoal, usedKeys)
-  );
+// Protein foods in a day, biggest protein contribution first.
+function rankedProteins(day) {
+  const byFood = {};
+  for (const inst of Object.values(day)) {
+    for (const f of inst.foods) {
+      if (f.role === "protein") byFood[f.name] = (byFood[f.name] || 0) + f.protein;
+    }
+  }
+  return Object.entries(byFood).sort((a, b) => b[1] - a[1]).map(([name]) => name);
 }
 
 function sumDay(day) {
   return Object.values(day)
-    .filter(Boolean)
     .flatMap((inst) => inst.foods)
     .reduce(
       (acc, f) => ({ calories: acc.calories + f.calories, protein: acc.protein + f.protein, carbs: acc.carbs + f.carbs, fats: acc.fats + f.fats }),
@@ -127,23 +68,27 @@ function sumDay(day) {
     );
 }
 
-function buildSearchIndex(entries) {
-  const seen = new Map();
-  for (const e of entries) {
-    if (!e.calories || e.calories <= 0 || isSuspicious(e)) continue;
-    if (!seen.has(e.food_name)) {
-      let displayServing = e.serving_size;
-      if (typeof e.serving_size === 'number') {
-        displayServing = `${e.serving_size} ${e.serving_unit || 'serving'}`;
-      }
-      seen.set(e.food_name, {
-        name: e.food_name, calories: e.calories,
-        protein: e.protein_grams || 0, carbs: e.carbs_grams || 0, fats: e.fats_grams || 0,
-        serving_size: displayServing || "1 serving", meal_type: e.meal_type,
-      });
+// `seed` (bumped by Regenerate) starts the rotation on a different protein, so
+// the optimizer, which is deterministic, still gives a different set of days.
+function generatePlan(opts, hidden, seed) {
+  const base = [...hidden];
+  const baseline = buildIdeaDay(0, { ...opts, excludeFoods: base });
+  const ranks = rankedProteins(baseline);
+  const rotated = seed > 0 && ranks.length ? [ranks[(seed - 1) % ranks.length]] : [];
+
+  const days = [];
+  for (let i = 0; i < PLAN_DAYS; i++) {
+    let day = buildIdeaDay(i, { ...opts, excludeFoods: [...base, ...rotated] });
+    // Taking a main protein off the menu can put the targets out of reach; if so,
+    // show this day without the rotation instead of a plan that misses.
+    if (rotated.length && Math.abs(sumDay(day).calories - opts.cal) > opts.cal * 0.05) {
+      day = buildIdeaDay(i, { ...opts, excludeFoods: base });
     }
+    days.push(day);
+    const lead = rankedProteins(day).find((n) => !rotated.includes(n));
+    if (lead) rotated.push(lead);
   }
-  return [...seen.values()];
+  return days;
 }
 
 function planFoodsToEntries(day, mealType = null) {
@@ -161,79 +106,47 @@ function planFoodsToEntries(day, mealType = null) {
   );
 }
 
-export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, proteinGoal, carbsGoal, fatsGoal }) {
+export default function MealPlanIdeas({ calorieGoal, proteinGoal, carbsGoal, fatsGoal, aggressiveCut = false }) {
   const { user } = useAuth();
-  const [excluded,    setExcluded]    = useState(new Set());
-  const [additions,   setAdditions]   = useState([]);
-  const [activeDay,   setActiveDay]   = useState(0);
-  const [showAdd,     setShowAdd]     = useState(false);
-  const [addSearch,   setAddSearch]   = useState("");
-  const [addMealType, setAddMealType] = useState("breakfast");
-  const [saveDialog,  setSaveDialog]  = useState(null); // { entries, mealType }
+  const [hidden,     setHidden]     = useState(new Set()); // food names the user skipped
+  const [seed,       setSeed]       = useState(0);
+  const [activeDay,  setActiveDay]  = useState(0);
+  const [saveDialog, setSaveDialog] = useState(null);       // { entries, mealType }
 
-  const cal  = calorieGoal  || 2000;
-  const prot = proteinGoal  || 0;
-  const carb = carbsGoal    || 0;
-  const fat  = fatsGoal     || 0;
+  const cal  = calorieGoal || 2000;
+  const prot = proteinGoal || 0;
+  const fat  = fatsGoal    || 0;
 
-  const pool = useMemo(
-    () => buildMealPool(eatenOnly(allFoodEntries), excluded, additions),
-    [allFoodEntries, excluded, additions]
+  const plan = useMemo(
+    () => generatePlan({ cal, prot, fat, aggressiveCut }, hidden, seed),
+    [cal, prot, fat, aggressiveCut, hidden, seed]
   );
 
-  const hasData = useMemo(
-    () => Object.values(pool).reduce((n, arr) => n + arr.length, 0) >= 3,
-    [pool]
-  );
+  const regenerate = useCallback(() => { setSeed((s) => s + 1); setActiveDay(0); }, []);
 
-  const [plan, setPlan] = useState(() =>
-    hasData ? generatePlan(pool, cal, prot, carb, fat) : []
-  );
+  const hideFood = useCallback((name) => {
+    setHidden((prev) => new Set([...prev, name]));
+  }, []);
 
-  const isFirstRender = useRef(true);
-  useEffect(() => {
-    if (isFirstRender.current) { isFirstRender.current = false; return; }
-    if (hasData) { setPlan(generatePlan(pool, cal, prot, carb, fat)); setActiveDay(0); }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [excluded, additions]);
+  const currentDay = plan[Math.min(activeDay, plan.length - 1)] || {};
+  const totals     = sumDay(currentDay);
+  const calClose   = Math.abs(totals.calories - cal) < 150;
 
-  const regenerate = useCallback(() => {
-    setPlan(generatePlan(pool, cal, prot, carb, fat));
-    setActiveDay(0);
-  }, [pool, cal, prot, carb, fat]);
-
-  const excludeMeal = useCallback((key) => setExcluded((prev) => new Set([...prev, key])), []);
-
-  const searchIndex   = useMemo(() => buildSearchIndex(eatenOnly(allFoodEntries)), [allFoodEntries]);
-  const searchResults = useMemo(() => {
-    if (!addSearch.trim()) return [];
-    const q = addSearch.toLowerCase();
-    return searchIndex.filter((f) => f.name.toLowerCase().includes(q)).slice(0, 6);
-  }, [addSearch, searchIndex]);
-
-  const addToPool = (food) => {
-    setAdditions((prev) => {
-      const key = `addition|${food.name}|${addMealType}`;
-      return [...prev.filter((a) => `addition|${a.name}|${a.meal_type}` !== key), { ...food, meal_type: addMealType }];
-    });
-    setAddSearch("");
-    setShowAdd(false);
-  };
-
-  if (!hasData) {
+  if (!Object.keys(currentDay).length) {
     return (
-      <div className="rounded-xl border border-dashed border-charcoal-border border-charcoal-border p-4 text-center space-y-2">
+      <div className="rounded-xl border border-dashed border-charcoal-border p-4 text-center space-y-2">
         <UtensilsCrossed className="w-6 h-6 text-ink-muted mx-auto" />
         <p className="text-sm text-ink-muted">
-          Log a few more meals to unlock meal plan ideas based on your food history.
+          No plan fits your targets with the foods that are hidden.
         </p>
+        {hidden.size > 0 && (
+          <button onClick={() => setHidden(new Set())} className="text-xs text-brand">
+            Bring back {hidden.size} hidden {hidden.size === 1 ? "food" : "foods"}
+          </button>
+        )}
       </div>
     );
   }
-
-  const currentDay = plan[activeDay] || {};
-  const totals     = sumDay(currentDay);
-  const calClose   = Math.abs(totals.calories - cal) < 150;
 
   return (
     <Card className="">
@@ -249,7 +162,7 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
           </Button>
         </div>
         <p className="text-xs text-ink-muted mt-0.5">
-          Meals from your log history · {cal.toLocaleString()} cal target
+          Solved to your {cal.toLocaleString()} cal target from your plan foods
         </p>
       </CardHeader>
 
@@ -261,7 +174,7 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
               className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 activeDay === i
                   ? "bg-brand text-[var(--color-action-dark)] font-bold"
-                  : "bg-charcoal-elevated bg-charcoal-elevated text-ink-muted text-ink-muted hover:bg-charcoal-elevated "
+                  : "bg-charcoal-elevated text-ink-muted hover:bg-charcoal-elevated"
               }`}
             >
               Day {i + 1}
@@ -291,15 +204,6 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
                     >
                       <Bookmark className="w-3.5 h-3.5" />
                     </Button>
-                    <Button
-                      variant="plain"
-                      size="icon"
-                      className="min-h-11 min-w-11"
-                      onClick={() => excludeMeal(inst.key)}
-                      title="Skip this meal"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </Button>
                   </div>
                 </div>
 
@@ -307,19 +211,29 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
                   {inst.foods.map((food, i) => (
                     <div key={i} className="flex items-center justify-between px-3 py-2">
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium text-ink  leading-tight break-words">
+                        <div className="text-sm font-medium text-ink leading-tight break-words">
                           {food.name}
                         </div>
                         <div className="text-xs text-ink-muted mt-0.5">{food.serving_size}</div>
                       </div>
                       <div className="text-right shrink-0 ml-3">
-                        <div className="text-xs font-semibold text-ink-muted text-ink-muted">{food.calories} cal</div>
+                        <div className="text-xs font-semibold text-ink-muted">{food.calories} cal</div>
                         <div className="flex gap-1.5 text-xs mt-0.5">
                           <span className="text-coral">{Math.round(food.protein)}P</span>
                           <span className="text-carb">{Math.round(food.carbs)}C</span>
                           <span className="text-rose-500">{Math.round(food.fats)}F</span>
                         </div>
                       </div>
+                      <Button
+                        variant="plain"
+                        size="icon"
+                        className="min-h-11 min-w-11 -mr-2 shrink-0 text-ink-faint hover:text-bad"
+                        onClick={() => hideFood(food.name)}
+                        aria-label={`Don't use ${food.name}`}
+                        title="Don't use this food"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -332,7 +246,7 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
         <div className="pt-2 border-t border-charcoal-border space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-ink-muted">Day Total</span>
-            <span className={`text-sm font-bold ${calClose ? "text-green-600" : "text-ink-muted text-ink-muted"}`}>
+            <span className={`text-sm font-bold ${calClose ? "text-green-600" : "text-ink-muted"}`}>
               {totals.calories.toLocaleString()}
               <span className="text-xs font-normal text-ink-muted ml-1">/ {cal.toLocaleString()} cal</span>
             </span>
@@ -353,79 +267,14 @@ export default function MealPlanIdeas({ allFoodEntries = [], calorieGoal, protei
           </Button>
         </div>
 
-        {/* Add food */}
-        <div className="pt-1 space-y-2">
+        {hidden.size > 0 && (
           <button
-            onClick={() => setShowAdd((v) => !v)}
-            className="flex items-center gap-1.5 text-xs text-brand hover:text-brand transition-colors"
+            onClick={() => setHidden(new Set())}
+            className="text-xs text-ink-muted hover:text-ink transition-colors"
           >
-            <Plus className="w-3.5 h-3.5" />
-            Add a food as a meal option
+            Bring back {hidden.size} hidden {hidden.size === 1 ? "food" : "foods"}
           </button>
-
-          {showAdd && (
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-muted" />
-                  <Input
-                    value={addSearch}
-                    onChange={(e) => setAddSearch(e.target.value)}
-                    placeholder="Search your foods…"
-                    className="pl-8 h-8 text-sm"
-                    autoFocus
-                  />
-                </div>
-                <Select value={addMealType} onValueChange={setAddMealType}>
-                  <SelectTrigger className="w-32 h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MEAL_ORDER.map((mt) => (
-                      <SelectItem key={mt} value={mt} className="text-xs">{MEAL_LABELS[mt]}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {searchResults.length > 0 && (
-                <div className="space-y-1">
-                  {searchResults.map((food) => (
-                    <button key={food.name} onClick={() => addToPool(food)}
-                      className="w-full flex items-center justify-between px-3 py-2 bg-charcoal-surface bg-charcoal-surface rounded-lg hover:bg-charcoal-elevated hover:bg-charcoal-elevated transition-colors text-left"
-                    >
-                      <div>
-                        <div className="text-sm font-medium text-ink ">{food.name}</div>
-                        <div className="text-xs text-ink-muted">{food.serving_size}</div>
-                      </div>
-                      <div className="text-right text-xs shrink-0 ml-3">
-                        <div className="text-ink-muted">{food.calories} cal</div>
-                        <div className="flex gap-1.5 text-xs mt-0.5">
-                          <span className="text-coral">{Math.round(food.protein)}P</span>
-                          <span className="text-carb">{Math.round(food.carbs)}C</span>
-                          <span className="text-rose-500">{Math.round(food.fats)}F</span>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {addSearch.trim() && !searchResults.length && (
-                <p className="text-xs text-ink-muted text-center py-2">No matching foods found in your log.</p>
-              )}
-            </div>
-          )}
-
-          {excluded.size > 0 && (
-            <button
-              onClick={() => setExcluded(new Set())}
-              className="text-xs text-ink-muted hover:text-ink-muted transition-colors"
-            >
-              Reset exclusions ({excluded.size} hidden)
-            </button>
-          )}
-        </div>
+        )}
       </CardContent>
 
       {saveDialog && (
