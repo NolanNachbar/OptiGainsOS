@@ -254,32 +254,33 @@ export default function WorkoutLoggingHeader({
                 </span>
               </button>
               {showRestPopover && restActive && (
-                <div className="absolute right-0 top-full mt-1 bg-charcoal-surface2 border border-charcoal-border shadow-lg rounded-control overflow-hidden p-2 z-[10200] flex items-center gap-1.5 text-ink">
-                  <Button
-                    variant="ghost"
-                    onClick={() => onAddRestTime?.(-10)}
-                    className="min-h-[40px] px-2.5 font-bold text-xs"
-                  >
-                    −10s
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => onAddRestTime?.(10)}
-                    className="min-h-[40px] px-2.5 font-bold text-xs"
-                  >
-                    +10s
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => onAddRestTime?.(30)}
-                    className="min-h-[40px] px-2.5 font-bold text-xs"
-                  >
-                    +30s
-                  </Button>
+                <div
+                  role="group"
+                  aria-label="Rest controls"
+                  className="absolute right-0 top-full mt-1.5 w-[248px] bg-charcoal-surface2 border border-charcoal-border shadow-lg rounded-control p-3 z-[10200] text-ink"
+                >
+                  <div className="flex items-baseline justify-between pb-2">
+                    <span className="text-micro font-technical font-bold uppercase tracking-wider text-ink-muted">Rest</span>
+                    <span className="font-technical text-[28px] leading-none font-extrabold tabular-nums">
+                      {restTimer === 0 ? '0:00' : formatRestTime(restTimer)}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {[[-10, '−10s'], [10, '+10s'], [30, '+30s']].map(([delta, label]) => (
+                      <Button
+                        key={label}
+                        variant="ghost"
+                        onClick={() => onAddRestTime?.(delta)}
+                        className="min-h-[44px] px-0 font-technical font-bold text-xs tabular-nums bg-charcoal-surface active:scale-[0.97] transition-transform duration-fast motion-reduce:transition-none"
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
                   <Button
                     variant="volt"
                     onClick={() => { onSkipRest?.(); setShowRestPopover(false); }}
-                    className="min-h-[40px] px-2.5 font-bold text-xs"
+                    className="mt-1.5 w-full min-h-[44px] font-bold text-xs"
                   >
                     Skip
                   </Button>

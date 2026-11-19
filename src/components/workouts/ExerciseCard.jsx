@@ -762,9 +762,10 @@ export default function ExerciseCard({
               </div>
             )}
             <div
-              className={`${gridCols} gap-1 sm:gap-1.5 items-center min-h-[48px] py-[5px] transition-colors [transition-timing-function:var(--ease)] duration-200 ${
-                isActive ? 'bg-charcoal-surface2 rounded-control -mx-2 px-2' : ''
+              className={`${gridCols} gap-1 sm:gap-1.5 items-center min-h-[48px] py-[5px] tabular-nums transition-colors [transition-timing-function:var(--ease)] duration-base motion-reduce:transition-none ${
+                isActive ? 'bg-charcoal-surface2 rounded-control -mx-2 px-2 shadow-[inset_2px_0_0_var(--text-primary)]' : ''
               } ${!set.completed && !isActive ? 'text-ink-faint' : ''}`}
+              aria-current={isActive ? 'step' : undefined}
             >
               <button
                 type="button"
@@ -892,9 +893,9 @@ export default function ExerciseCard({
               >
                 {/* Rounded-square fill (MF-referenced), not a circle: full
                     gain-green fill + dark check when done, bordered when not. */}
-                <span className={`w-9 h-9 rounded-control flex items-center justify-center transition-[transform,background-color,border-color] duration-fast ease-out group-active:scale-[0.94] ${
+                <span className={`w-9 h-9 rounded-control flex items-center justify-center transition-[transform,background-color,border-color] duration-fast ease-out group-active:scale-[0.94] motion-reduce:transition-none motion-reduce:group-active:scale-100 ${
                   set.completed
-                    ? 'bg-leaf text-charcoal'
+                    ? 'bg-ink text-charcoal'
                     : 'border border-charcoal-border bg-charcoal-surface2 text-ink-faint hover:border-ink-muted hover:text-ink'
                 }`}>
                   <Check className="w-4 h-4" strokeWidth={3} />

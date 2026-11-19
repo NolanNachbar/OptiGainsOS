@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { buildFinishSummary } from "@/utils/finishSummary";
+import { isWarmupSet } from "@/utils/setTypes";
 
 /**
  * Plain, collapsed-by-default recap shown inside the finish dialogs. Purely
@@ -19,8 +20,29 @@ export default function FinishSummary({ exercises, allWorkoutLogs, weightUnit = 
 
   if (!summary || summary.exercises.length === 0) return null;
 
+  const setCount = (exercises || []).reduce(
+    (n, ex) => n + (ex?.sets || []).filter((s) => s?.completed && !isWarmupSet(s)).length,
+    0,
+  );
+  const stats = [
+    ["Volume", summary.volume.toLocaleString(), weightUnit],
+    ["Sets", String(setCount), null],
+    ["PRs", String(summary.prs.length), null],
+  ];
+
   return (
     <div className="rounded-control border border-charcoal-border">
+      <dl className="grid grid-cols-3 divide-x divide-charcoal-border border-b border-charcoal-border">
+        {stats.map(([label, value, unit]) => (
+          <div key={label} className="px-3 py-2.5">
+            <dt className="text-micro font-technical font-bold uppercase tracking-wider text-ink-faint">{label}</dt>
+            <dd className="pt-0.5 font-technical text-body font-extrabold text-ink tabular-nums truncate">
+              {value}
+              {unit && <span className="ml-1 text-caption font-semibold text-ink-muted">{unit}</span>}
+            </dd>
+          </div>
+        ))}
+      </dl>
       <button
         type="button"
         aria-expanded={open}
@@ -28,10 +50,7 @@ export default function FinishSummary({ exercises, allWorkoutLogs, weightUnit = 
         className="w-full flex items-center justify-between px-3 min-h-[44px] text-left touch-manipulation"
       >
         <span className="text-xs font-bold text-ink">Summary</span>
-        <span className="font-technical text-xs text-ink-muted tabular-nums">
-          {summary.volume.toLocaleString()} {weightUnit}
-          {summary.prs.length > 0 ? ` · ${summary.prs.length} PR${summary.prs.length === 1 ? "" : "s"}` : ""}
-        </span>
+        <span className="font-technical text-xs text-ink-muted">{open ? "Hide" : "By exercise"}</span>
       </button>
       {open && (
         <div className="px-3 pb-3 space-y-2 text-caption font-technical text-ink-muted">
