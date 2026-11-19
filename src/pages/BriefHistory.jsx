@@ -28,7 +28,7 @@ const COACHES = [
 /** Coach-persona tag — tiny uppercase neutral chip. */
 function CoachTag({ children, hue = "!text-ink-muted bg-track" }) {
   return (
-    <span className={`section-label ${hue} rounded-md px-2 py-0.5 whitespace-nowrap shrink-0`}>
+    <span className={`text-micro text-ink-muted ${hue} rounded-md px-2 py-0.5 whitespace-nowrap shrink-0`}>
       {children}
     </span>
   );
@@ -57,12 +57,12 @@ function BriefEntry({ brief, index = 0 }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className={`glass overflow-hidden mb-2 ${riseClass}`}>
+    <div className={`bg-charcoal-surface border border-charcoal-border overflow-hidden mb-2 ${riseClass}`}>
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
         aria-expanded={open}
-        className={`w-full px-5 py-2.5 flex flex-col gap-1 text-left min-h-[44px] justify-center tile-interactive transition-colors duration-200 ease-[cubic-bezier(.2,.7,.3,1)] active:bg-[var(--glass-edge)] ${open ? "border-b hairline" : ""}`}
+        className={`w-full px-5 py-2.5 flex flex-col gap-1 text-left min-h-[44px] justify-center hover:bg-charcoal-surface2 transition-colors duration-base ease-out active:bg-charcoal-surface2 ${open ? "border-b hairline" : ""}`}
       >
         <div className="flex items-center justify-between gap-2 w-full">
           <div className="flex items-center gap-2 min-w-0">
@@ -97,7 +97,7 @@ function BriefEntry({ brief, index = 0 }) {
             style={{ transform: open ? "none" : "translateY(8px)" }}
           >
             {json.insight && (
-              <div className="mx-5 mt-4 flex items-start gap-2.5 p-3 glass-inset">
+              <div className="mx-5 mt-4 flex items-start gap-2.5 p-3 bg-charcoal-surface2 rounded-control">
                 <Lightbulb className="w-3.5 h-3.5 text-muted-2 shrink-0 mt-0.5" aria-hidden="true" />
                 <p className="text-sm font-semibold text-ink leading-relaxed">{json.insight}</p>
               </div>
@@ -115,7 +115,7 @@ function BriefEntry({ brief, index = 0 }) {
 
               {json.today_actions?.length > 0 && (
                 <div>
-                  <p className="section-label mb-2">Actions</p>
+                  <p className="text-micro text-ink-muted mb-2">Actions</p>
                   <ul className="space-y-1">
                     {json.today_actions.map((action, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm font-semibold text-secondary">
@@ -205,9 +205,9 @@ export default function BriefHistory() {
           <div className="flex flex-col min-h-[calc(100vh-12rem)]">
             {/* Summary tile anchors the layout so a small list (often a single
                 brief) reads as an intentional composition instead of one card
-                floating over an empty void. Neutral glass, no CTA, the cards
+                floating over an empty void. Neutral surface, no CTA, the cards
                 below remain the only interactive surface. */}
-            <div className="glass-inset flex items-center gap-3 px-5 py-4 mb-4 rise-in">
+            <div className="bg-charcoal-surface2 rounded-control flex items-center gap-3 px-5 py-4 mb-4 rise-in">
               <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-track shrink-0">
                 <Bot className="w-4 h-4 text-muted-2" aria-hidden="true" />
               </span>
@@ -235,7 +235,7 @@ export default function BriefHistory() {
                 return (
                   <div key={brief.id}>
                     {showHeader && (
-                      <p className={`section-label mb-4 ${i === 0 ? "" : "mt-6"}`}>{group}</p>
+                      <p className={`text-micro text-ink-muted mb-4 ${i === 0 ? "" : "mt-6"}`}>{group}</p>
                     )}
                     <BriefEntry brief={brief} index={i} />
                   </div>
@@ -259,7 +259,7 @@ export default function BriefHistory() {
               // interactive surface.
               <div className="flex items-center gap-3 mt-auto pt-6 mb-1 select-none" aria-hidden="true">
                 <span className="h-px flex-1 bg-track" />
-                <span className="section-label text-faint whitespace-nowrap">
+                <span className="text-micro text-ink-muted text-faint whitespace-nowrap">
                   You&apos;re all caught up
                 </span>
                 <span className="h-px flex-1 bg-track" />

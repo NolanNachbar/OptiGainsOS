@@ -200,9 +200,9 @@ export default function RecoveryDetail() {
       <div className="max-w-4xl xl:max-w-5xl mx-auto">
         {/* Readiness Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-          <Card className="md:col-span-1 glass-interactive rise-in">
+          <Card className="md:col-span-1 rise-in">
             <CardHeader className="pb-1 md:pb-2">
-              <CardTitle className="section-label">Readiness</CardTitle>
+              <CardTitle className="text-micro text-ink-muted">Readiness</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col items-center py-1 md:py-3">
@@ -222,13 +222,13 @@ export default function RecoveryDetail() {
                     dots carry the datum identity, not the figure weight). */}
                 <div className="grid grid-cols-2 gap-4 w-full border-t hairline pt-3 md:pt-4 mt-1 md:mt-2">
                   <div className="text-center">
-                    <div className="section-label mb-1 flex items-center justify-center gap-1.5">
+                    <div className="text-micro text-ink-muted mb-1 flex items-center justify-center gap-1.5">
                       <i className="w-[5px] h-[5px] rounded-full bg-leaf" /> Body Battery
                     </div>
                     <div className="font-technical text-lg text-ink-secondary">{latest?.body_battery ?? "--"}</div>
                   </div>
                   <div className="text-center">
-                    <div className="section-label mb-1 flex items-center justify-center gap-1.5">
+                    <div className="text-micro text-ink-muted mb-1 flex items-center justify-center gap-1.5">
                       <i className="w-[5px] h-[5px] rounded-full bg-violet" /> Sleep Score
                     </div>
                     <div className="font-technical text-lg text-ink-secondary">{latest?.sleep_score ?? "--"}</div>
@@ -238,9 +238,9 @@ export default function RecoveryDetail() {
             </CardContent>
           </Card>
 
-          <Card className="md:col-span-2 glass-interactive rise-in-2">
+          <Card className="md:col-span-2 rise-in-2">
             <CardHeader className="pb-1 md:pb-2">
-              <CardTitle className="section-label">Training Load (ACWR)</CardTitle>
+              <CardTitle className="text-micro text-ink-muted">Training Load (ACWR)</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col items-center md:flex-row md:items-center gap-3 md:gap-6 py-0.5 md:py-2">
@@ -253,7 +253,7 @@ export default function RecoveryDetail() {
                       it only earns the physiological spectrum once it leaves the
                       0.8–1.3 band (warn/bad). */}
                   <div className={`font-technical text-3xl font-numeral md:text-5xl tabular-nums ${acwrColor} mb-1`}>{acwr != null ? acwr.toFixed(2) : "--"}</div>
-                  <div className="section-label">Current Ratio</div>
+                  <div className="text-micro text-ink-muted">Current Ratio</div>
                 </div>
                 <div className="w-full md:flex-1">
                   {/* ACWR band gauge — neutral track, the 0.8–1.3 lowest-risk
@@ -353,7 +353,7 @@ export default function RecoveryDetail() {
           </EmptyState>
         ) : (
         <div className="mb-6">
-          <Card className="glass-interactive overflow-hidden rise-in-3">
+          <Card className="overflow-hidden rise-in-3">
             {/* In-card segmented control, deliberately NOT the coral SubTabs
                 pill. Coral-pill is reserved for top-level section navigation;
                 this is a lighter neutral-track segmented control so the chart
@@ -374,7 +374,7 @@ export default function RecoveryDetail() {
                       onClick={() => setActiveChart(id)}
                       className={`flex flex-1 items-center justify-center gap-1.5 h-9 rounded-full text-micro font-bold uppercase tracking-[0.06em] transition-colors duration-200 [transition-timing-function:var(--ease)] ${
                         isActive
-                          ? "bg-elevated text-ink shadow-[inset_0_1px_0_var(--glass-specular)]"
+                          ? "bg-elevated text-ink "
                           : "text-ink-muted hover:text-ink"
                       }`}
                     >
@@ -393,10 +393,10 @@ export default function RecoveryDetail() {
               <div className="px-4 pt-3 flex items-baseline justify-between gap-2">
                 <div className="flex items-baseline gap-1.5">
                   <span className="font-technical text-3xl font-numeral tabular-nums text-ink">{chartMeta[resolvedChart].value}</span>
-                  <span className="section-label">{chartMeta[resolvedChart].unit}</span>
+                  <span className="text-micro text-ink-muted">{chartMeta[resolvedChart].unit}</span>
                 </div>
                 <div className="text-right">
-                  <div className="section-label">{chartMeta[resolvedChart].label}</div>
+                  <div className="text-micro text-ink-muted">{chartMeta[resolvedChart].label}</div>
                   {chartMeta[resolvedChart].date && (
                     <div className="text-xs text-ink-muted tabular-nums">{chartMeta[resolvedChart].date}</div>
                   )}
@@ -534,9 +534,9 @@ export default function RecoveryDetail() {
             tss_run/tss_cycling/tss_swim. Previously this showed a permanent
             row of zeros because garmin-sync never writes these fields. */}
         {['swim', 'cycling', 'run'].some((s) => Number(latest?.[`tss_${s}`]) > 0) && (
-          <Card className="mb-6 glass">
+          <Card className="mb-6 bg-charcoal-surface border border-charcoal-border">
             <CardHeader className="pb-1 md:pb-2">
-              <CardTitle className="section-label flex items-center gap-1.5">
+              <CardTitle className="text-micro text-ink-muted flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5 text-carb" />
                 Endurance Stress (TSS)
               </CardTitle>
@@ -548,12 +548,12 @@ export default function RecoveryDetail() {
                   const val = latest?.[field] ?? 0;
                   return (
                     <div key={sport} className="flex flex-col items-center">
-                      <div className="section-label mb-1 flex items-center justify-center gap-1.5">
+                      <div className="text-micro text-ink-muted mb-1 flex items-center justify-center gap-1.5">
                         <i className="w-[5px] h-[5px] rounded-full shrink-0 bg-carb" />
                         {sport}
                       </div>
                       <div className="font-technical text-2xl font-numeral text-ink">{val}</div>
-                      <div className="section-label mt-1">Today's Load</div>
+                      <div className="text-micro text-ink-muted mt-1">Today's Load</div>
                     </div>
                   );
                 })}

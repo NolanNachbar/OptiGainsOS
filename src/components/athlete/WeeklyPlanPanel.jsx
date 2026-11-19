@@ -49,9 +49,9 @@ export default function WeeklyPlanPanel() {
 
   if (isError) {
     return (
-      <Card className="glass glass-interactive mb-4">
+      <Card className="mb-4">
         <CardHeader className="pb-2 pt-4 px-5">
-          <CardTitle className="section-label flex items-center gap-2 normal-case">
+          <CardTitle className="text-micro text-ink-muted flex items-center gap-2 normal-case">
             <CalendarDays className="w-3.5 h-3.5 text-gold" /> This Week&apos;s Plan
           </CardTitle>
         </CardHeader>
@@ -68,9 +68,9 @@ export default function WeeklyPlanPanel() {
 
   if (isLoading) {
     return (
-      <Card className="glass glass-interactive mb-4">
+      <Card className="mb-4">
         <CardHeader className="pb-2 pt-4 px-5">
-          <CardTitle className="section-label flex items-center gap-2 normal-case">
+          <CardTitle className="text-micro text-ink-muted flex items-center gap-2 normal-case">
             <CalendarDays className="w-3.5 h-3.5 text-gold" /> This Week&apos;s Plan
           </CardTitle>
         </CardHeader>
@@ -89,9 +89,9 @@ export default function WeeklyPlanPanel() {
   const setTargets = plan?.set_targets || {};
 
   return (
-    <Card className="glass glass-interactive mb-4 rise-in">
+    <Card className="mb-4 rise-in">
       <CardHeader className="pb-2 pt-4 px-5">
-        <CardTitle className="section-label flex items-center gap-2 normal-case">
+        <CardTitle className="text-micro text-ink-muted flex items-center gap-2 normal-case">
           <CalendarDays className="w-3.5 h-3.5 text-gold" /> This Week&apos;s Plan
           {plan?.week_start && <span className="font-technical text-caption font-bold text-faint normal-case">wk of {plan.week_start}</span>}
         </CardTitle>
@@ -114,7 +114,7 @@ export default function WeeklyPlanPanel() {
         {Object.keys(setTargets).length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {Object.entries(setTargets).map(([muscle, sets]) => (
-              <span key={muscle} className="glass-inset px-2 py-1 text-caption font-bold text-secondary capitalize">
+              <span key={muscle} className="bg-charcoal-surface2 rounded-control px-2 py-1 text-caption font-bold text-secondary capitalize">
                 {muscle.replace(/_/g, " ")} <span className="font-technical font-extrabold text-ink">{sets}</span>
               </span>
             ))}

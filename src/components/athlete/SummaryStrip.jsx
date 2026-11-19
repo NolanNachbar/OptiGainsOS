@@ -46,8 +46,8 @@ export function SummaryStrip({ state, vdot }) {
     const rest = tiles.filter((_, i) => i !== heroIdx);
     return (
       <div className="mb-4 rise-in space-y-2">
-        <div className="glass-inset px-4 py-4">
-          <div className="section-label flex items-center gap-1.5">
+        <div className="bg-charcoal-surface2 rounded-control px-4 py-4">
+          <div className="text-micro text-ink-muted flex items-center gap-1.5">
             <span className="w-[5px] h-[5px] rounded-full shrink-0" style={{ background: hero.accent }} />
             {hero.label}
           </div>
@@ -81,7 +81,7 @@ export function SummaryStripSkeleton() {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
       {[0, 1, 2, 3].map((i) => (
-        <div key={i} className="glass-inset px-3 py-2.5">
+        <div key={i} className="bg-charcoal-surface2 rounded-control px-3 py-2.5">
           <div className="pulse-loop rounded bg-track h-2.5 w-2/3" />
           <div className="pulse-loop rounded bg-track h-5 w-1/2 mt-2" />
         </div>

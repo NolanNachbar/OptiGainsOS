@@ -29,8 +29,8 @@ export default function EnduranceSection({ data }) {
         </div>
       )}
       {data.running_fatigue_atl != null && (
-        <div className="glass-inset px-3 py-2">
-          <div className="section-label">Running Fatigue (ATL)</div>
+        <div className="bg-charcoal-surface2 rounded-control px-3 py-2">
+          <div className="text-micro text-ink-muted">Running Fatigue (ATL)</div>
           <div className="font-technical text-sm font-extrabold text-ink mt-0.5">{data.running_fatigue_atl}</div>
         </div>
       )}

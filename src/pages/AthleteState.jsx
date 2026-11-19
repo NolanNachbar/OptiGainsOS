@@ -96,7 +96,7 @@ export default function AthleteState({ hideHeader = false }) {
             <SummaryStripSkeleton />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[0, 1, 2, 3].map((i) => (
-                <Card key={i} className="glass glass-interactive">
+                <Card key={i} className="bg-charcoal-surface border border-charcoal-border hover:bg-charcoal-surface2 transition-colors duration-base">
                   <CardContent className="px-5 py-5 space-y-2">
                     <div className="pulse-loop rounded-lg bg-track h-3.5 w-2/5" />
                     <div className="pulse-loop rounded-lg bg-track h-4 w-3/4" />
@@ -109,7 +109,7 @@ export default function AthleteState({ hideHeader = false }) {
         )}
 
         {!isLoading && isError && (
-          <Card className="glass glass-interactive mb-6">
+          <Card className="mb-6">
             <CardContent className="pb-8 text-center">
               <div className="pt-8">
                 <AlertTriangle className="w-8 h-8 text-warn mx-auto mb-3" />
@@ -124,7 +124,7 @@ export default function AthleteState({ hideHeader = false }) {
         )}
 
         {!isLoading && !isError && !state && (
-          <Card className="glass glass-interactive mb-6">
+          <Card className="mb-6">
             <CardContent className="pb-8 text-center">
               <div className="pt-8">
                 <BarChart3 className="w-8 h-8 text-faint mx-auto mb-3" />
@@ -176,7 +176,7 @@ export default function AthleteState({ hideHeader = false }) {
         {!isLoading && !isError && state && (
         <div className="grid grid-cols-1 gap-4 rise-in-2">
           {/* Strength */}
-          <Card className="glass glass-interactive">
+          <Card>
             <CardHeader className="pb-2 pt-4 px-5">
               <SectionHeader icon={Dumbbell} title="Strength Goals" />
             </CardHeader>
@@ -192,22 +192,22 @@ export default function AthleteState({ hideHeader = false }) {
             desktop via lg:block. Keeps the core answer within ~2 viewports. */}
         {!isLoading && !isError && state && (
         <>
-          {/* Thin section-label groups the two tap-to-expand accordions
+          {/* Thin text-micro text-ink-muted groups the two tap-to-expand accordions
               (ChevronDown = disclose) so they read as one collapsible "Details"
               zone, distinct from the ChevronRight nav links below (= navigate
               away). Mobile-only, matching the lg:hidden accordions. */}
-          <div className="lg:hidden section-label mt-5 mb-1.5">Details</div>
+          <div className="lg:hidden text-micro text-ink-muted mt-5 mb-1.5">Details</div>
           <button
             type="button"
             onClick={() => setDetailOpen((v) => !v)}
             aria-expanded={detailOpen}
-            className="lg:hidden w-full glass glass-interactive px-4 py-3 min-h-[44px] flex items-center gap-2.5 rise-in-2 active:scale-[0.99] transition-transform duration-200 ease-[var(--ease)]"
+            className="lg:hidden w-full bg-charcoal-surface border border-charcoal-border hover:bg-charcoal-surface2 transition-colors duration-base px-4 py-3 min-h-[44px] flex items-center gap-2.5 rise-in-2 active:scale-[0.99] transition-transform duration-200 ease-[var(--ease)]"
           >
             <span className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center bg-violet/[0.13] text-violet">
               <BarChart3 className="w-3.5 h-3.5" />
             </span>
             <span className="flex-1 min-w-0 text-left">
-              <span className="block section-label !text-ink">Body analytics</span>
+              <span className="block text-micro text-ink">Body analytics</span>
               <span className="block text-caption font-semibold text-muted-2 truncate">Fatigue · Volume · Endurance · Nutrition</span>
             </span>
             <ChevronDown className={`w-4 h-4 text-muted-2 transition-transform duration-200 ease-[var(--ease)] ${detailOpen ? "rotate-180" : ""}`} />
@@ -222,7 +222,7 @@ export default function AthleteState({ hideHeader = false }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 lg:mt-4">
               {/* Fatigue */}
               {state?.fatigue && (
-              <Card className="glass glass-interactive">
+              <Card>
                 <CardHeader className="pb-2 pt-4 px-5">
                   <SectionHeader icon={Activity} title="Fatigue / Load" color="text-violet" />
                 </CardHeader>
@@ -233,7 +233,7 @@ export default function AthleteState({ hideHeader = false }) {
               )}
 
               {/* Muscle Volume */}
-              <Card className="glass glass-interactive">
+              <Card>
                 <CardHeader className="pb-2 pt-4 px-5">
                   <SectionHeader icon={BarChart3} title="Muscle Volume" color="text-teal" />
                 </CardHeader>
@@ -249,7 +249,7 @@ export default function AthleteState({ hideHeader = false }) {
             {/* Endurance / BUD/S + PST */}
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
               {state?.endurance && (
-              <Card className="glass glass-interactive">
+              <Card>
                 <CardHeader className="pb-2 pt-4 px-5">
                   <SectionHeader icon={Waves} title="Endurance / BUD/S Readiness" color="text-teal" />
                 </CardHeader>
@@ -265,7 +265,7 @@ export default function AthleteState({ hideHeader = false }) {
             {/* Nutrition */}
             {state?.nutrition && (
             <div className="mt-4">
-              <Card className="glass glass-interactive">
+              <Card>
                 <CardHeader className="pb-2 pt-4 px-5">
                   <SectionHeader icon={Utensils} title="Nutrition" color="text-gold" />
                 </CardHeader>
@@ -286,13 +286,13 @@ export default function AthleteState({ hideHeader = false }) {
               type="button"
               onClick={() => setEngineOpen((v) => !v)}
               aria-expanded={engineOpen}
-              className="w-full glass glass-interactive px-4 py-3 min-h-[44px] mt-4 mb-4 flex items-center gap-2.5 rise-in-3 active:scale-[0.99] transition-transform duration-200 ease-[var(--ease)]"
+              className="w-full bg-charcoal-surface border border-charcoal-border hover:bg-charcoal-surface2 transition-colors duration-base px-4 py-3 min-h-[44px] mt-4 mb-4 flex items-center gap-2.5 rise-in-3 active:scale-[0.99] transition-transform duration-200 ease-[var(--ease)]"
             >
               <span className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center bg-gold/[0.13] text-gold">
                 <Cpu className="w-3.5 h-3.5" />
               </span>
               <span className="flex-1 min-w-0 text-left">
-                <span className="block section-label !text-ink">Engine internals</span>
+                <span className="block text-micro text-ink">Engine internals</span>
                 <span className="block text-caption font-semibold text-muted-2 truncate">Adaptive engine · Weekly plan · Pace zones</span>
               </span>
               <ChevronDown className={`w-4 h-4 text-muted-2 transition-transform duration-200 ease-[var(--ease)] ${engineOpen ? "rotate-180" : ""}`} />
@@ -314,7 +314,7 @@ export default function AthleteState({ hideHeader = false }) {
             accordion above it) always clear the floating mobile dock; the wrapper
             no longer pads so clearance lives on the true last child. */}
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 rise-in-3 pb-[var(--dock-clearance)] lg:pb-2">
-          <Link to="/physique" className="glass glass-interactive px-4 py-3.5 flex items-center gap-3">
+          <Link to="/physique" className="bg-charcoal-surface border border-charcoal-border hover:bg-charcoal-surface2 transition-colors duration-base px-4 py-3.5 flex items-center gap-3">
             <span className="w-9 h-9 rounded-lg shrink-0 flex items-center justify-center bg-violet/[0.13] text-violet">
               <Camera className="w-4 h-4" />
             </span>
@@ -324,7 +324,7 @@ export default function AthleteState({ hideHeader = false }) {
             </span>
             <ChevronRight className="w-4 h-4 text-faint shrink-0" />
           </Link>
-          <Link to="/recovery" className="glass glass-interactive px-4 py-3.5 flex items-center gap-3">
+          <Link to="/recovery" className="bg-charcoal-surface border border-charcoal-border hover:bg-charcoal-surface2 transition-colors duration-base px-4 py-3.5 flex items-center gap-3">
             <span className="w-9 h-9 rounded-lg shrink-0 flex items-center justify-center bg-teal/[0.13] text-teal">
               <Heart className="w-4 h-4" />
             </span>

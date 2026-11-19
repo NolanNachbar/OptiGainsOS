@@ -62,9 +62,9 @@ export default function StrengthSection({ data }) {
               {d.eta_days === 0 && <span className="text-teal">Target reached.</span>}
               <span>{d.sessions} sessions</span>
               {d.progression_command && d.progression_command !== "HOLD" && (
-                // Non-imperative status chip (glass-inset pill, muted ink) so the
+                // Non-imperative status chip (bg-charcoal-surface2 rounded-control pill, muted ink) so the
                 // engine's progression verdict reads as state, not a tappable CTA.
-                <span className="glass-inset px-2 py-0.5 text-micro font-bold text-muted-2 uppercase tracking-[0.06em]">
+                <span className="bg-charcoal-surface2 rounded-control px-2 py-0.5 text-micro font-bold text-muted-2 uppercase tracking-[0.06em]">
                   {{
                     INCREASE_LOAD: "Load ready",
                     DELOAD: "Trending down",

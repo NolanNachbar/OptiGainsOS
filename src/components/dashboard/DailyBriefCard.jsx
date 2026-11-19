@@ -46,10 +46,10 @@ function CoachSection({ coach, content, defaultOpen = false }) {
       <button
         onClick={() => setOpen(v => !v)}
         aria-expanded={open}
-        className="w-full flex items-center gap-2.5 min-h-[44px] px-4 py-3 tile-interactive text-left"
+        className="w-full flex items-center gap-2.5 min-h-[44px] px-4 py-3 hover:bg-charcoal-surface2 transition-colors duration-base text-left"
       >
         {Icon && (
-          <span className="shrink-0 grid place-items-center w-7 h-7 rounded-lg glass-inset">
+          <span className="shrink-0 grid place-items-center w-7 h-7 rounded-lg bg-charcoal-surface2 rounded-control">
             <Icon className="w-4 h-4 text-secondary" aria-hidden="true" />
           </span>
         )}
@@ -129,7 +129,7 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false, defaultCo
   if (!brief) {
     if (hideWhenEmpty) return null;
     return (
-      <Card className="glass">
+      <Card>
         <CardContent className="pt-5 pb-5 px-4 flex flex-col items-center text-center gap-3">
           <div className="p-3 rounded-full bg-teal/10">
             <Bot className="w-5 h-5 text-teal" />
@@ -154,11 +154,11 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false, defaultCo
   const generatedAt = brief.generated_at ? format(parseISO(brief.generated_at), "h:mm a") : null;
 
   return (
-    <Card className="glass glass-interactive">
+    <Card>
       <CardHeader className={`pt-4 px-4 ${isCollapsed ? 'pb-4' : 'pb-0'}`}>
         <div className="flex items-center justify-between gap-2">
           <div className="flex flex-col min-w-0">
-            <CardTitle className="section-label !text-ink flex items-center gap-2 min-w-0">
+            <CardTitle className="text-micro text-ink flex items-center gap-2 min-w-0">
               <Bot className="w-4 h-4 text-teal shrink-0" />
               <span className="truncate">AI Daily Brief</span>
             </CardTitle>
@@ -178,7 +178,7 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false, defaultCo
               aria-label={isCollapsed ? "Expand brief" : "Collapse brief"}
               className="min-h-[44px] min-w-[44px] flex items-center justify-center -mr-1 transition-colors duration-200 [transition-timing-function:var(--ease)] rounded group"
             >
-              <span className="grid place-items-center w-7 h-7 rounded-full glass-inset text-muted-2 group-hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]">
+              <span className="grid place-items-center w-7 h-7 rounded-full bg-charcoal-surface2 rounded-control text-muted-2 group-hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]">
                 {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
               </span>
             </button>
@@ -189,7 +189,7 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false, defaultCo
       {!isCollapsed && (
         <>
           {json.insight && (
-            <div className="mx-4 mt-3 mb-1 flex items-start gap-2.5 p-3 glass-inset">
+            <div className="mx-4 mt-3 mb-1 flex items-start gap-2.5 p-3 bg-charcoal-surface2 rounded-control">
               <Lightbulb className="w-3.5 h-3.5 text-teal shrink-0 mt-0.5" />
               <p className="text-body font-semibold text-ink leading-[1.55]">{json.insight}</p>
             </div>

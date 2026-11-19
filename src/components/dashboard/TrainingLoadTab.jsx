@@ -161,7 +161,7 @@ export default function TrainingLoadTab({ cardioSessions, workoutLogs, profile, 
   return (
     <div className="space-y-4">
       {/* Weekly TSS */}
-      <div className="glass-inset p-4">
+      <div className="bg-charcoal-surface2 rounded-control p-4">
         <div className="mb-2">
           <h3 className="text-sm font-extrabold text-ink flex items-center gap-2">
             <BarChart3 className="w-4 h-4 text-teal" />
@@ -184,7 +184,7 @@ export default function TrainingLoadTab({ cardioSessions, workoutLogs, profile, 
       </div>
 
       {/* CTL / ATL / TSB */}
-      <div className="glass-inset p-4">
+      <div className="bg-charcoal-surface2 rounded-control p-4">
         <div className="mb-2">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <h3 className="text-sm font-extrabold text-ink flex items-center gap-2">

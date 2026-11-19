@@ -79,10 +79,10 @@ export default function SorenessCheckin({ today }) {
   if (alreadyLogged) {
     const sore = existing.filter(r => r.level > 0).sort((a, b) => b.level - a.level);
     return (
-      <div className="glass px-4 pt-3.5 pb-3.5">
+      <div className="bg-charcoal-surface border border-charcoal-border px-4 pt-3.5 pb-3.5">
         <div className="flex items-center gap-2 mb-2">
           <CheckCircle2 className="w-4 h-4 text-leaf" />
-          <span className="section-label !text-ink">Soreness Logged</span>
+          <span className="text-micro text-ink">Soreness Logged</span>
         </div>
         {sore.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
@@ -103,7 +103,7 @@ export default function SorenessCheckin({ today }) {
   }
 
   return (
-    <div className="glass p-4">
+    <div className="bg-charcoal-surface border border-charcoal-border p-4">
       <p className="text-sm font-extrabold text-ink mb-3">Soreness Check-in, tap to cycle</p>
       <div className="grid grid-cols-5 gap-1.5 mb-4">
         {MUSCLE_GROUPS.map(muscle => (

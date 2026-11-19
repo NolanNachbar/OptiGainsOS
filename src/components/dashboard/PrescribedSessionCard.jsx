@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Button, ReasonLine } from "@/components/ui";
 import { useTodayPrescription } from "@/hooks/useEngineQueries";
 import { useCardioCompletions } from "@/hooks/useCardioCompletions";
 import { useTodayGarminCardio } from "@/hooks/useTodayGarminCardio";
@@ -99,7 +100,7 @@ function CardioDoneToggle({ done, onToggle }) {
       type="button"
       onClick={onToggle}
       className={`relative shrink-0 w-11 h-11 -my-1.5 rounded-full flex items-center justify-center transition-all duration-200 [transition-timing-function:var(--ease)] active:scale-95 ${
-        done ? "bg-leaf text-ink" : "glass-inset text-ink-faint hover:text-ink-secondary"
+        done ? "bg-leaf text-ink" : "bg-charcoal-surface2 rounded-control text-ink-faint hover:text-ink-secondary"
       }`}
       aria-pressed={done}
       aria-label={done ? "Mark conditioning not done" : "Mark conditioning done"}
@@ -504,9 +505,9 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
   }
 
   return (
-    // Plain glass div (not Card/CardContent) — CardContent's default pt-0
+    // Plain bg-charcoal-surface border border-charcoal-border div (not Card/CardContent) — CardContent's default pt-0
     // fights custom py-* classes and lets the title touch the card edge.
-    <div className="glass px-4 pt-4 pb-4 sm:px-5">
+    <div className="bg-charcoal-surface border border-charcoal-border px-4 pt-4 pb-4 sm:px-5">
         {/* Title row — session name left, intensity multiplier right (teal) */}
         <div className="flex items-start justify-between gap-3">
           <h3 className="type-display text-lg line-clamp-2">{titleText}</h3>
@@ -517,7 +518,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
           )}
         </div>
         {prescription.rationale && (
-          <p className="text-caption font-medium text-muted-2 mt-1 leading-relaxed">{humanizeRationale(prescription.rationale)}</p>
+          <ReasonLine className="mt-1">{humanizeRationale(prescription.rationale)}</ReasonLine>
         )}
 
         {/* Deadline weighting + anabolic window — the "why today looks like this" line */}
@@ -544,7 +545,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
             <button
               type="button"
               onClick={() => setLiftsOpen((o) => !o)}
-              className="w-full flex items-center gap-1.5 section-label mb-1 min-h-[44px] py-2 lg:min-h-0 lg:py-0 lg:pointer-events-none"
+              className="w-full flex items-center gap-1.5 text-micro text-ink-muted mb-1 min-h-[44px] py-2 lg:min-h-0 lg:py-0 lg:pointer-events-none"
               aria-expanded={liftsOpen}
             >
               <Dumbbell className="w-3 h-3" /> Lifts
@@ -562,7 +563,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
         {/* Calisthenics */}
         {calItems.length > 0 && (
           <div className="mt-3">
-            <div className="flex items-center gap-1.5 section-label mb-1">
+            <div className="flex items-center gap-1.5 text-micro text-ink-muted mb-1">
               <Activity className="w-3 h-3" /> Calisthenics
             </div>
             <div className="flex flex-wrap gap-x-4 gap-y-1">
@@ -578,7 +579,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
         {/* Run + Swim — completion driven by actual Garmin activity */}
         {(run || swim) && (
           <div className="mt-3">
-            <div className="flex items-center gap-1.5 section-label mb-1">
+            <div className="flex items-center gap-1.5 text-micro text-ink-muted mb-1">
               <Waves className="w-3 h-3" /> Conditioning
             </div>
             <div className="flex flex-col gap-2">
@@ -660,32 +661,34 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
             ghost link so logging a workout is never buried, without competing
             with the coral primary that owns the train days. */}
         {isRest && (
-          <button type="button" onClick={() => beginSession("/quick-workout")} className="cta-ghost mt-3.5 w-full">
+          <Button type="button" variant="secondary" size="lg" onClick={() => beginSession("/quick-workout")} className="mt-4 w-full">
             Log a workout
-          </button>
+          </Button>
         )}
 
         {/* Pre-train check-in + Begin Session — carry the prescribed lifts AND
             the pre-train note into the logger (saved as a PRE: session note). */}
         {!isRest && !loggedToday && (
           <>
-            <button
+            <Button
               type="button"
+              variant={demoteCta ? "secondary" : "primary"}
+              size="lg"
               onClick={() => beginSession(programHref || "/quick-workout", programHref ? undefined : {
                 prescribedSession: { title: titleText, exercises: prescribedExercises },
                 preNote: preNote.trim() || undefined,
               })}
-              className={`${demoteCta ? "cta-ghost" : "cta-action"} w-full mt-3.5`}
+              className="w-full mt-4"
             >
               Begin Session
-              <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M3.5 2.5v9l8-4.5-8-4.5Z" fill="currentColor"/></svg>
-            </button>
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3.5 2.5v9l8-4.5-8-4.5Z" fill="currentColor"/></svg>
+            </Button>
             {strength.length > 0 && (
               <div className="mt-2">
                 <button
                   type="button"
                   onClick={() => setNoteOpen((o) => !o)}
-                  className="w-full flex items-center gap-1.5 section-label min-h-[44px] py-2 text-muted-2 hover:text-ink-secondary transition-colors duration-200 [transition-timing-function:var(--ease)]"
+                  className="w-full flex items-center gap-1.5 text-micro text-ink-muted min-h-[44px] py-2 text-muted-2 hover:text-ink-secondary transition-colors duration-200 [transition-timing-function:var(--ease)]"
                   aria-expanded={noteOpen}
                   aria-controls="pre-train-note"
                 >
@@ -703,7 +706,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
                     rows={2}
                     autoFocus
                     placeholder="Anything to flag before you train? sleep, soreness, energy…"
-                    className="w-full glass-inset rise-in px-3 py-2 mt-1 text-body text-ink placeholder:text-faint resize-none focus-visible:ring-1 focus-visible:ring-brand"
+                    className="w-full bg-charcoal-surface2 rounded-control rise-in px-3 py-2 mt-1 text-body text-ink placeholder:text-faint resize-none focus-visible:ring-1 focus-visible:ring-brand"
                   />
                 )}
               </div>

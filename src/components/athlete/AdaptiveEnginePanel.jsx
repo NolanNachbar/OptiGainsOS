@@ -13,9 +13,9 @@ export default function AdaptiveEnginePanel({ date }) {
 
   if (isLoading) {
     return (
-      <Card className="glass glass-interactive mb-4">
+      <Card className="mb-4">
         <CardHeader className="pb-2 pt-4 px-5">
-          <CardTitle className="section-label flex items-center gap-2 normal-case">
+          <CardTitle className="text-micro text-ink-muted flex items-center gap-2 normal-case">
             <Cpu className="w-3.5 h-3.5 text-teal" /> Adaptive Engine
           </CardTitle>
         </CardHeader>
@@ -58,16 +58,16 @@ export default function AdaptiveEnginePanel({ date }) {
   }
 
   return (
-    <Card className="glass glass-interactive mb-4 rise-in">
+    <Card className="mb-4 rise-in">
       <CardHeader className="pb-2 pt-4 px-5">
-        <CardTitle className="section-label flex items-center gap-2 normal-case">
+        <CardTitle className="text-micro text-ink-muted flex items-center gap-2 normal-case">
           <Cpu className="w-3.5 h-3.5 text-teal" /> Adaptive Engine
         </CardTitle>
       </CardHeader>
       <CardContent className="px-5 pb-4">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <div className="glass-inset px-3 py-2.5 text-center">
-            <div className="section-label flex items-center justify-center gap-1.5 mb-1">
+          <div className="bg-charcoal-surface2 rounded-control px-3 py-2.5 text-center">
+            <div className="text-micro text-ink-muted flex items-center justify-center gap-1.5 mb-1">
               <i className="w-[5px] h-[5px] rounded-full bg-teal" /> VDOT
             </div>
             <div className="font-technical text-xl font-extrabold text-ink">{vdot != null ? Number(vdot).toFixed(1) : "--"}</div>
@@ -77,16 +77,16 @@ export default function AdaptiveEnginePanel({ date }) {
               </div>
             )}
           </div>
-          <div className="glass-inset px-3 py-2.5 text-center">
-            <div className="section-label mb-1">Personalization</div>
+          <div className="bg-charcoal-surface2 rounded-control px-3 py-2.5 text-center">
+            <div className="text-micro text-ink-muted mb-1">Personalization</div>
             <div className="text-sm font-bold text-ink mt-1.5">{personalization}</div>
           </div>
-          <div className="glass-inset px-3 py-2.5 text-center">
-            <div className="section-label mb-1">Model Confidence</div>
+          <div className="bg-charcoal-surface2 rounded-control px-3 py-2.5 text-center">
+            <div className="text-micro text-ink-muted mb-1">Model Confidence</div>
             <div className="font-technical text-xl font-extrabold text-ink">{confidence != null ? `${Math.round(confidence * 100)}%` : "--"}</div>
           </div>
-          <div className="glass-inset px-3 py-2.5 text-center">
-            <div className="section-label mb-1">Interference</div>
+          <div className="bg-charcoal-surface2 rounded-control px-3 py-2.5 text-center">
+            <div className="text-micro text-ink-muted mb-1">Interference</div>
             <div className="text-sm font-bold text-ink mt-1.5">{prescription?.interference?.interference_level || "--"}</div>
           </div>
         </div>
@@ -94,7 +94,7 @@ export default function AdaptiveEnginePanel({ date }) {
         {/* What the engine has learned about you (RLS constants + volume probe) */}
         {(tauFat != null || probe) && (
           <div className="mt-4 pt-3 border-t hairline space-y-1.5">
-            <div className="section-label">Learnings</div>
+            <div className="text-micro text-ink-muted">Learnings</div>
             {tauFat != null && (
               <p className="text-xs font-semibold text-secondary">
                 Fatigue clears in <span className="font-technical font-extrabold text-ink">{tauFat.toFixed(0)}d</span>

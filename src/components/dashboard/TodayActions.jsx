@@ -157,11 +157,11 @@ export default function TodayActions({ today, briefActions = [], isError = false
   const total = todos.length;
 
   if (isError) return (
-    <div className="glass glass-interactive px-4 pt-3 pb-3 text-sm text-bad">Could not load today's actions</div>
+    <div className="bg-charcoal-surface border border-charcoal-border hover:bg-charcoal-surface2 transition-colors duration-base px-4 pt-3 pb-3 text-sm text-bad">Could not load today's actions</div>
   );
 
   return (
-    <div className="glass glass-interactive px-4 pt-3 pb-3">
+    <div className="bg-charcoal-surface border border-charcoal-border hover:bg-charcoal-surface2 transition-colors duration-base px-4 pt-3 pb-3">
       <div className="flex items-center justify-between mb-2">
         <span className="text-body font-semibold text-muted-2">
           {total > 0 ? `To do · ${total - completed} open` : "To do"}
@@ -181,7 +181,7 @@ export default function TodayActions({ today, briefActions = [], isError = false
       {total > 0 && (
         <div className="h-1 bg-track rounded-full mt-2.5">
           <div
-            className="h-full bg-[var(--glass-edge-strong)] rounded-full transition-all duration-300 [transition-timing-function:var(--ease)]"
+            className="h-full bg-ink-faint rounded-full transition-all duration-300 [transition-timing-function:var(--ease)]"
             style={{ width: `${(completed / total) * 100}%` }}
           />
         </div>

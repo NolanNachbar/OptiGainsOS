@@ -69,7 +69,7 @@ export default function WeighInPrompt({
   // here silently replaces the real one. Confirm and move on instead.
   if (isSheet && todayWeight?.weight != null) {
     return (
-      <div className="glass px-4 sm:px-5 py-4">
+      <div className="bg-charcoal-surface border border-charcoal-border px-4 sm:px-5 py-4">
         <p className="text-body font-semibold text-secondary">
           Already logged today: <span className="tabular-nums text-ink">{todayWeight.weight} {unit}</span>
         </p>
@@ -127,13 +127,13 @@ export default function WeighInPrompt({
   return (
     <form
       onSubmit={submit}
-      className={`glass overflow-hidden ${className}`}
+      className={`bg-charcoal-surface border border-charcoal-border overflow-hidden ${className}`}
       aria-labelledby="weigh-in-prompt-title"
     >
       <div className="px-4 sm:px-5 pt-4 pb-3 flex items-start gap-3">
         <div
           className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
-            isStale ? "bg-[rgb(var(--warn-rgb)/0.14)] text-warn" : "bg-[var(--glass-inset-bg)] text-secondary"
+            isStale ? "bg-[rgb(var(--warn-rgb)/0.14)] text-warn" : "bg-charcoal-surface2 text-secondary"
           }`}
         >
           <Scale className="h-[18px] w-[18px]" aria-hidden="true" />
@@ -150,7 +150,7 @@ export default function WeighInPrompt({
 
       <div className="px-4 sm:px-5 pb-4">
         <div
-          className={`relative flex items-center rounded-2xl border bg-[var(--glass-inset-bg)] transition-colors duration-200 ${
+          className={`relative flex items-center rounded-2xl border bg-charcoal-surface2 transition-colors duration-200 ${
             error ? "border-[rgb(var(--warn-rgb)/0.55)]" : "border-charcoal-border"
           }`}
         >

@@ -514,7 +514,7 @@ export default function Today() {
   //                 no active session demoting it to a ghost).
   //   "checkin"  → no session teal, so the check-in's "Check In" is the one teal
   //                primary (no prescription / rest / already logged).
-  // The active-session "tap to continue" banner is deliberately neutral glass and
+  // The active-session "tap to continue" banner is deliberately neutral bg-charcoal-surface border border-charcoal-border and
   // never the teal primary, so it doesn't enter this decision.
   const tealPrimary =
     ((!!prescription && prescription.mpc_action !== "REST") || !!todayProgramWorkout) &&
@@ -556,7 +556,7 @@ export default function Today() {
   // The consolidated detail card's segmented control — Brief leads (the Daily
   // Brief headline is the IA priority). Muscle is offered even on error/empty so
   // the tab set stays stable (the body renders the reason). Rendered with the
-  // lighter inset SegmentedControl, NOT the global glass-elevated coral SubTabs
+  // lighter inset SegmentedControl, NOT the global elevated coral SubTabs
   // strip, so this in-card switch doesn't mimic the page-level nav pills.
   const detailTabs = [
     { value: "brief", label: "Brief" },
@@ -691,16 +691,16 @@ export default function Today() {
       style={{ paddingBottom: "calc(var(--floating-chrome-bottom) + 64px)" }}
     >
       <PageHeader
-        className="px-0"
+        className="px-0 max-lg:[&_h1]:hidden"
         eyebrow={format(nowInTz(profile?.timezone), "EEE d MMM")}
         title="Today"
       />
 
       {/* Load-failure is an app condition, not a biometric — render it as
-          neutral glass (muted icon + brand-colored retry), not warn-amber,
+          neutral bg-charcoal-surface border border-charcoal-border (muted icon + brand-colored retry), not warn-amber,
           so the physiological spectrum stays reserved for body data. */}
       {(prescriptionError || stateError) && (
-        <div className="glass-inset flex items-center gap-2 px-4 py-3 mb-3 rounded-lg text-sm">
+        <div className="bg-charcoal-surface2 rounded-control flex items-center gap-2 px-4 py-3 mb-3 rounded-lg text-sm">
           <AlertTriangle className="w-4 h-4 shrink-0 text-muted-2" />
           <span className="font-semibold text-muted-2">Could not load today&apos;s data. Retry.</span>
           <button
@@ -968,10 +968,10 @@ export default function Today() {
         {/* Below the fold: everything else — secondary or collapsed.
             Carb timing chip → Vitals + Brief/State/Muscle detail disclosure. */}
         {carbTimingToday && carbTimingToday.length > 0 && (
-          <div className="glass px-4 sm:px-5 py-3.5 -mx-4 sm:-mx-6 lg:mx-0">
+          <div className="bg-charcoal-surface border border-charcoal-border px-4 sm:px-5 py-3.5 -mx-4 sm:-mx-6 lg:mx-0">
             <div className="flex items-center gap-2 mb-1.5">
               <Flame className="w-3.5 h-3.5 text-ink-muted shrink-0" />
-              <span className="section-label">
+              <span className="text-micro text-ink-muted">
                 Carbs around today's session{carbTimingToday.length > 1 ? "s" : ""}
               </span>
             </div>
@@ -1085,11 +1085,11 @@ export default function Today() {
         {/* Old "Quick actions" Log-food tile — demoted here as a secondary
             shortcut now that Log Food is a primary FAB action and Nutrition ·
             remaining above already links to /fuel. */}
-        <div className="glass px-4 pt-3 pb-3">
+        <div className="bg-charcoal-surface border border-charcoal-border px-4 pt-3 pb-3">
           <SectionLabel className="mb-2">Quick actions</SectionLabel>
           <Link
             to="/food-tracker?addFood=true"
-            className="glass-inset tile-interactive flex items-center justify-center gap-2.5 min-h-[64px]"
+            className="bg-charcoal-surface2 rounded-control hover:bg-charcoal-surface2 transition-colors duration-base flex items-center justify-center gap-2.5 min-h-[64px]"
           >
             <Apple className="w-[18px] h-[18px] text-muted-2" />
             <span className="text-body font-extrabold text-ink leading-none">Log food</span>

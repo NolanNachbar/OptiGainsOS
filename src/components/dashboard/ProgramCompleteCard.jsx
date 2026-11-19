@@ -49,11 +49,11 @@ export default function ProgramCompleteCard({ className = "" }) {
   const title = finished.program?.title || "Your program";
 
   return (
-    <div className={`glass overflow-hidden ${className}`}>
+    <div className={`bg-charcoal-surface border border-charcoal-border overflow-hidden ${className}`}>
       <div className="px-4 sm:px-5 py-4 flex items-start gap-3">
         <div
           className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
-            drifting ? "bg-[rgb(var(--warn-rgb)/0.14)] text-warn" : "bg-[var(--glass-inset-bg)] text-secondary"
+            drifting ? "bg-[rgb(var(--warn-rgb)/0.14)] text-warn" : "bg-charcoal-surface2 text-secondary"
           }`}
         >
           <Flag className="h-[18px] w-[18px]" aria-hidden="true" />

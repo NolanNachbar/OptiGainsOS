@@ -51,10 +51,10 @@ export default function PhaseRecommendationCard() {
     : rec.confidence === "low" ? "text-warn" : "text-muted-2";
 
   return (
-    <div className="glass p-4">
+    <div className="bg-charcoal-surface border border-charcoal-border p-4">
       <div className="flex items-center gap-2 mb-1">
         <Brain className="w-3.5 h-3.5 text-gold" />
-        <span className="section-label">Coach: diet phase</span>
+        <span className="text-micro text-ink-muted">Coach: diet phase</span>
         <span className={`font-technical text-caption font-bold ml-auto ${confColor}`}>{rec.confidence} confidence</span>
       </div>
 

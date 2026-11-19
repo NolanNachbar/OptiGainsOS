@@ -200,7 +200,7 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
       .sort((a, b) => b[1] - a[1]);
 
     return (
-      <div className="glass overflow-hidden">
+      <div className="bg-charcoal-surface border border-charcoal-border overflow-hidden">
         <div className="px-4 py-3 border-b hairline flex items-center justify-between">
           {/* Completed confirmation lives in ink hierarchy, not a green check:
               the leaf/green check poached the biometric spectrum to decorate a
@@ -210,7 +210,7 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
             {/* Retitled off 'Daily Readiness' so it never collides with the
                 Today ring's 'READINESS' micro-label, this is the SUBJECTIVE
                 self-report, distinct from the objective readiness score. */}
-            <span className="section-label !text-ink">Subjective check-in</span>
+            <span className="text-micro text-ink">Subjective check-in</span>
             <span className="text-micro font-semibold text-faint uppercase tracking-wider">Logged</span>
           </div>
           <div className="flex items-center gap-3">
@@ -298,7 +298,7 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
   }
 
   return (
-    <div className="glass p-4">
+    <div className="bg-charcoal-surface border border-charcoal-border p-4">
       {/* Weigh-in leads the form. It used to sit between mood and soreness as a
           w-32 field captioned "Optional", which is exactly how it got treated.
           It is the only entry here the engine cannot reconstruct later: energy
@@ -306,7 +306,7 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
           reading exists only if he takes it while standing on the scale. */}
       <div className="mb-5">
         <div className="flex items-baseline justify-between gap-3 mb-2">
-          <p className="section-label !text-ink">Weigh-in</p>
+          <p className="text-micro text-ink">Weigh-in</p>
           <p className={`text-caption font-semibold ${weighInIsStale ? "text-warn" : "text-faint"}`}>
             {todayWeight?.weight != null
               ? `Logged today: ${todayWeight.weight} ${weightUnit}`
@@ -317,7 +317,7 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
                   : `Last: ${lastWeighIn.weight} ${weightUnit}, ${lastWeighInDaysAgo}d ago`}
           </p>
         </div>
-        <div className="relative flex items-center rounded-2xl border border-charcoal-border bg-[var(--glass-inset-bg)]">
+        <div className="relative flex items-center rounded-2xl border border-charcoal-border bg-charcoal-surface2">
           <input
             type="text"
             inputMode="decimal"
@@ -353,7 +353,7 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
 
       {/* Muscle soreness */}
       <div className="mb-4">
-        <p className="section-label mb-2">Soreness, tap to cycle</p>
+        <p className="text-micro text-ink-muted mb-2">Soreness, tap to cycle</p>
         <div className="grid grid-cols-3 gap-1.5">
           {MUSCLE_GROUPS.map(group => (
             <button

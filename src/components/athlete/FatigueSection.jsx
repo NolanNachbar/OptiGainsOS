@@ -22,9 +22,9 @@ export default function FatigueSection({ data }) {
               SummaryStrip TSB tile (MetricTile renders its value neutral), so
               the same TSB reads consistently in both surfaces. */}
           <div className="hero-metric text-3xl text-ink">{data.tsb > 0 ? "+" : ""}{data.tsb?.toFixed(1)}</div>
-          <div className="section-label">Training Stress Balance</div>
+          <div className="text-micro text-ink-muted">Training Stress Balance</div>
         </div>
-        <Badge className="ml-auto glass-inset text-muted-2 border-none capitalize text-xs">
+        <Badge className="ml-auto bg-charcoal-surface2 rounded-control text-muted-2 border-none capitalize text-xs">
           {(data.interpretation || "").replace(/_/g, " ")}
         </Badge>
       </div>
@@ -38,8 +38,8 @@ export default function FatigueSection({ data }) {
           { label: "CNS", value: `${((data.cns_fatigue || 0) * 100).toFixed(0)}%`, desc: "CNS fatigue", hue: "var(--hue-violet)", warn: data.cns_fatigue > 0.7 },
           { label: "ACWR", value: data.acwr?.toFixed(2) ?? "--", desc: "acute:chronic", hue: "var(--hue-teal)", warn: data.acwr > 1.5 },
         ].map(({ label, value, desc, hue, warn }) => (
-          <div key={label} className="glass-inset px-3 py-2 text-center">
-            <div className="section-label flex items-center justify-center gap-1.5">
+          <div key={label} className="bg-charcoal-surface2 rounded-control px-3 py-2 text-center">
+            <div className="text-micro text-ink-muted flex items-center justify-center gap-1.5">
               <i className="w-[5px] h-[5px] rounded-full shrink-0" style={{ background: hue }} />
               {label}
             </div>

@@ -18,7 +18,7 @@ export function SectionHeader({ icon: Icon, title, color = "text-teal" }) {
   return (
     <div className="flex items-center gap-2 mb-4">
       <Icon className={`w-3.5 h-3.5 ${color}`} />
-      <h2 className="section-label !text-ink">{title}</h2>
+      <h2 className="text-micro text-ink">{title}</h2>
     </div>
   );
 }

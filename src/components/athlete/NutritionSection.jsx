@@ -95,8 +95,8 @@ export default function NutritionSection({ data, targets }) {
       </div>
 
       {/* Weight trend */}
-      <div className="flex items-center justify-between glass-inset px-3 py-2">
-        <span className="section-label flex items-center gap-1.5">
+      <div className="flex items-center justify-between bg-charcoal-surface2 rounded-control px-3 py-2">
+        <span className="text-micro text-ink-muted flex items-center gap-1.5">
           <i className="w-[5px] h-[5px] rounded-full shrink-0 bg-violet" />
           Weight Trend
         </span>
