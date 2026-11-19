@@ -2,10 +2,14 @@ import { Badge } from "@/components/ui/badge";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
-export function StallBadge({ risk }) {
+// Badge agrees with the measured rate: a lift still gaining load is never
+// "Stalled", whatever the stall-risk model says. Status is state, not alarm,
+// so no red here; warn is the strongest tint.
+export function StallBadge({ risk, rate }) {
   if (risk == null) return null;
-  if (risk >= 0.75) return <Badge className="bg-bad/15 text-bad border-none text-caption">Stalled</Badge>;
-  if (risk >= 0.4)  return <Badge className="bg-warn/15 text-warn border-none text-caption">Watch</Badge>;
+  const gaining = Number(rate) > 0;
+  if (risk >= 0.75 && !gaining) return <Badge className="bg-warn/15 text-warn border-none text-caption">Stalled</Badge>;
+  if (risk >= 0.4) return <Badge className="bg-charcoal-surface2 text-muted-2 border-none text-caption">{gaining ? "Slowing" : "Watch"}</Badge>;
   return <Badge className="bg-teal/15 text-teal border-none text-caption">Progressing</Badge>;
 }
 

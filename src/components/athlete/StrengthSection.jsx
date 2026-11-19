@@ -30,7 +30,7 @@ export default function StrengthSection({ data }) {
             <div className="flex items-baseline justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
                 <span className="text-xs font-extrabold text-ink capitalize whitespace-nowrap">{LIFT_LABEL[lift] ?? lift}</span>
-                <StallBadge risk={d.stall_risk} />
+                <StallBadge risk={d.stall_risk} rate={d.progression_rate_lbs_per_week} />
               </div>
               <span className="font-technical text-xs font-bold text-muted-2 whitespace-nowrap">
                 {d.current_e1rm}{d.target ? ` / ${d.target}` : ""} lb
@@ -66,9 +66,9 @@ export default function StrengthSection({ data }) {
                 // engine's progression verdict reads as state, not a tappable CTA.
                 <span className="bg-charcoal-surface2 rounded-control px-2 py-0.5 text-micro font-bold text-muted-2 uppercase tracking-[0.06em]">
                   {{
-                    INCREASE_LOAD: "Load ready",
-                    DELOAD: "Trending down",
-                    SWAP_EXERCISE: "Swap due",
+                    INCREASE_LOAD: "Add load next session",
+                    DELOAD: "Deload next session",
+                    SWAP_EXERCISE: "Swap exercise",
                   }[d.progression_command] ?? d.progression_command}
                 </span>
               )}

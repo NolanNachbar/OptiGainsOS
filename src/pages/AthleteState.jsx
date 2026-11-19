@@ -11,6 +11,7 @@ import PSTTracker from "@/components/PSTTracker";
 import VdotZonesCard from "@/components/workouts/VdotZonesCard";
 import { Link } from "react-router-dom";
 import { useState } from "react";
+import { format, parseISO } from "date-fns";
 import { Dumbbell, Activity, BarChart3, Heart, Waves, AlertTriangle, Utensils, Cpu, Camera, ChevronRight, ChevronDown } from "lucide-react";
 import AdaptiveEnginePanel from "@/components/athlete/AdaptiveEnginePanel";
 import WeeklyPlanPanel from "@/components/athlete/WeeklyPlanPanel";
@@ -60,6 +61,15 @@ export default function AthleteState({ hideHeader = false }) {
   // When the surfaced row predates today, note it so the page can flag the data
   // as carried-forward rather than silently implying it was computed this morning.
   const isStale = !!state?.date && state.date !== today;
+  const asOf = isStale ? `As of ${format(parseISO(state.date), "MMM d")}` : null;
+  const staleNote = isStale && (
+    <span className="ml-2 text-faint">
+      Recomputes each morning.{" "}
+      <button type="button" onClick={() => refetch()} className="underline underline-offset-2 text-muted-2 min-h-[44px] lg:min-h-0">
+        Refresh
+      </button>
+    </span>
+  );
 
   return (
     <div className={`px-3 py-4 md:px-6 md:py-8 min-h-screen ${hideHeader ? 'pt-0 px-0 md:px-0 min-h-0' : ''}`}>
@@ -76,8 +86,9 @@ export default function AthleteState({ hideHeader = false }) {
                 page caption collapses to a single faint "Updated HH:MM" line to
                 avoid restating the date. */}
             <p className="hidden lg:block font-technical text-body font-semibold text-muted-2 lg:mt-0.5">
-              {isStale ? `As of ${state.date}` : `Computed daily · ${today}`}
-              {state?.computed_at && (
+              {isStale ? asOf : `Computed daily · ${format(parseISO(today), "MMM d")}`}
+              {staleNote}
+              {!isStale && state?.computed_at && (
                 <span className="ml-2 text-faint">
                   Last updated {new Date(state.computed_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </span>
@@ -85,7 +96,7 @@ export default function AthleteState({ hideHeader = false }) {
             </p>
             {(isStale || state?.computed_at) && (
               <p className="lg:hidden font-technical text-caption font-semibold text-faint">
-                {isStale ? `As of ${state.date}` : `Updated ${new Date(state.computed_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
+                {isStale ? <>{asOf}{staleNote}</> : `Updated ${new Date(state.computed_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
               </p>
             )}
           </div>
