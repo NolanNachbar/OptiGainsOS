@@ -300,9 +300,6 @@ export default function Supplements({ embedded = false }) {
         <header className={embedded ? "mb-4" : "mb-8"}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-brand/10">
-                <Pill className="w-5 h-5 text-brand" />
-              </div>
               <div>
                 {embedded ? (
                   <h2 className="section-label">Supplements & Water</h2>
@@ -316,8 +313,8 @@ export default function Supplements({ embedded = false }) {
             </div>
             {/* Empty stack shows the empty-state CTA below; avoid two coral primaries for one action. */}
             {suppTypes.length > 0 && (
-              <Button variant="volt" size="sm" onClick={() => setShowAddType(true)} className="gap-1.5 min-h-[44px]">
-                <Plus className="w-3.5 h-3.5" /> Add Supplement
+              <Button variant="secondary" size="sm" onClick={() => setShowAddType(true)} className="gap-1.5 min-h-[44px]">
+                <Plus className="w-3.5 h-3.5" /> Add supplement
               </Button>
             )}
           </div>
@@ -331,7 +328,7 @@ export default function Supplements({ embedded = false }) {
         {/* Today's supplement status */}
         {suppTypes.length > 0 && (
           <div className="mb-6">
-            <h2 className="section-label mb-3">Today's Log</h2>
+            <h2 className="section-label mb-3">Today</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {suppTypes.map(type => {
                 const taken = takenNames.has(type.name);
@@ -399,7 +396,7 @@ export default function Supplements({ embedded = false }) {
         {/* Today's log entries */}
         {todayLogs.length > 0 && (
           <div className="mb-6">
-            <h2 className="section-label mb-3">Taken Today</h2>
+            <h2 className="section-label mb-3">Taken today</h2>
             <div className="space-y-2">
               {todayLogs.map(log => (
                 <div key={log.id} className="flex items-center justify-between px-4 py-2.5 glass-inset group">
