@@ -589,7 +589,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                     <Link to="/program-builder">
                       <Button variant="primary" className="min-h-[44px] active:scale-[0.97]">
                         <Plus className="w-4 h-4 mr-2" />
-                        Build a Program
+                        Build a program
                       </Button>
                     </Link>
                   }
@@ -605,7 +605,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                         <Link to="/program-builder">
                           <Button variant="primary" className="min-h-[44px] active:scale-[0.97]">
                             <Plus className="w-4 h-4 mr-2" />
-                            Build a Program
+                            Build a program
                           </Button>
                         </Link>
                       }
@@ -627,7 +627,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                   {pastEnrollments.length > 0 && (
                     <div>
                       <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3">
-                        Past Programs
+                        Past programs
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {pastEnrollments.map((enrollment, i) => (
@@ -661,7 +661,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                     <Link to="/program-builder">
                       <Button variant="primary" className="min-h-[44px] active:scale-[0.97]">
                         <Plus className="w-4 h-4 mr-2" />
-                        Build a Program
+                        Build a program
                       </Button>
                     </Link>
                   }

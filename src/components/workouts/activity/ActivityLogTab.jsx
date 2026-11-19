@@ -80,7 +80,6 @@ function StrengthEntryCard({ entry }) {
   const cells = [
     { label: 'Exercises', value: entry.exerciseCount || '—' },
     { label: 'Sets', value: entry.sets > 0 ? entry.sets : '—' },
-    { label: 'Volume', value: entry.volume ? Math.round(entry.volume).toLocaleString() : '—', suffix: entry.volume ? 'lbs' : null },
     { label: 'Duration', value: entry.duration || '—' },
   ];
 
@@ -103,11 +102,11 @@ function StrengthEntryCard({ entry }) {
       {/* Stable 4-cell scaffold. Dividers derive from grid position so a wrapped
           row never leaves an orphaned left hairline. Subordinate to the hero:
           smaller values, so the header figure stays dominant. */}
-      <div className="grid grid-cols-4 gap-y-3 px-4 pb-4 border-t hairline pt-3">
+      <div className="grid grid-cols-3 gap-y-3 px-4 pb-4 border-t hairline pt-3">
         {cells.map((cell, i) => (
           <div
             key={cell.label}
-            className={`flex flex-col ${i % 4 !== 0 ? 'border-l hairline pl-4' : ''}`}
+            className={`flex flex-col ${i % 3 !== 0 ? 'border-l hairline pl-4' : ''}`}
           >
             <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">{cell.label}</span>
             <div className="flex items-baseline gap-1 mt-1">
