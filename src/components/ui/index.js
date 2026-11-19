@@ -12,10 +12,7 @@ export {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-  SelectGroup,
-  SelectLabel,
-  SelectSeparator
+  SelectValue
 } from './select';
 export {
   Dialog,
