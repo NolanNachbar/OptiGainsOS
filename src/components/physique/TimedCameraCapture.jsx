@@ -115,8 +115,8 @@ export default function TimedCameraCapture({ open, onClose, onCapture, poseLabel
     <div className="fixed inset-0 z-[10002] flex flex-col bg-charcoal sheet-rise">
       <div className="flex items-center justify-between px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] bg-charcoal-surface border-b border-charcoal-border">
         <div>
-          <span className="text-ink font-semibold text-base">{poseLabel || "Capture"}</span>
-          {poseCue && <p className="text-xs text-ink-muted mt-0.5 max-w-[70vw]">{poseCue}</p>}
+          <span className="text-title font-semibold text-ink">{poseLabel || "Capture"}</span>
+          {poseCue && <p className="text-caption text-ink-muted mt-0.5 max-w-[70vw]">{poseCue}</p>}
         </div>
         <button
           onClick={onClose}
@@ -144,13 +144,13 @@ export default function TimedCameraCapture({ open, onClose, onCapture, poseLabel
           {camState === "requesting" && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-charcoal text-center px-8">
               <Loader2 className="w-8 h-8 spin-loop text-ink-muted" />
-              <p className="text-sm text-ink-muted">Requesting camera…</p>
+              <p className="text-body text-ink-muted">Requesting camera</p>
             </div>
           )}
 
           {camState === "counting" && countdown != null && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <span className="font-technical text-8xl font-extrabold text-white drop-shadow-lg">
+              <span className="text-hero font-numeral tabular-nums text-ink">
                 {countdown > 0 ? countdown : ""}
               </span>
             </div>
@@ -159,13 +159,13 @@ export default function TimedCameraCapture({ open, onClose, onCapture, poseLabel
           {/* Controls */}
           <div className="absolute bottom-0 inset-x-0 pb-8 pt-6 bg-gradient-to-t from-charcoal/90 to-transparent flex flex-col items-center gap-4">
             {camState === "live" && (
-              <div className="flex items-center gap-1.5 bg-charcoal/70 backdrop-blur border border-charcoal-border rounded-full p-1">
+              <div className="flex items-center gap-1.5 bg-charcoal/70 backdrop-blur border border-charcoal-border rounded-pill p-1">
                 <Timer className="w-3.5 h-3.5 text-ink-muted ml-2" />
                 {TIMER_OPTIONS.map((s) => (
                   <button
                     key={s}
                     onClick={() => setSeconds(s)}
-                    className={`min-h-[36px] px-3 rounded-full text-xs font-bold transition-colors ${
+                    className={`min-h-[36px] px-3 rounded-pill text-caption font-semibold transition-colors ${
                       seconds === s ? "bg-brand text-[var(--color-action-dark)]" : "text-ink-muted hover:text-ink"
                     }`}
                   >
@@ -187,7 +187,7 @@ export default function TimedCameraCapture({ open, onClose, onCapture, poseLabel
               )}
 
               {camState === "live" ? (
-                <Button variant="volt" size="lg" className="px-10" onClick={startCountdown}>
+                <Button variant="primary" size="lg" className="px-10" onClick={startCountdown}>
                   Start {seconds}s timer
                 </Button>
               ) : (
@@ -206,8 +206,8 @@ export default function TimedCameraCapture({ open, onClose, onCapture, poseLabel
         <div className="flex-1 bg-charcoal-surface px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] flex flex-col items-center justify-center gap-3 text-center">
           <AlertTriangle className="w-10 h-10 text-ink-muted" />
           <div>
-            <p className="font-semibold text-ink">Camera unavailable</p>
-            <p className="text-sm text-ink-muted mt-1">{errorMessage}</p>
+            <p className="text-emph font-semibold text-ink">Camera unavailable</p>
+            <p className="text-body text-ink-muted mt-1">{errorMessage}</p>
           </div>
           <Button variant="ghost" size="lg" className="w-full" onClick={onClose}>
             Close

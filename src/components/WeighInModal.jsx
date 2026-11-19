@@ -1,16 +1,8 @@
 import { useState } from "react";
 import { useProfile } from "@/hooks/useUserQueries";
 import { useLogWeight } from "@/hooks/useWeighIn";
-import { Scale, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Button, Input, Label, Sheet, ReasonLine } from "@/components/ui";
 
 export default function WeighInModal({ open, onOpenChange }) {
   const { profile } = useProfile();
@@ -20,10 +12,11 @@ export default function WeighInModal({ open, onOpenChange }) {
   const lastWeight = profile?.current_weight;
 
   const weighInMutation = useLogWeight();
+  const invalid = !weight || parseFloat(weight) <= 0;
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!weight || parseFloat(weight) <= 0) {
+    if (invalid) {
       toast.error("Enter a weight above 0.");
       return;
     }
@@ -41,63 +34,48 @@ export default function WeighInModal({ open, onOpenChange }) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md flex flex-col" sheetMinHeight="">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Scale className="w-5 h-5 text-ink-secondary" /> Log Your Weight
-          </DialogTitle>
-        </DialogHeader>
-        {/* Flex column so the Save CTA rides mt-auto down to the bottom safe-area
-            thumb zone with no empty glass band beneath it (weigh-in-modal-1,4). */}
-        <form onSubmit={handleSubmit} className="flex flex-1 flex-col">
-          <div>
-            <label className="form-label mb-2 block">
-              Weight ({weightUnit})
-            </label>
-            {/* Quiet trailing 'lbs' unit adornment inside the input (weigh-in-modal-3). */}
-            <div className="relative">
-              <Input
-                type="text"
-                inputMode="decimal"
-                step="0.1"
-                enterKeyHint="done"
-                placeholder="Enter weight"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-                className="type-display tabular-nums text-2xl sm:text-3xl h-16 pr-14"
-                autoFocus
-              />
-              <span
-                className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-sm font-medium text-ink-faint"
-                aria-hidden="true"
-              >
-                {weightUnit}
-              </span>
-            </div>
-            {lastWeight != null && (
-              <p className="text-xs text-ink-faint mt-2">
-                Last: <span className="tabular-nums">{lastWeight}</span> {weightUnit}
-              </p>
-            )}
-          </div>
-          <Button
-            type="submit"
-            variant="volt"
-            size="lg"
-            className="w-full mt-auto"
-            disabled={weighInMutation.isPending || !weight || parseFloat(weight) <= 0}
+    <Sheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Log weight"
+      footer={
+        <Button
+          type="submit"
+          form="weigh-in-form"
+          variant="primary"
+          size="lg"
+          className="w-full"
+          disabled={weighInMutation.isPending || invalid}
+        >
+          {weighInMutation.isPending ? "Saving" : "Save"}
+        </Button>
+      }
+    >
+      <form id="weigh-in-form" onSubmit={handleSubmit} className="flex flex-col gap-2 pt-2">
+        <Label htmlFor="weigh-in-value" className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">
+          Weight ({weightUnit})
+        </Label>
+        <div className="relative">
+          <Input
+            id="weigh-in-value"
+            type="text"
+            inputMode="decimal"
+            enterKeyHint="done"
+            placeholder="0.0"
+            value={weight}
+            onChange={(e) => setWeight(e.target.value)}
+            className="h-16 pr-14 text-display font-numeral"
+            autoFocus
+          />
+          <span
+            className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-body text-ink-muted"
+            aria-hidden="true"
           >
-            {weighInMutation.isPending ? (
-              <>
-                <Loader2 className="w-4 h-4 spin-loop" /> Saving…
-              </>
-            ) : (
-              "Save"
-            )}
-          </Button>
-        </form>
-      </DialogContent>
-    </Dialog>
+            {weightUnit}
+          </span>
+        </div>
+        {lastWeight != null && <ReasonLine>Last logged {lastWeight} {weightUnit}</ReasonLine>}
+      </form>
+    </Sheet>
   );
 }

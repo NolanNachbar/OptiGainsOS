@@ -4,8 +4,7 @@ import { db } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useUserQueries";
 import { queryKeys } from "@/lib/queryKeys";
-import { LoadingScreen } from "@/components/ui/loading-spinner";
-import { Module } from "@/components/ui/system";
+import { PageHeader, Card, CardHeader, CardTitle, CardDescription, ListRow, EmptyState, LoadingState, cn } from "@/components/ui";
 import ExerciseProgressChart from "@/components/progress/ExerciseProgressChart";
 import { getLoggedExerciseSummaries, getRepPRTable } from "@/utils/exerciseStats";
 import { format, parseISO } from "date-fns";
@@ -38,131 +37,124 @@ export default function Lifts() {
     [workoutLogs, expanded]
   );
 
-  if (!user || isLoading) {
-    return <LoadingScreen />;
-  }
-
-  return (
+  const shell = (children) => (
     <div
-      className="min-h-full px-4 sm:px-6 pt-2 lg:pt-6 max-w-[720px] mx-auto"
+      className="min-h-full max-w-[720px] mx-auto"
       style={{ paddingBottom: "calc(var(--floating-chrome-bottom) + 64px)" }}
     >
-      <div className="hidden lg:block mb-5">
-        <h1 className="type-display text-[28px]">Lifts</h1>
-      </div>
+      <PageHeader title="Lifts" meta={summaries.length > 0 ? `${summaries.length} logged, latest first` : undefined} />
+      <div className="flex flex-col gap-stack">{children}</div>
+    </div>
+  );
 
-      {summaries.length === 0 ? (
-        <div className="glass-inset flex items-center justify-center text-center py-16 px-6 -mx-4 sm:-mx-6 lg:mx-0">
-          <p className="text-sm font-semibold text-muted-2">
-            Log a workout with completed sets to see lift progress here.
-          </p>
-        </div>
-      ) : (
-        <Module label={`Lifts · ${summaries.length}`}>
-          {summaries.map((s) => {
-            const isOpen = expanded === s.name;
-            return (
-              <div key={s.name} className="border-t hairline first:border-t-0">
-                <button
-                  type="button"
-                  onClick={() => setExpanded(isOpen ? null : s.name)}
-                  aria-expanded={isOpen}
-                  className="w-full flex items-center gap-3 py-2.5 min-h-[44px] text-left"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-extrabold text-ink truncate">{s.name}</p>
-                    <p className="text-[11px] font-semibold text-muted-2 mt-0.5">
-                      {format(parseISO(s.lastDate), "MMM d")} · {s.count} session{s.count === 1 ? "" : "s"}
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    {s.currentE1rm != null ? (
-                      <p className="font-technical text-xs font-bold text-ink tabular-nums">
-                        {s.currentE1rm} <span className="text-[11px] font-semibold text-muted-2">{weightUnit}</span>
-                      </p>
-                    ) : s.bestWeight != null ? (
-                      // Never trained ≤12 reps (calf raises and most isolation
-                      // work): no honest e1RM to show, so show the actual PR instead.
-                      <p className="font-technical text-xs font-bold text-ink tabular-nums">
-                        {s.bestWeight}<span className="text-[11px] font-semibold text-muted-2">{weightUnit}</span>
-                        {" × "}{s.bestReps}
-                      </p>
-                    ) : s.bodyweightReps != null ? (
-                      // Bodyweight movement, never logged with added load —
-                      // "0 lbs" is a lie, so report the rep count on its own.
-                      <p className="font-technical text-xs font-bold text-ink tabular-nums">
-                        {s.bodyweightReps} reps
-                      </p>
-                    ) : (
-                      <p className="font-technical text-xs font-bold text-faint tabular-nums">—</p>
+  if (!user || isLoading) {
+    return shell(<LoadingState rows={5} label="Loading lifts" />);
+  }
+
+  if (summaries.length === 0) {
+    return shell(
+      <EmptyState title="No lifts logged yet">
+        Finish a workout with completed sets and each lift gets an e1RM trend here.
+      </EmptyState>
+    );
+  }
+
+  return shell(
+    <Card>
+      <CardHeader>
+        <CardTitle>e1RM by lift</CardTitle>
+        <CardDescription>Estimated from sets of 12 reps or fewer. Change is over the last 4 weeks.</CardDescription>
+      </CardHeader>
+      {summaries.map((s) => {
+        const isOpen = expanded === s.name;
+        let value = null;
+        let unit = null;
+        if (s.currentE1rm != null) {
+          value = s.currentE1rm;
+          unit = weightUnit;
+        } else if (s.bestWeight != null) {
+          // Never trained at 12 reps or fewer (calf raises and most isolation
+          // work): no honest e1RM, so show the actual best set instead.
+          value = s.bestWeight;
+          unit = `${weightUnit} \u00d7 ${s.bestReps}`;
+        } else if (s.bodyweightReps != null) {
+          // Bodyweight movement never logged with added load: "0 lbs" would be
+          // a lie, so report the rep count on its own.
+          value = s.bodyweightReps;
+          unit = "reps";
+        }
+        return (
+          <div key={s.name} className="border-b border-charcoal-borderSoft last:border-b-0">
+            <ListRow
+              title={s.name}
+              detail={`${format(parseISO(s.lastDate), "MMM d")} \u00b7 ${s.count} session${s.count === 1 ? "" : "s"}`}
+              value={value ?? "--"}
+              unit={unit}
+              chevron={false}
+              onClick={() => setExpanded(isOpen ? null : s.name)}
+              aria-expanded={isOpen}
+              className="border-b-0"
+              trailing={
+                <span className="flex items-center gap-2">
+                  <span
+                    className={cn(
+                      "w-16 text-right text-caption font-semibold tabular-nums",
+                      s.change4w != null && s.change4w > 0 ? "text-leaf" : "text-ink-muted"
                     )}
-                    <p
-                      className={`font-technical text-[11px] font-bold tabular-nums mt-0.5 ${
-                        s.change4w == null
-                          ? "text-faint"
-                          : s.change4w > 0
-                          ? "text-leaf"
-                          : "text-muted-2"
-                      }`}
-                    >
-                      {s.change4w == null
-                        ? "— / 4wk"
-                        : `${s.change4w > 0 ? "+" : ""}${s.change4w} / 4wk`}
-                    </p>
-                  </div>
+                  >
+                    {s.change4w == null ? "-- / 4wk" : `${s.change4w > 0 ? "+" : ""}${s.change4w} / 4wk`}
+                  </span>
                   <ChevronDown
-                    className={`w-4 h-4 text-faint shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                    aria-hidden="true"
+                    className={cn("h-4 w-4 shrink-0 text-ink-faint transition-transform duration-base", isOpen && "rotate-180")}
                   />
-                </button>
-                {isOpen && (
-                  <div className="pb-3">
-                    {s.history.length > 0 ? (
-                      <ExerciseProgressChart data={s.history} exerciseName={s.name} weightUnit={weightUnit} />
-                    ) : (
-                      <p className="text-[11px] font-semibold text-muted-2 px-1 py-2">
-                        No sets of 12 reps or fewer logged for this lift, so there's no e1RM trend to
-                        chart —{" "}
-                        {s.bestWeight != null
-                          ? `best set logged is ${s.bestWeight} ${weightUnit} × ${s.bestReps}.`
-                          : s.bodyweightReps != null
-                          ? `best set logged is ${s.bodyweightReps} reps.`
-                          : "no completed sets logged yet."}
-                      </p>
-                    )}
-                    {prTable.length > 0 && (
-                      <div className="px-1 pt-3">
-                        <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted-2 mb-1">
-                          Records by reps
-                        </p>
-                        <table className="w-full text-[11px] font-technical tabular-nums">
-                          <thead>
-                            <tr className="text-muted-2 text-left">
-                              <th className="font-semibold py-0.5">Reps</th>
-                              <th className="font-semibold py-0.5">Best ({weightUnit})</th>
-                              <th className="font-semibold py-0.5 text-right">Set on</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {prTable.map((p) => (
-                              <tr key={p.reps} className="border-t hairline text-ink">
-                                <td className="py-1">{p.reps}</td>
-                                <td className="py-1 font-bold">{p.weight}</td>
-                                <td className="py-1 text-right text-muted-2">
-                                  {p.date ? format(parseISO(p.date), "MMM d, yyyy") : "—"}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
+                </span>
+              }
+            />
+            {isOpen && (
+              <div className="px-gutter pb-4">
+                {s.history.length > 0 ? (
+                  <ExerciseProgressChart data={s.history} exerciseName={s.name} weightUnit={weightUnit} />
+                ) : (
+                  <p className="py-2 text-caption text-ink-muted">
+                    No sets of 12 reps or fewer logged for this lift, so there is no e1RM trend to chart.{" "}
+                    {s.bestWeight != null
+                      ? `Best set logged is ${s.bestWeight} ${weightUnit} \u00d7 ${s.bestReps}.`
+                      : s.bodyweightReps != null
+                      ? `Best set logged is ${s.bodyweightReps} reps.`
+                      : "No completed sets logged yet."}
+                  </p>
+                )}
+                {prTable.length > 0 && (
+                  <div className="pt-4">
+                    <p className="mb-1 text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Records by reps</p>
+                    <table className="w-full text-caption tabular-nums">
+                      <thead>
+                        <tr className="text-left text-ink-muted">
+                          <th className="py-1 font-normal">Reps</th>
+                          <th className="py-1 font-normal">Best ({weightUnit})</th>
+                          <th className="py-1 text-right font-normal">Set on</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {prTable.map((p) => (
+                          <tr key={p.reps} className="border-t border-charcoal-borderSoft text-ink">
+                            <td className="py-2">{p.reps}</td>
+                            <td className="py-2 font-semibold">{p.weight}</td>
+                            <td className="py-2 text-right text-ink-muted">
+                              {p.date ? format(parseISO(p.date), "MMM d, yyyy") : "--"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </div>
-            );
-          })}
-        </Module>
-      )}
-    </div>
+            )}
+          </div>
+        );
+      })}
+    </Card>
   );
 }

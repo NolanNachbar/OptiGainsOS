@@ -6,21 +6,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAllBodyWeightEntries, useProfile } from "@/hooks/useUserQueries";
 import { useLogWeight } from "@/hooks/useWeighIn";
 import { BOUNDS as WEIGHT_BOUNDS } from "@/components/dashboard/WeighInPrompt";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Module, SegmentedControl } from "@/components/ui/system";
-import { calculateEWMA } from "@/utils/coachingUtils";
 import {
-  TrendingUp, Ruler, Camera, Upload, Trash2, Plus, X,
-  TrendingDown, ArrowUpRight, ArrowDownRight, Flame, Activity, ChevronDown
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+  Button, Input, Label, Card, CardHeader, CardTitle, CardContent, Tabs, TabsList, TabsTrigger, TabsContent,
+  ConfirmDialog, Skeleton, SegmentedControl, Stat, ReasonLine, EmptyState, ErrorState,
+} from "@/components/ui";
+import { calculateEWMA } from "@/utils/coachingUtils";
+import { weeklyRate, signed } from "@/components/progress/trendMath";
+import { Camera, Trash2, Plus, X, ArrowUpRight, ArrowDownRight, ChevronDown } from "lucide-react";
 import { format, parseISO, differenceInCalendarDays } from "date-fns";
 import { db } from "@/api/supabaseClient";
 import { invalidateBodyWeight } from "@/lib/queryKeys";
@@ -71,10 +63,9 @@ function trendDelta(trended, days) {
   return Math.round((last.trendWeight - candidate.trendWeight) * 10) / 10;
 }
 
-// Ledger-style weight chart (DESIGN.md Charts): pale raw weigh-in scatter,
-// a bold trend line (EWMA) over them, small tabular axis labels on the
-// right — same chart language as ExerciseProgressChart (gray history,
-// off-white "now" dot, var(--text-faint) tick tokens).
+// Weight chart (system charts): logged weigh-ins as faint 3px dots, the smoothed
+// trend as a 2px line on top, small tabular axis labels on the right. Same
+// language as ExerciseProgressChart.
 function WeightTrendChart({ trended }) {
   if (!trended || trended.length < 2) return null;
   const W = 396, H = 140, PAD_X = 4, PAD_Y = 14, LABEL_W = 32;
@@ -87,8 +78,7 @@ function WeightTrendChart({ trended }) {
   const innerH = H - PAD_Y * 2;
   const yFor = (v) => PAD_Y + (1 - (v - min) / span) * innerH;
   // Positioned by actual elapsed days, not row index, so a gap between
-  // weigh-ins reads as a visual gap instead of being silently compressed
-  // (mf-app-screens.md Body pattern #1; same convention as Today's WeightSpark).
+  // weigh-ins reads as a visual gap instead of being silently compressed.
   const t0 = new Date(`${trended[0].recorded_date}T00:00:00`);
   const tN = new Date(`${trended[trended.length - 1].recorded_date}T00:00:00`);
   const totalDays = Math.max(1, Math.round((tN - t0) / 86400000));
@@ -108,14 +98,14 @@ function WeightTrendChart({ trended }) {
         return (
           <g key={i}>
             <line x1={0} y1={y} x2={W - LABEL_W} y2={y} stroke="var(--color-border-soft)" />
-            <text x={W} y={y + 3} textAnchor="end" fontSize="10" fontFamily="var(--font-ui)" fill="var(--text-faint)" className="tabular-nums">
+            <text x={W} y={y + 3} textAnchor="end" fontFamily="var(--font-ui)" fill="var(--text-faint)" className="text-caption tabular-nums">
               {Math.round(t * 10) / 10}
             </text>
           </g>
         );
       })}
       <g fill="var(--text-faint)" opacity="0.7">
-        {rawPoints.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r="2" />)}
+        {rawPoints.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r="1.5" />)}
       </g>
       <path d={path} fill="none" stroke="var(--text-primary)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
       <circle cx={last.x} cy={last.y} r="3.5" fill="var(--text-primary)" />
@@ -129,17 +119,17 @@ function DeltaTriples({ trended, weightUnit }) {
       {DELTA_PERIODS.map(({ label, days }) => {
         const value = trendDelta(trended, days);
         return (
-          <div key={label} className="flex items-center gap-1.5">
-            <span className="text-[11px] font-semibold text-muted-2">{label}</span>
+          <div key={label} className="flex items-center gap-2">
+            <span className="text-caption text-ink-muted">{label}</span>
             {value == null ? (
-              <span className="font-technical text-xs font-bold text-faint tabular-nums">—</span>
+              <span className="text-caption font-semibold text-ink-faint tabular-nums">--</span>
             ) : (
-              <span className="font-technical text-xs font-bold text-ink tabular-nums flex items-center gap-0.5">
+              <span className="text-caption font-semibold text-ink tabular-nums flex items-center gap-1">
                 {value > 0 ? "+" : ""}{value} {weightUnit}
                 {value > 0 ? (
-                  <ArrowUpRight className="w-3 h-3" />
+                  <ArrowUpRight className="w-3 h-3" aria-hidden="true" />
                 ) : value < 0 ? (
-                  <ArrowDownRight className="w-3 h-3" />
+                  <ArrowDownRight className="w-3 h-3" aria-hidden="true" />
                 ) : null}
               </span>
             )}
@@ -150,12 +140,13 @@ function DeltaTriples({ trended, weightUnit }) {
   );
 }
 
+const FIELD_LABEL = "mb-1 block text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted";
+
 // ─── Weight module ─────────────────────────────────────────────────────────────
-// The leading surface on Body (mf-app-screens.md "Weight Trend" widget):
-// trend value, a 1W/1M/3M/6M/1Y/All range control over the scatter+trend
-// chart, delta triples below it, then the logger + history. Replaces the old
-// split between a fixed "30 days" summary module above the tabs and a
-// second, separate chart inside a "Weight" tab — one chart, one place.
+// The leading surface on Body: trend value with its weekly rate and basis, a
+// range control over the dots-plus-trend chart, period deltas below it, then
+// the logger and history. The logger's Log button is the screen's one primary
+// action.
 function WeightModule() {
   const qc = useQueryClient();
   const { profile, isLoading: profileLoading } = useProfile();
@@ -175,7 +166,7 @@ function WeightModule() {
 
   // Windowed relative to the most recent weigh-in, not the wall clock, so a
   // lapsed logger still sees their actual last N days instead of an empty
-  // "log a few more" state (same anchor the deltas above use).
+  // state (same anchor the deltas use).
   const windowed = useMemo(() => {
     if (allTrended.length === 0) return [];
     const rangeDef = RANGES.find((r) => r.value === range);
@@ -186,6 +177,11 @@ function WeightModule() {
     const cutoffStr = cutoff.toISOString().slice(0, 10);
     return allTrended.filter((e) => e.recorded_date >= cutoffStr);
   }, [allTrended, range]);
+
+  const rate = useMemo(
+    () => weeklyRate(allTrended.map((r) => ({ date: r.recorded_date, value: r.trendWeight }))),
+    [allTrended]
+  );
 
   const latest = allTrended[allTrended.length - 1];
   const isStale = latest
@@ -229,130 +225,142 @@ function WeightModule() {
   const visibleHistory = showAllHistory ? reversed : reversed.slice(0, HISTORY_PAGE_SIZE);
   const remainingHistory = reversed.length - visibleHistory.length;
 
+  const trendReason = latest && (
+    `${isStale ? `As of ${format(parseISO(latest.recorded_date), "MMM d")}. ` : ""}Smoothed trend of ${allTrended.length} weigh-ins, ${
+      rate ? `rate over the last ${rate.spanDays} days` : "rate needs 7 days of data"
+    }`
+  );
+
   return (
     <>
-      <Module>
-        <div className="flex items-center justify-between gap-2 mb-1">
-          <span className="text-[14px] font-semibold text-muted-2">Weight</span>
+      <Card>
+        <div className="flex items-center justify-between gap-2 px-4 pt-3.5">
+          <CardTitle>Weight</CardTitle>
           {weightEntries.length >= 2 && (
             <SegmentedControl options={RANGES} value={range} onChange={setRange} size="sm" />
           )}
         </div>
 
-        {isLoading || profileLoading ? (
-          <div className="space-y-2 py-1">
-            <Skeleton className="h-7 w-32 rounded" />
-            <Skeleton className="h-[140px] w-full rounded-lg" />
-          </div>
-        ) : error ? (
-          <div className="py-6 text-center">
-            <p className="text-sm font-semibold text-muted-2">Couldn&apos;t load weigh-ins.</p>
-            <Button variant="outline" size="sm" className="mt-3" onClick={() => refetch()}>Retry</Button>
-          </div>
-        ) : weightEntries.length < 2 ? (
-          <p className="text-[12px] text-muted-2 font-semibold py-1">
-            {weightEntries.length === 0
-              ? "Log a weigh-in to start tracking your trend."
-              : "Log one more weigh-in to see a trend."}
-          </p>
-        ) : (
-          <>
-            <div className="flex items-baseline gap-1.5">
-              <span className="type-display text-2xl font-semibold tabular-nums">
-                {fmt(latest.trendWeight, 1)}
-              </span>
-              <span className="text-[14px] font-semibold text-muted">{weightUnit}</span>
+        <div className="px-4 pb-3 pt-2">
+          {isLoading || profileLoading ? (
+            <div className="space-y-2 py-1" role="status" aria-label="Loading weight">
+              <Skeleton className="h-7 w-32 rounded-control" />
+              <Skeleton className="h-[140px] w-full rounded-control" />
             </div>
-            {isStale && (
-              <p className="text-[11px] font-semibold text-muted-2 mt-0.5">
-                as of {format(parseISO(latest.recorded_date), "MMM d")}
-              </p>
-            )}
-            {windowed.length >= 2 ? (
-              <div className="mt-2">
-                <WeightTrendChart trended={windowed} />
-              </div>
-            ) : (
-              <p className="text-[12px] text-muted-2 font-semibold mt-2">Not enough weigh-ins in this range.</p>
-            )}
-            <DeltaTriples trended={allTrended} weightUnit={weightUnit} />
-          </>
-        )}
+          ) : error ? (
+            <ErrorState title="Could not load weigh-ins" onRetry={() => refetch()} className="px-0" />
+          ) : weightEntries.length < 2 ? (
+            <EmptyState
+              className="px-0 py-3"
+              title={weightEntries.length === 0 ? "No weigh-ins yet" : "One weigh-in logged"}
+              progress={{ value: weightEntries.length, max: 7 }}
+            >
+              The trend firms up after about 7 days of weigh-ins. Day {weightEntries.length} of 7.
+            </EmptyState>
+          ) : (
+            <>
+              <Stat
+                label="Trend weight"
+                value={fmt(latest.trendWeight, 1)}
+                unit={weightUnit}
+                delta={rate ? `${signed(rate.perWeek)} ${weightUnit}/wk` : undefined}
+                reason={trendReason}
+              />
+              {windowed.length >= 2 ? (
+                <div className="mt-3">
+                  <WeightTrendChart trended={windowed} />
+                  <div className="mt-2 flex items-center gap-4 text-caption text-ink-muted">
+                    <span className="flex items-center gap-2">
+                      <span className="h-[3px] w-[3px] rounded-pill bg-ink-faint opacity-70 scale-[2]" aria-hidden="true" />
+                      Logged
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span className="h-[2px] w-4 bg-ink" aria-hidden="true" />
+                      Trend
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-3 text-caption text-ink-muted">Not enough weigh-ins in this range.</p>
+              )}
+              <DeltaTriples trended={allTrended} weightUnit={weightUnit} />
+            </>
+          )}
+        </div>
 
-        {/* Quick log — collapsed into a disclosure so the trend stays above the
-            fold; expand to record a new entry. Defaults open for a brand-new
-            account so the first thing offered is a way to add data, not a
-            buried control. */}
-        <details open={weightEntries.length === 0} className="mt-3 -mx-4 sm:-mx-5 lg:-mx-4 border-t hairline group/log [&[open]>summary_.log-chevron]:rotate-180">
-          <summary className="flex items-center justify-between cursor-pointer list-none px-4 sm:px-5 lg:px-4 py-3 min-h-[44px]">
+        {/* Quick log: collapsed into a disclosure so the trend stays above the
+            fold. Open by default for a brand-new account so the first thing
+            offered is a way to add data. */}
+        <details open={weightEntries.length === 0} className="border-t border-charcoal-borderSoft group/log [&[open]>summary_.log-chevron]:rotate-180">
+          <summary className="flex items-center justify-between cursor-pointer list-none px-4 py-3 min-h-tap">
             <span className="flex items-center gap-2">
-              <Plus className="w-4 h-4 text-muted-2" />
-              <span className="section-label !text-ink">Log Weight</span>
+              <Plus className="w-4 h-4 text-ink-muted" aria-hidden="true" />
+              <span className="text-emph font-semibold text-ink">Log Weight</span>
             </span>
-            <ChevronDown className="log-chevron w-4 h-4 text-faint transition-transform duration-200 ease-[cubic-bezier(.2,.7,.3,1)]" />
+            <ChevronDown aria-hidden="true" className="log-chevron w-4 h-4 text-ink-faint transition-transform duration-base ease-out" />
           </summary>
-          <div className="px-4 sm:px-5 lg:px-4 pb-4 pt-1">
-            <div className="space-y-3">
+          <div className="px-4 pb-4 pt-1">
+            <div className="flex flex-col gap-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-xs text-ink-muted mb-1.5 block">Date</Label>
-                  <Input data-testid="weight-log-date" type="date" value={date} onChange={e => setDate(e.target.value)} className="h-11 text-sm w-full font-technical" />
+                  <Label className={FIELD_LABEL}>Date</Label>
+                  <Input data-testid="weight-log-date" type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full" />
                 </div>
                 <div>
-                  <Label className="text-xs text-ink-muted mb-1.5 block">Weight ({weightUnit})</Label>
-                  <Input data-testid="weight-log-value" type="number" inputMode="decimal" step="0.1" value={weight} onChange={e => { setWeight(e.target.value); setWeightError(null); }} placeholder="0.0" className="h-11 w-full" />
+                  <Label className={FIELD_LABEL}>Weight ({weightUnit})</Label>
+                  <Input data-testid="weight-log-value" type="number" inputMode="decimal" step="0.1" value={weight} onChange={e => { setWeight(e.target.value); setWeightError(null); }} placeholder="0.0" className="w-full" />
                 </div>
               </div>
               {weightError && (
-                <p className="text-xs font-semibold text-bad">{weightError}</p>
+                <p className="text-caption text-bad" role="alert">{weightError}</p>
               )}
               <div>
-                <Label className="text-xs text-ink-muted mb-1.5 block">Notes (optional)</Label>
-                <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Morning, fasted..." className="h-11" />
+                <Label className={FIELD_LABEL}>Notes (optional)</Label>
+                <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Morning, fasted..." />
               </div>
-              <Button variant="volt" size="lg" className="w-full" disabled={!weight || add.isPending} onClick={() => add.mutate()}>
+              <Button variant="primary" size="lg" className="w-full" disabled={!weight || add.isPending} onClick={() => add.mutate()}>
                 Log
               </Button>
             </div>
           </div>
         </details>
-      </Module>
+      </Card>
 
       {sorted.length > 0 && (
-        <Module label="History">
-          <div className="space-y-1.5">
+        <Card>
+          <CardHeader>
+            <CardTitle>History</CardTitle>
+          </CardHeader>
+          <div>
             {visibleHistory.map((entry, i, arr) => {
               const prev = arr[i + 1];
               const diff = prev ? (entry.weight - prev.weight) : null;
               return (
-                <div key={entry.id} className="flex items-center gap-4 py-2 border-t hairline first:border-t-0 group">
-                  <span className="font-technical text-xs font-semibold text-muted-2 w-20 shrink-0">{format(parseISO(entry.recorded_date), "MMM d, yyyy")}</span>
-                  <span className="font-technical text-sm font-extrabold text-ink">{entry.weight} {weightUnit}</span>
+                <div key={entry.id} className="group flex items-center gap-3 px-4 min-h-[56px] border-t border-charcoal-borderSoft">
+                  <span className="w-24 shrink-0 text-caption text-ink-muted tabular-nums">{format(parseISO(entry.recorded_date), "MMM d, yyyy")}</span>
+                  <span className="text-emph font-semibold text-ink tabular-nums">{entry.weight} {weightUnit}</span>
                   {diff !== null && diff !== 0 && (
-                    <span className="font-technical text-xs font-bold flex items-center gap-0.5 text-ink">
-                      {diff > 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                    <span className="flex items-center gap-1 text-caption font-semibold tabular-nums text-ink-secondary">
+                      {diff > 0 ? <ArrowUpRight className="w-3 h-3" aria-hidden="true" /> : <ArrowDownRight className="w-3 h-3" aria-hidden="true" />}
                       {diff > 0 ? "+" : ""}{diff.toFixed(1)}
                     </span>
                   )}
-                  {entry.notes && <span className="text-xs font-semibold text-muted-2 italic flex-1 truncate">{entry.notes}</span>}
-                  <button aria-label="Delete entry" onClick={() => setConfirmId(entry.id)} className="ml-auto flex items-center justify-center min-h-[44px] min-w-[44px] -my-3 -mr-3 opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad transition-all shrink-0">
-                    <X className="w-3.5 h-3.5" />
+                  {entry.notes && <span className="flex-1 truncate text-caption text-ink-muted">{entry.notes}</span>}
+                  <button aria-label="Delete entry" onClick={() => setConfirmId(entry.id)} className="ml-auto -mr-3 flex min-h-tap min-w-tap shrink-0 items-center justify-center text-ink-muted opacity-60 transition-opacity hover:text-bad md:opacity-0 md:group-hover:opacity-100">
+                    <X className="w-4 h-4" aria-hidden="true" />
                   </button>
                 </div>
               );
             })}
           </div>
           {reversed.length > HISTORY_PAGE_SIZE && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full mt-2.5 min-h-[44px] cta-ghost"
-              onClick={() => setShowAllHistory(v => !v)}
-            >
-              {showAllHistory ? "Show less" : `Show more (${remainingHistory})`}
-            </Button>
+            <div className="border-t border-charcoal-borderSoft p-3">
+              <Button variant="outline" size="sm" className="w-full min-h-tap" onClick={() => setShowAllHistory(v => !v)}>
+                {showAllHistory ? "Show less" : `Show more (${remainingHistory})`}
+              </Button>
+            </div>
           )}
-        </Module>
+        </Card>
       )}
 
       <ConfirmDialog
@@ -380,15 +388,13 @@ const MEASUREMENT_FIELDS = [
   { key: "neck_cm",      label: "Neck" },
 ];
 
-function TrendBadge({ curr, prev }) {
-  if (!curr || !prev) return null;
+// Change vs the previous entry. Direction is neutral: a bigger arm and a
+// smaller waist can both be the goal, so no good/bad hue.
+function measurementDelta(curr, prev) {
+  if (!curr || !prev) return undefined;
   const diff = curr - prev;
-  if (Math.abs(diff) < 0.1) return null;
-  return (
-    <span className={`font-technical text-[11px] font-bold ml-1 ${diff > 0 ? "text-warn" : "text-ok"}`}>
-      {diff > 0 ? "▲" : "▼"}{Math.abs(diff).toFixed(1)}
-    </span>
-  );
+  if (Math.abs(diff) < 0.1) return undefined;
+  return signed(diff);
 }
 
 function MeasurementsTab() {
@@ -453,34 +459,34 @@ function MeasurementsTab() {
   const prev = history[1];
 
   return (
-    <div className="space-y-6">
-      <Card className="glass glass-interactive">
-        <CardContent className="pt-4 pb-5 px-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="section-label">Log Measurements (cm)</h3>
-            <Input data-testid="measurements-date" type="date" value={date} onChange={e => setDate(e.target.value)} className="min-h-[44px] text-xs w-36 font-technical" />
-          </div>
+    <div className="flex flex-col gap-stack">
+      <Card>
+        <CardHeader className="flex-row items-center justify-between gap-2">
+          <CardTitle>Log measurements (cm)</CardTitle>
+          <Input data-testid="measurements-date" type="date" value={date} onChange={e => setDate(e.target.value)} className="w-40" />
+        </CardHeader>
+        <CardContent>
           <div className="grid grid-cols-4 gap-3 mb-3">
             {MEASUREMENT_FIELDS.map((f, i) => (
               <div key={f.key}>
-                <Label className="text-[11px] text-ink-muted mb-1 block uppercase tracking-wider">{f.label}</Label>
+                <Label className={FIELD_LABEL}>{f.label}</Label>
                 <Input
                   data-testid={i === 0 ? "measurements-chest" : undefined}
                   type="number" inputMode="decimal"
                   step="0.1"
                   value={form[f.key] || ""}
                   onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
-                  placeholder={latest?.[f.key] ? String(latest[f.key]) : "—"}
-                  className="min-h-[44px] text-xs"
+                  placeholder={latest?.[f.key] ? String(latest[f.key]) : "--"}
+                  className="px-2"
                 />
               </div>
             ))}
           </div>
           <div className="flex gap-3 items-end">
             <div className="flex-1">
-              <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notes (optional)" className="min-h-[44px] text-xs" />
+              <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notes (optional)" />
             </div>
-            <Button variant="volt" size="lg" className="px-4 shrink-0" disabled={!hasData || save.isPending} onClick={() => save.mutate()}>
+            <Button variant="secondary" size="lg" className="px-4 shrink-0" disabled={!hasData || save.isPending} onClick={() => save.mutate()}>
               Save Entry
             </Button>
           </div>
@@ -488,62 +494,62 @@ function MeasurementsTab() {
       </Card>
 
       {isLoading && (
-        <div className="space-y-3">
-          <Skeleton className="h-24 rounded-xl" />
-          <Skeleton className="h-40 rounded-xl" />
+        <div className="flex flex-col gap-3" role="status" aria-label="Loading measurements">
+          <Skeleton className="h-24 rounded-control" />
+          <Skeleton className="h-40 rounded-control" />
         </div>
       )}
 
-      {isError && (
-        <div className="py-8 text-center glass-inset">
-          <p className="text-sm font-semibold text-muted-2">Couldn&apos;t load measurements.</p>
-          <Button variant="outline" size="sm" className="mt-3" onClick={() => refetch()}>Retry</Button>
-        </div>
-      )}
+      {isError && <ErrorState title="Could not load measurements" onRetry={() => refetch()} />}
 
-      {/* Latest vs previous */}
       {latest && (
-        <div>
-          <h3 className="section-label mb-3">Latest · {format(parseISO(latest.date), "MMM d, yyyy")}</h3>
-          <div className="grid grid-cols-4 gap-2">
-            {MEASUREMENT_FIELDS.filter(f => latest[f.key]).map(f => (
-              <div key={f.key} className="p-3 glass-inset text-center">
-                <p className="text-[11px] font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">{f.label}</p>
-                <p className="font-technical text-sm font-extrabold text-ink">
-                  {latest[f.key]}
-                  <TrendBadge curr={latest[f.key]} prev={prev?.[f.key]} />
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Latest</CardTitle>
+            <ReasonLine>{format(parseISO(latest.date), "MMM d, yyyy")}, change vs the entry before it</ReasonLine>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-4 gap-x-3 gap-y-4">
+              {MEASUREMENT_FIELDS.filter(f => latest[f.key]).map(f => (
+                <Stat
+                  key={f.key}
+                  size="sm"
+                  label={f.label}
+                  value={latest[f.key]}
+                  delta={measurementDelta(latest[f.key], prev?.[f.key])}
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
-      {/* History table */}
       {history.length > 0 && (
-        <div>
-          <h3 className="section-label mb-3">History</h3>
-          <div className="overflow-x-auto rounded-lg hairline glass-inset">
-            <table className="w-full text-xs">
+        <Card>
+          <CardHeader>
+            <CardTitle>History</CardTitle>
+          </CardHeader>
+          <div className="overflow-x-auto">
+            <table className="w-full text-caption tabular-nums">
               <thead>
-                <tr className="border-b hairline">
-                  <th className="text-left px-4 py-2.5 text-muted-2 font-bold uppercase tracking-[0.08em] whitespace-nowrap">Date</th>
+                <tr className="border-y border-charcoal-borderSoft">
+                  <th className="px-4 py-2 text-left text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted whitespace-nowrap">Date</th>
                   {MEASUREMENT_FIELDS.map(f => (
-                    <th key={f.key} className="text-right px-3 py-2.5 text-muted-2 font-bold uppercase tracking-[0.08em] whitespace-nowrap">{f.label}</th>
+                    <th key={f.key} className="px-3 py-2 text-right text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted whitespace-nowrap">{f.label}</th>
                   ))}
                   <th className="w-8" />
                 </tr>
               </thead>
               <tbody>
                 {history.map((row) => (
-                  <tr key={row.id} className="border-b hairline last:border-0 group hover:bg-track">
-                    <td className="font-technical px-4 py-2.5 text-muted-2 whitespace-nowrap">{format(parseISO(row.date), "MMM d, yyyy")}</td>
+                  <tr key={row.id} className="group border-b border-charcoal-borderSoft last:border-0 hover:bg-charcoal-surface2">
+                    <td className="px-4 py-2 text-ink-muted whitespace-nowrap">{format(parseISO(row.date), "MMM d, yyyy")}</td>
                     {MEASUREMENT_FIELDS.map(f => (
-                      <td key={f.key} className="px-3 py-2.5 text-right font-technical font-bold text-ink">{row[f.key] ?? "—"}</td>
+                      <td key={f.key} className="px-3 py-2 text-right font-semibold text-ink">{row[f.key] ?? "--"}</td>
                     ))}
-                    <td className="px-2 py-2.5">
-                      <button aria-label="Delete measurement" onClick={() => setConfirmId(row.id)} className="flex items-center justify-center min-h-[44px] min-w-[44px] -my-2 -mx-2 opacity-60 md:opacity-0 md:group-hover:opacity-100 text-muted-2 hover:text-bad transition-all">
-                        <Trash2 className="w-3 h-3" />
+                    <td className="px-2 py-2">
+                      <button aria-label="Delete measurement" onClick={() => setConfirmId(row.id)} className="-my-2 -mx-2 flex min-h-tap min-w-tap items-center justify-center text-ink-muted opacity-60 transition-opacity hover:text-bad md:opacity-0 md:group-hover:opacity-100">
+                        <Trash2 className="w-4 h-4" aria-hidden="true" />
                       </button>
                     </td>
                   </tr>
@@ -551,7 +557,7 @@ function MeasurementsTab() {
               </tbody>
             </table>
           </div>
-        </div>
+        </Card>
       )}
 
       <ConfirmDialog
@@ -573,21 +579,21 @@ function MeasurementsTab() {
 // Physique flow never populates, so it always read empty. Link out instead.
 function PhotosLink() {
   return (
-    <Link
-      to="/physique"
-      className="glass glass-interactive flex items-center gap-3 px-4 py-4"
-    >
-      <div className="p-2 rounded-full bg-teal/10 shrink-0">
-        <Camera className="w-4 h-4 text-teal" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-bold text-ink">Progress photos</p>
-        <p className="text-[11px] font-semibold text-muted-2">
-          Open the Physique tracker, pose tracking, side-by-side compare, and body-fat trend.
-        </p>
-      </div>
-      <ArrowUpRight className="w-4 h-4 text-faint shrink-0" />
-    </Link>
+    <Card>
+      <Link
+        to="/physique"
+        className="flex min-h-[56px] items-center gap-3 px-4 py-row transition-colors duration-fast hover:bg-charcoal-surface2"
+      >
+        <Camera className="h-5 w-5 shrink-0 text-ink-secondary" aria-hidden="true" />
+        <span className="min-w-0 flex-1">
+          <span className="block text-emph font-semibold text-ink">Progress photos</span>
+          <span className="block text-caption text-ink-muted">
+            Pose tracking, side-by-side compare and the body fat trend live in Physique.
+          </span>
+        </span>
+        <ArrowUpRight className="h-4 w-4 shrink-0 text-ink-faint" aria-hidden="true" />
+      </Link>
+    </Card>
   );
 }
 
@@ -607,102 +613,81 @@ function MetabolismTab() {
   });
 
   // weight_trend_lbs_per_week is always computed in lbs by the engine
-  // (Today.jsx's same convention) — convert the NUMBER for a kg profile,
-  // don't just relabel an unconverted lbs value "lbs/wk".
+  // (Today.jsx's same convention): convert the NUMBER for a kg profile,
+  // don't just relabel an unconverted lbs value.
   const weightTrendLbs = state?.nutrition?.weight_trend_lbs_per_week;
   const weightTrend = weightTrendLbs == null ? null
     : weightUnit === "kg" ? Math.round(weightTrendLbs * LBS_PER_KG * 100) / 100
     : weightTrendLbs;
 
+  // Net energy is derived from the measured weight trend: a sustained weight
+  // change is the energy balance.
+  const trend = Number(weightTrendLbs);
+  const known = weightTrendLbs != null && !Number.isNaN(trend);
+  const netLabel = !known ? null : trend > 0.15 ? "Surplus" : trend < -0.15 ? "Deficit" : "Balanced";
+
+  // avg_calories_7d is what he ATE over the last 7 days. It is intake, not burn.
+  const intake = state?.nutrition?.avg_calories_7d || state?.nutrition?.avg_daily_calories_7d;
+
   return (
-    <div className="space-y-6">
-      <Card className="glass glass-interactive">
-        <CardContent className="pt-6 pb-6 px-5">
-           <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Flame className="w-4 h-4 text-gold" />
-                <h3 className="section-label !text-ink">Expenditure Engine</h3>
-              </div>
-              <Badge className={state?.nutrition ? "bg-teal/10 text-teal border-none" : "bg-track glass-inset text-muted-2 border-none"}>
-                {state?.nutrition ? "Active" : "No data"}
-              </Badge>
-           </div>
-           <div className="text-center py-4">
-              <p className="hero-metric text-ink text-4xl">{state?.nutrition?.avg_calories_7d || state?.nutrition?.avg_daily_calories_7d || "—"}</p>
-              {/* This is avg_calories_7d — what he ATE over the last 7 days.
-                  Labelling logged intake as "Calculated Burn" made the one
-                  number on the Expenditure card mean the opposite of what it
-                  says, in the place he checks whether the cut is working. */}
-              <p className="text-[11px] text-muted-2 mt-1.5 font-bold uppercase tracking-[0.08em]">Intake (7d Avg)</p>
-           </div>
+    <div className="flex flex-col gap-stack">
+      <Card>
+        <CardContent className="pt-4">
+          <Stat
+            label="Intake, 7-day avg"
+            size="md"
+            value={intake || undefined}
+            unit={intake ? "kcal" : undefined}
+            reason={intake ? "Average logged calories over the last 7 days" : "Needs logged meals on several days"}
+          />
         </CardContent>
       </Card>
-      
-      <div className="grid grid-cols-2 gap-3">
-         <Card className="glass glass-interactive p-4">
-            <p className="text-[11px] text-muted-2 uppercase font-bold tracking-[0.08em] mb-1 flex items-center gap-1.5">
-              <i className="w-[5px] h-[5px] rounded-full shrink-0 bg-violet" /> Weight Trend
-            </p>
-            <p className="font-technical text-lg font-extrabold text-ink">{weightTrend != null ? `${weightTrend > 0 ? "+" : ""}${weightTrend} ${weightUnit}/wk` : "—"}</p>
-         </Card>
-         {(() => {
-            // Net energy derived from the measured weight trend rather than a
-            // hardcoded label: a sustained weight change *is* the energy balance.
-            const trend = Number(state?.nutrition?.weight_trend_lbs_per_week);
-            const known = state?.nutrition?.weight_trend_lbs_per_week != null && !Number.isNaN(trend);
-            // Net Energy is a derived NUTRITION label, not a biometric readout —
-            // so it owns a single data hue (gold, carried by the dot below) and
-            // the value renders as neutral ink rather than poaching the
-            // physiological spectrum (warn/info/teal). See SYS-09(a) in index.css.
-            const net = !known ? { label: "—" }
-              : trend > 0.15 ? { label: "Surplus" }
-              : trend < -0.15 ? { label: "Deficit" }
-              : { label: "Balanced" };
-            return (
-              <Card className="glass glass-interactive p-4">
-                <p className="text-[11px] text-muted-2 uppercase font-bold tracking-[0.08em] mb-1 flex items-center gap-1.5">
-                  <i className="w-[5px] h-[5px] rounded-full shrink-0 bg-gold" /> Net Energy
-                </p>
-                <p className={`font-technical text-lg font-extrabold ${known ? "text-ink" : "text-muted-2"}`}>{net.label}</p>
-              </Card>
-            );
-         })()}
+
+      <div className="grid grid-cols-2 gap-stack">
+        <Card className="p-4">
+          <Stat
+            label="Weight trend"
+            size="sm"
+            value={weightTrend != null ? `${weightTrend > 0 ? "+" : ""}${weightTrend}` : undefined}
+            unit={weightTrend != null ? `${weightUnit}/wk` : undefined}
+          />
+        </Card>
+        <Card className="p-4">
+          <Stat
+            label="Net energy"
+            size="sm"
+            value={netLabel ?? undefined}
+            reason={known ? "From the weight trend, within 0.15 lb/wk is balanced" : undefined}
+          />
+        </Card>
       </div>
 
-      <div className="p-4 glass-inset">
-         <p className="text-xs font-semibold text-muted-2 leading-relaxed">
-            The engine uses your daily intake and weight change to calculate your true expenditure.
-            This filters out water retention and glycogen fluctuations to show your actual metabolic rate.
-         </p>
-      </div>
+      <p className="text-caption text-ink-muted">
+        The engine reads your daily intake against your weight change to estimate expenditure. Smoothing filters out
+        water and glycogen swings.
+      </p>
     </div>
   );
 }
 
 // ─── Main ──────────────────────────────────────────────────────────────────────
-// Rendered embedded inside Fuel → Body & Progress (the standalone /progress route was retired).
-// MacroFactor redesign (LAUNCH_PLAN phase 4): the weight module leads, full
-// width, with its own range control and deltas — it's no longer one of four
-// equal-weight tabs (that duplicated the trend across a "30 days" summary
-// module AND a separate "Weight" tab chart). Metabolism/Measurements/Photos
-// stay tabbed below it; a per-muscle map isn't duplicated here since
-// AthleteState (the Body tab-root) already renders one.
+// Rendered embedded inside Fuel, Body & Progress (the standalone /progress route
+// was retired), so the Fuel page owns the PageHeader. The weight module leads;
+// Metabolism, Measurements and Photos stay tabbed below it. A per-muscle map
+// isn't duplicated here since AthleteState already renders one.
 export default function Progress() {
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col gap-stack">
       <WeightModule />
       <Tabs defaultValue="metabolism">
-      {/* Subordinate to the parent Fuel SubTabs: a lighter, contained segmented
-          control (glass-inset, no full-width underline strip) so the two nav
-          levels read as a clear hierarchy rather than two equal-weight strips. */}
-      <TabsList className="mb-3 h-auto gap-1 border-b-0 p-1 glass-inset rounded-lg !justify-start">
-        <TabsTrigger value="metabolism" variant="segment" className="!min-h-[44px] !py-1.5 rounded-md !text-xs">Metabolism</TabsTrigger>
-        <TabsTrigger value="measurements" variant="segment" className="!min-h-[44px] !py-1.5 rounded-md !text-xs">Measurements</TabsTrigger>
-        <TabsTrigger value="photos" variant="segment" className="!min-h-[44px] !py-1.5 rounded-md !text-xs">Photos</TabsTrigger>
-      </TabsList>
-      <TabsContent value="metabolism"><MetabolismTab /></TabsContent>
-      <TabsContent value="measurements"><MeasurementsTab /></TabsContent>
-      <TabsContent value="photos"><PhotosLink /></TabsContent>
+        <TabsList className="mb-3 h-auto gap-1 border-b-0 p-1 bg-charcoal-surface2 rounded-control justify-start">
+          <TabsTrigger value="metabolism" variant="segment" className="!min-h-tap !py-1.5 rounded-control">Metabolism</TabsTrigger>
+          <TabsTrigger value="measurements" variant="segment" className="!min-h-tap !py-1.5 rounded-control">Measurements</TabsTrigger>
+          <TabsTrigger value="photos" variant="segment" className="!min-h-tap !py-1.5 rounded-control">Photos</TabsTrigger>
+        </TabsList>
+        <TabsContent value="metabolism"><MetabolismTab /></TabsContent>
+        <TabsContent value="measurements"><MeasurementsTab /></TabsContent>
+        <TabsContent value="photos"><PhotosLink /></TabsContent>
       </Tabs>
     </div>
   );
