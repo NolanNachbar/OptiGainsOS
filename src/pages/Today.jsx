@@ -695,7 +695,7 @@ export default function Today() {
       style={{ paddingBottom: "calc(var(--floating-chrome-bottom) + 64px)" }}
     >
       <PageHeader
-        className="px-0 max-lg:[&_h1]:hidden"
+        className="px-0 max-lg:hidden"
         meta={format(nowInTz(profile?.timezone), "EEE d MMM")}
         title="Today"
       />

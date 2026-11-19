@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Search, Camera, Plus, UtensilsCrossed } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Search, Camera, Plus, UtensilsCrossed } from "lucide-react";
 import { format } from "date-fns";
 import { getTodayString } from "@/utils/dateUtils";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,11 @@ export default function TrackerDateBar({ changeDate, isViewingToday, resetForm, 
               tabular-nums label so no bright UA calendar box leaks onto the
               dark field. */}
           <label className="relative flex items-center h-11 px-3 glass-inset cursor-pointer">
-            <span className="font-technical tabular-nums text-body font-semibold text-ink">
+            {/* On mobile the Layout header already prints today's date, so when
+                viewing today the pill collapses to a calendar icon (still the
+                date picker); any other day keeps its date text. */}
+            {isViewingToday && <CalendarDays className="w-4 h-4 text-ink-secondary lg:hidden" aria-hidden="true" />}
+            <span className={`font-technical tabular-nums text-body font-semibold text-ink${isViewingToday ? " max-lg:sr-only" : ""}`}>
               {format(new Date(selectedDate + 'T00:00:00'), 'EEE, MMM d')}
             </span>
             <input
