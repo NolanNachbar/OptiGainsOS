@@ -58,10 +58,10 @@ export default function WorkoutLibrarySidebar() {
         className="flex items-center justify-between mb-3 cursor-pointer"
         onClick={() => setCollapsed(!collapsed)}
       >
-        <h3 className="text-sm font-semibold text-ink-muted flex items-center gap-1.5">
+        <h3 className="text-body font-semibold text-ink-muted flex items-center gap-1.5">
           <Library className="w-4 h-4" />
           Workout Library
-          <Badge variant="outline" className="text-xs ml-1">
+          <Badge variant="outline" className="text-caption ml-1">
             {workouts.length}
           </Badge>
         </h3>
@@ -70,7 +70,7 @@ export default function WorkoutLibrarySidebar() {
             to="/create-workout"
             onClick={(e) => e.stopPropagation()}
           >
-            <Button size="sm" variant="ghost" className="h-6 px-2 text-xs gap-1">
+            <Button size="sm" variant="secondary" className="h-6 px-2 text-caption gap-1">
               <Plus className="w-3 h-3" />
               New Workout
             </Button>
@@ -89,7 +89,7 @@ export default function WorkoutLibrarySidebar() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search workouts..."
-              className="pl-8 h-8 text-sm"
+              className="pl-8 h-8 text-body"
             />
           </div>
 
@@ -101,7 +101,7 @@ export default function WorkoutLibrarySidebar() {
                 size="sm"
                 variant={filter === value ? "default" : "outline"}
                 onClick={() => setFilter(value)}
-                className="h-6 text-xs px-2"
+                className="h-6 text-caption px-2"
               >
                 {label}
               </Button>
@@ -116,7 +116,7 @@ export default function WorkoutLibrarySidebar() {
                 size="sm"
                 variant={folderFilter === "all" ? "default" : "outline"}
                 onClick={() => setFolderFilter("all")}
-                className="h-6 text-xs px-2"
+                className="h-6 text-caption px-2"
               >
                 All Folders
               </Button>
@@ -126,7 +126,7 @@ export default function WorkoutLibrarySidebar() {
                   size="sm"
                   variant={folderFilter === folder ? "default" : "outline"}
                   onClick={() => setFolderFilter(folder)}
-                  className="h-6 text-xs px-2"
+                  className="h-6 text-caption px-2"
                 >
                   {folder}
                 </Button>
@@ -135,7 +135,7 @@ export default function WorkoutLibrarySidebar() {
                 size="sm"
                 variant={folderFilter === "unfiled" ? "default" : "outline"}
                 onClick={() => setFolderFilter("unfiled")}
-                className="h-6 text-xs px-2"
+                className="h-6 text-caption px-2"
               >
                 Unfiled
               </Button>
@@ -144,7 +144,7 @@ export default function WorkoutLibrarySidebar() {
 
           {filtered.length === 0 ? (
             <div className="text-center py-4">
-              <p className="text-xs text-ink-muted">
+              <p className="text-caption text-ink-muted">
                 {workouts.length === 0
                   ? "No workouts yet, click a day slot to build exercises inline."
                   : "No workouts match your filters."}

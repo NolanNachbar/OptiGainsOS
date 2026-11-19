@@ -73,11 +73,11 @@ export default function ProgramCard({ program, enrollment, index = 0, inActiveTa
             )}
 
             <div>
-              <h3 className="text-base font-bold text-ink mb-1">
+              <h3 className="text-body font-bold text-ink mb-1">
                 {program.title || program.name}
               </h3>
               {program.description && (
-                <p className="text-xs text-ink-muted line-clamp-2">{program.description}</p>
+                <p className="text-caption text-ink-muted line-clamp-2">{program.description}</p>
               )}
             </div>
 
@@ -86,13 +86,13 @@ export default function ProgramCard({ program, enrollment, index = 0, inActiveTa
                 {/* Compact progress line — bar + one figure, no PROGRESS/SESSIONS
                     duplication. Active keeps the live viz hue; past programs
                     drop to a muted track so the active card holds primacy. */}
-                <div className="h-1 bg-track rounded-full overflow-hidden">
+                <div className="h-1 bg-track rounded-pill overflow-hidden">
                   <div
-                    className={`h-full rounded-full ${isActive ? "bg-viz-1" : "bg-ink-faint/40"}`}
+                    className={`h-full rounded-pill ${isActive ? "bg-viz-1" : "bg-ink-faint/40"}`}
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
-                <div className="flex items-center gap-3 font-technical text-xs text-ink-muted">
+                <div className="flex items-center gap-3 font-numeral tabular-nums text-caption text-ink-muted">
                   {/* One progress figure — the concrete fraction, not fraction +
                       percent (the bar already carries the proportion visually). */}
                   <span><span className="text-ink font-bold">{completedCount}</span> / {totalWorkouts} sessions</span>
@@ -106,11 +106,11 @@ export default function ProgramCard({ program, enrollment, index = 0, inActiveTa
               <div className="flex">
                 <div className="flex-1 flex flex-col">
                   <span className="section-label">Cycle</span>
-                  <span className="font-technical text-lg font-bold text-ink mt-0.5">{durationLabel}</span>
+                  <span className="font-numeral tabular-nums text-title font-bold text-ink mt-0.5">{durationLabel}</span>
                 </div>
                 <div className="flex-1 flex flex-col border-l hairline pl-4">
                   <span className="section-label">Length</span>
-                  <span className="font-technical text-lg font-bold text-ink mt-0.5">{frequencyLabel}</span>
+                  <span className="font-numeral tabular-nums text-title font-bold text-ink mt-0.5">{frequencyLabel}</span>
                 </div>
               </div>
             )}
@@ -119,12 +119,12 @@ export default function ProgramCard({ program, enrollment, index = 0, inActiveTa
             {hasTags && (
               <div className="flex flex-wrap gap-1">
                 {visibleTags.map((tag) => (
-                  <Badge key={tag} variant="outline" className="text-xs">{humanizeTag(tag)}</Badge>
+                  <Badge key={tag} variant="outline" className="text-caption">{humanizeTag(tag)}</Badge>
                 ))}
                 {/* Overflow is a count, not an action — render it as quiet faint
                     ink with no chip border so it reads as '+N more', not a tag. */}
                 {overflowTags > 0 && (
-                  <span className="self-center px-1 text-xs font-technical text-ink-faint">+{overflowTags}</span>
+                  <span className="self-center px-1 text-caption font-numeral tabular-nums text-ink-faint">+{overflowTags}</span>
                 )}
               </div>
             )}

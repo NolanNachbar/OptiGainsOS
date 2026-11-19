@@ -52,20 +52,20 @@ export default function DraggableWorkoutCard({ workout, isOverlay = false }) {
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap gap-1.5 mb-1.5">
                 {workout.focus && (
-                  <Badge variant="outline" className="text-xs capitalize">
+                  <Badge variant="outline" className="text-caption capitalize">
                     {workout.focus}
                   </Badge>
                 )}
               </div>
-              <p className="text-sm font-bold text-ink truncate">
+              <p className="text-body font-bold text-ink truncate">
                 {workout.title}
               </p>
               {workout.description && (
-                <p className="text-xs text-ink-muted  line-clamp-1 mt-0.5">
+                <p className="text-caption text-ink-muted  line-clamp-1 mt-0.5">
                   {workout.description}
                 </p>
               )}
-                <div className="flex items-center gap-3 mt-2 text-xs text-ink-muted ">
+                <div className="flex items-center gap-3 mt-2 text-caption text-ink-muted ">
                 {workout.duration_minutes && (
                   <span className="flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5" />
