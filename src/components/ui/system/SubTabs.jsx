@@ -52,7 +52,7 @@ export default function SubTabs({ tabs, active, onChange, right, sticky = true, 
                 key={id}
                 ref={isActive ? activeRef : null}
                 onClick={() => onChange(id)}
-                className={`relative shrink-0 px-3 h-11 rounded-full flex items-center gap-1.5 text-micro font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-200 [transition-timing-function:var(--ease)] ${
+                className={`relative shrink-0 px-3 h-11 rounded-full flex items-center gap-1.5 text-body font-semibold whitespace-nowrap transition-colors duration-200 [transition-timing-function:var(--ease)] ${
                   isActive
                     ? "text-ink bg-[var(--glass-edge)]"
                     : "text-ink-secondary hover:text-ink"

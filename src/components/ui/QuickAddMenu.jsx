@@ -6,16 +6,16 @@ import { X, Dumbbell, Apple, Scale, PenLine, Calculator, Brain, BarChart3 } from
 const EASE = [0.2, 0.7, 0.3, 1];
 
 // Three tiers (IA.md): a prominent primary pair, a normal-weight middle tier
-// (Weigh In — a daily ritual, not demoted), and a visually quieter demoted
+// (Weigh in — a daily ritual, not demoted), and a visually quieter demoted
 // trio for the less-frequent utilities. `tier` drives rendering only; the
 // path/action handling below is unchanged.
 const actions = [
-  { label: "Quick Workout", icon: Dumbbell, path: "/quick-workout", primary: true, tier: "primary" },
-  { label: "Log Food", icon: Apple, path: "/food-tracker?addFood=true", primary: true, tier: "primary" },
-  { label: "Weigh In", icon: Scale, action: "weighIn", tier: "mid" },
-  { label: "Create Workout", icon: PenLine, path: "/create-workout", tier: "demoted" },
+  { label: "Quick workout", icon: Dumbbell, path: "/quick-workout", primary: true, tier: "primary" },
+  { label: "Log food", icon: Apple, path: "/fuel?addFood=true", primary: true, tier: "primary" },
+  { label: "Weigh in", icon: Scale, action: "weighIn", tier: "mid" },
+  { label: "Create workout", icon: PenLine, path: "/create-workout", tier: "demoted" },
   { label: "Calculators", icon: Calculator, action: "calculators", tier: "demoted" },
-  { label: "Stream Note", icon: Brain, action: "streamNote", tier: "demoted" },
+  { label: "Stream note", icon: Brain, action: "streamNote", tier: "demoted" },
   { label: "Analyze", icon: BarChart3, path: "/insights", tier: "demoted" },
 ];
 
@@ -31,7 +31,7 @@ export default function QuickAddMenu({ open, onClose, onWeighIn, onCalculators, 
   const location = useLocation();
   const handleAction = (action) => {
     onClose?.();
-    if (action.label === "Log Food" && location.pathname === "/fuel") {
+    if (action.label === "Log food" && location.pathname === "/fuel") {
       // Fuel.jsx renders FoodTracker directly (see Fuel.jsx) -- if he's
       // already there, navigating to /food-tracker would unmount Fuel and
       // remount FoodTracker as its own standalone page instead of just
@@ -94,28 +94,22 @@ export default function QuickAddMenu({ open, onClose, onWeighIn, onCalculators, 
                     key={action.label}
                     type="button"
                     role="menuitem"
-                    data-tutorial={action.label === "Log Food" ? "fab-log-food" : undefined}
+                    data-tutorial={action.label === "Log food" ? "fab-log-food" : undefined}
                     onClick={() => handleAction(action)}
                     className={`flex w-full items-center gap-3 min-h-[44px] px-2.5 text-left transition-colors duration-200 [transition-timing-function:var(--ease)] active:bg-[var(--glass-edge)] rounded-xl ${
                       startsDemotedTier ? "mt-1 pt-2 border-t border-[var(--color-border)]" : ""
                     }`}
                   >
                     <span
-                      className={`shrink-0 rounded-full flex items-center justify-center ${
-                        action.primary
-                          ? "w-10 h-10 bg-brand text-[var(--color-action-dark)]"
-                          : demoted
-                            ? "w-8 h-8 bg-[var(--glass-inset-bg)] text-muted-2"
-                            : "w-9 h-9 bg-[var(--glass-inset-bg)] text-ink"
-                      }`}
+                      className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center bg-[var(--glass-inset-bg)] text-ink"
                     >
-                      <action.icon className={demoted ? "w-4 h-4" : "w-[18px] h-[18px]"} strokeWidth={2} />
+                      <action.icon className="w-[18px] h-[18px]" strokeWidth={2} />
                     </span>
                     <span className={
                       action.primary
                         ? "text-emph font-bold text-ink"
                         : demoted
-                          ? "text-body font-medium text-muted-2"
+                          ? "text-sm font-medium text-ink-secondary"
                           : "text-sm font-semibold text-ink"
                     }>
                       {action.label}
@@ -176,7 +170,7 @@ export default function QuickAddMenu({ open, onClose, onWeighIn, onCalculators, 
               return (
               <div
                 key={action.label}
-                data-tutorial={action.label === "Log Food" ? "fab-log-food" : undefined}
+                data-tutorial={action.label === "Log food" ? "fab-log-food" : undefined}
               >
                 <motion.button
                   initial={{ opacity: 0, scale: 0.3, y: 8 }}
@@ -196,15 +190,9 @@ export default function QuickAddMenu({ open, onClose, onWeighIn, onCalculators, 
                     {action.label}
                   </span>
                   <div
-                    className={`rounded-full flex items-center justify-center border ${
-                      action.primary
-                        ? "w-11 h-11 bg-brand text-[var(--color-action-dark)] border-transparent"
-                        : demoted
-                          ? "w-9 h-9 glass-elevated text-muted-2 border-charcoal-border"
-                          : "w-11 h-11 glass-elevated text-ink border-charcoal-border"
-                    }`}
+                    className="w-10 h-10 rounded-full flex items-center justify-center border glass-elevated text-ink border-charcoal-border"
                   >
-                    <action.icon className={demoted ? "w-4 h-4" : "w-[18px] h-[18px]"} strokeWidth={2} />
+                    <action.icon className="w-[18px] h-[18px]" strokeWidth={2} />
                   </div>
                 </motion.button>
               </div>

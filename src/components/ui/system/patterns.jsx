@@ -62,7 +62,7 @@ const listRowVariants = cva(
 );
 
 export const ListRow = React.forwardRef(function ListRow(
-  { leading, title, detail, value, unit, trailing, chevron, selected = false, onClick, href, className = "", children, ...props },
+  { leading, title, detail, value, unit, trailing, chevron, selected = false, truncate = false, onClick, href, className = "", children, ...props },
   ref
 ) {
   const interactive = Boolean(onClick || href);
@@ -73,7 +73,7 @@ export const ListRow = React.forwardRef(function ListRow(
       {leading && <span className="shrink-0 flex items-center text-ink-secondary">{leading}</span>}
       <span className="min-w-0 flex-1">
         {title && <span className="block text-emph font-semibold truncate">{title}</span>}
-        {detail && <span className="block text-caption text-ink-muted truncate">{detail}</span>}
+        {detail && <span className={cn("block text-caption text-ink-muted", truncate ? "truncate" : "line-clamp-2")}>{detail}</span>}
         {children}
       </span>
       {value != null && (
@@ -88,13 +88,14 @@ export const ListRow = React.forwardRef(function ListRow(
   );
 });
 
-/* ReasonLine: the basis under every engine number. One line, caption, muted,
-   ellipsized. With `detail`, tapping expands an inline drawer (never a modal). */
-export function ReasonLine({ children, detail, className = "", defaultOpen = false }) {
+/* ReasonLine: the basis under every engine number. Caption, muted; wraps to at
+   most 2 lines (opt in to single-line ellipsis with `truncate`). With `detail`, tapping expands an inline drawer (never a modal). */
+export function ReasonLine({ children, detail, className = "", defaultOpen = false, truncate = false }) {
+  const clamp = truncate ? "truncate" : "line-clamp-2";
   const [open, setOpen] = React.useState(defaultOpen);
   const id = React.useId();
   if (!detail) {
-    return <p className={cn("text-caption text-ink-muted truncate tabular-nums", className)}>{children}</p>;
+    return <p className={cn("text-caption text-ink-muted tabular-nums", clamp, className)}>{children}</p>;
   }
   return (
     <div className={className}>
@@ -105,7 +106,7 @@ export function ReasonLine({ children, detail, className = "", defaultOpen = fal
         onClick={() => setOpen((o) => !o)}
         className="flex w-full min-h-[24px] items-center gap-1 text-left text-caption text-ink-muted tabular-nums hover:text-ink-secondary transition-colors duration-fast"
       >
-        <span className="truncate">{children}</span>
+        <span className={clamp}>{children}</span>
         <ChevronRight aria-hidden="true" className={cn("h-3 w-3 shrink-0 transition-transform duration-base ease-out", open && "rotate-90")} />
       </button>
       {open && (
@@ -127,7 +128,7 @@ const statValue = cva("font-numeral tabular-nums tracking-[-0.02em] leading-none
   defaultVariants: { size: "md", hue: "none" },
 });
 
-export function Stat({ label, value, unit, delta, reason, size = "md", hue = "none", align = "left", className = "" }) {
+export function Stat({ label, value, unit, delta, reason, size = "md", hue = "none", align = "left", truncate = false, className = "" }) {
   return (
     <div className={cn("min-w-0", align === "center" && "text-center", className)}>
       {label && <p className="mb-1 text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">{label}</p>}
@@ -136,7 +137,7 @@ export function Stat({ label, value, unit, delta, reason, size = "md", hue = "no
         {unit && <span className={cn("font-normal text-ink-muted", size === "lg" ? "text-title" : "text-caption")}>{unit}</span>}
         {delta && <span className="ml-1 text-caption font-semibold tabular-nums text-ink-secondary">{delta}</span>}
       </p>
-      {reason && <ReasonLine className="mt-1">{reason}</ReasonLine>}
+      {reason && <ReasonLine className="mt-1" truncate={truncate}>{reason}</ReasonLine>}
     </div>
   );
 }
