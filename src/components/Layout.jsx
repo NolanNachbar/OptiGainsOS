@@ -10,6 +10,7 @@ import WeighInModal from "@/components/WeighInModal";
 import QuickAddMenu from "@/components/ui/QuickAddMenu";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import Logo from "@/components/Logo";
+import { cn } from "@/components/ui";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import QuickCapture from "@/components/QuickCapture";
@@ -111,11 +112,10 @@ function isNavActive(item, pathname) {
   );
 }
 
-function Wordmark({ size = 17 }) {
-  // Ledger: no brand hue. The name is typed "OptiGains" (never shouted); the
-  // wordmark is one neutral ink voice at display weight.
+function Wordmark() {
+  // The name is typed "OptiGains", one neutral ink voice, no hue.
   return (
-    <span className="type-display select-none whitespace-nowrap" style={{ fontSize: size, letterSpacing: '-0.03em' }}>
+    <span className="text-title select-none whitespace-nowrap tracking-[-0.02em]">
       OptiGains
     </span>
   );
@@ -357,14 +357,22 @@ export default function Layout({ children, currentPageName }) {
       <Link
         key={item.title}
         to={item.url}
-        className={`flex flex-col items-center gap-[2px] py-1 rounded-full min-w-0 transition-colors duration-200 [transition-timing-function:var(--ease)] ${
-          isActive
-            ? "text-[var(--brand-tint)] bg-brand/[0.18]"
-            : "text-ink-faint hover:text-ink-muted"
-        }`}
+        aria-current={isActive ? "page" : undefined}
+        className={cn(
+          "relative flex flex-col items-center justify-center gap-0.5 min-h-tap min-w-0 transition-colors duration-base ease-out active:scale-[0.94]",
+          isActive ? "text-ink" : "text-ink-faint hover:text-ink-muted"
+        )}
       >
+        {/* One 2px reading tick on the dock's top rule marks the current section. */}
+        <span
+          aria-hidden="true"
+          className={cn(
+            "absolute top-0 h-0.5 w-6 bg-brand transition-opacity duration-base",
+            isActive ? "opacity-100" : "opacity-0"
+          )}
+        />
         <item.icon className="w-5 h-5" strokeWidth={isActive ? 2 : 1.7} />
-        <span className="text-[11px] font-semibold leading-[14px] tracking-normal truncate max-w-full">{item.title}</span>
+        <span className="text-micro normal-case tracking-normal truncate max-w-full">{item.title}</span>
       </Link>
     );
   };
@@ -374,42 +382,41 @@ export default function Layout({ children, currentPageName }) {
       <div className="min-h-screen flex w-full">
         {/* Desktop — floating glass sidebar (the dk-side) */}
         <aside
-          className="hidden lg:flex flex-col w-[216px] shrink-0 sticky top-4 ml-4 my-4 rounded-3xl surface px-3.5 pt-[22px] pb-4"
+          className="hidden lg:flex flex-col w-[216px] shrink-0 sticky top-4 ml-4 my-4 rounded-module bg-charcoal-surface border border-charcoal-border px-3 pt-6 pb-4"
           style={{ height: "calc(100vh - 2rem)" }}
         >
-          <Link to="/today" className="flex items-center gap-2.5 px-2.5 pb-[18px]">
+          <Link to="/today" className="flex items-center gap-2 px-3 pb-6">
             <Logo className="w-7 h-7" />
             <Wordmark />
           </Link>
 
-          <nav className="flex flex-col gap-[3px]">
+          <nav className="flex flex-col gap-1">
             {navigationItems.map((item) => {
               const isActive = isNavActive(item, location.pathname);
               return (
                 <div key={item.title}>
                   <Link
                     to={item.url}
-                    className={`flex items-center gap-[11px] px-3 py-2.5 rounded-lg text-[14px] font-semibold transition-colors duration-200 [transition-timing-function:var(--ease)] ${
-                      isActive
-                        ? "text-[var(--brand-tint)] bg-brand/[0.16]"
-                        : "text-ink-faint hover:text-ink"
-                    }`}
+                    className={cn(
+                      "flex items-center gap-3 px-3 min-h-tap rounded-control text-body font-semibold transition-colors duration-base ease-out",
+                      isActive ? "text-ink bg-charcoal-surface2" : "text-ink-faint hover:text-ink"
+                    )}
                   >
                     <item.icon className="w-5 h-5" strokeWidth={isActive ? 2 : 1.7} />
                     {item.title}
                   </Link>
                   {/* Sub-tabs of the active section, indented off the parent */}
                   {isActive && item.children && (
-                    <div className="ml-[27px] pl-3 my-1 border-l border-white/[0.08] flex flex-col gap-px">
+                    <div className="ml-[27px] pl-3 my-1 border-l border-charcoal-border flex flex-col gap-px">
                       {item.children.map((c) => {
                         const on = c.active(location);
                         return (
                           <Link
                             key={c.label}
                             to={c.url}
-                            className={`px-2 py-[5px] rounded-md text-[12px] font-semibold transition-colors duration-200 [transition-timing-function:var(--ease)] ${
+                            className={`px-2 py-1.5 rounded-control text-caption font-semibold transition-colors duration-base ease-out ${
                               on
-                                ? "text-ink bg-white/[0.05]"
+                                ? "text-ink bg-charcoal-surface2"
                                 : "text-ink-faint hover:text-ink-muted"
                             }`}
                           >
@@ -426,7 +433,7 @@ export default function Layout({ children, currentPageName }) {
 
           <div className="mt-auto px-2.5">
             <div className="flex items-center justify-between px-0.5">
-              <span className="font-technical text-[11px] font-semibold text-ink-faint uppercase tracking-[0.08em]">
+              <span className="text-micro text-ink-faint">
                 {format(nowInTz(), "EEE MMM d")}
               </span>
               <div className="flex items-center gap-2">
@@ -440,7 +447,7 @@ export default function Layout({ children, currentPageName }) {
                   aria-haspopup="menu"
                   aria-expanded={quickAddOpen}
                   data-testid="quick-add-button-desktop"
-                  className="flex items-center justify-center w-7 h-7 rounded-full bg-[var(--color-brand)] text-[var(--color-action-dark)] transition-transform duration-150 [transition-timing-function:var(--ease)] hover:scale-105"
+                  className="flex items-center justify-center w-8 h-8 rounded-control bg-brand text-charcoal transition-transform duration-fast ease-out active:scale-[0.94]"
                 >
                   <Plus className="w-4 h-4" strokeWidth={2.5} />
                 </button>
@@ -450,7 +457,7 @@ export default function Layout({ children, currentPageName }) {
                     url={profile?.avatar_url}
                     name={profile?.display_name || profile?.username}
                     size="sm"
-                    className="w-7 h-7 text-xs border border-charcoal-border"
+                    className="w-8 h-8 border border-charcoal-border"
                   />
                 </Link>
               </div>
@@ -468,7 +475,7 @@ export default function Layout({ children, currentPageName }) {
           <header
             ref={mobileHeaderRef}
             data-mobile-header
-            className="px-[18px] py-2.5 sticky top-0 z-[9998] flex items-center gap-3 lg:hidden"
+            className="px-gutter py-2.5 sticky top-0 z-[9998] flex items-center gap-3 lg:hidden border-b border-charcoal-borderSoft"
             style={{
               // max() gives a 0.75rem (12px) minimum so the title clears the
               // status bar even when env(safe-area-inset-top) resolves to 0
@@ -500,38 +507,38 @@ export default function Layout({ children, currentPageName }) {
                     }
                   }}
                   aria-label="Back"
-                  className="shrink-0 flex items-center justify-center h-11 w-11 -ml-2"
+                  className="shrink-0 flex items-center justify-center min-h-tap min-w-tap -ml-2 text-ink active:scale-[0.94] transition-transform duration-fast"
                 >
                   <ChevronLeft className="w-6 h-6" strokeWidth={2} />
                 </button>
                 <div className="flex-1 min-w-0 text-center">
-                  <h1 className="type-display text-[17px] truncate">{pageDisplayName}</h1>
+                  <h1 className="text-title truncate">{pageDisplayName}</h1>
                 </div>
                 {/* Spacer mirrors the back button's width so the title stays
                     visually centered in the row instead of drifting right. */}
-                <div className="shrink-0 h-11 w-11" aria-hidden="true" />
+                <div className="shrink-0 min-h-tap min-w-tap" aria-hidden="true" />
               </>
             ) : (
               <>
                 <div className="flex-1 min-w-0">
-                  <h1 className="type-display truncate text-[28px]">
+                  <h1 className="text-display truncate">
                     {pageDisplayName}
                   </h1>
                   {mobileSubtitle && (
                     // text-ink-secondary (72%) not text-muted-2 (50%): the date
                     // subtitle read too dim on charcoal; secondary is the AA-safe
                     // secondary-contrast tier.
-                    <div className="text-[12px] font-semibold text-ink-secondary truncate">
+                    <div className="text-caption text-ink-secondary truncate">
                       {mobileSubtitle}
                     </div>
                   )}
                 </div>
-                <Link to="/profile" className="shrink-0 flex items-center justify-center h-11 w-11 -mr-1.5" aria-label="Profile">
+                <Link to="/profile" className="shrink-0 flex items-center justify-center min-h-tap min-w-tap -mr-1.5" aria-label="Profile">
                   <UserAvatar
                     url={profile?.avatar_url}
                     name={profile?.display_name || profile?.username}
                     size="sm"
-                    className="w-8 h-8 text-xs border border-charcoal-border"
+                    className="w-8 h-8 border border-charcoal-border"
                   />
                 </Link>
               </>
@@ -547,7 +554,7 @@ export default function Layout({ children, currentPageName }) {
               row stays a clean tab strip instead of an orphaned 'Tools' toolbar. */}
           {hasSubTabs && (
             <div
-              className="lg:hidden sticky z-[9997] glass-elevated border-x-0 border-t-0 rounded-none"
+              className="lg:hidden sticky z-[9997] bg-charcoal border-b border-charcoal-borderSoft"
               style={{ top: "var(--layout-header-height, 0px)" }}
             >
               <div className="relative">
@@ -555,7 +562,7 @@ export default function Layout({ children, currentPageName }) {
                     minimum. pr-[18px] keeps the last pill off the viewport edge so a
                     trailing tab is never flush-clipped, and lets the scroll-fade sit
                     over padding. */}
-                <div ref={stripScrollRef} className="flex items-center gap-1.5 pl-[18px] pr-[18px] h-12 overflow-x-auto no-scrollbar">
+                <div ref={stripScrollRef} className="flex items-center gap-1.5 px-gutter h-12 overflow-x-auto no-scrollbar">
                   {activeSection.children.map((c) => {
                     const on = c.active(location);
                     return (
@@ -570,9 +577,9 @@ export default function Layout({ children, currentPageName }) {
                         // solid surface fill (--color-surface) + full-ink label
                         // reads as a lifted, clearly-selected pill against the
                         // translucent glass-elevated track without borrowing teal.
-                        className={`shrink-0 px-3 min-h-[44px] inline-flex items-center rounded-full text-[11px] font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-200 [transition-timing-function:var(--ease)] ${
+                        className={`shrink-0 px-3 min-h-[44px] inline-flex items-center rounded-pill text-micro whitespace-nowrap transition-colors duration-base ease-out ${
                           on
-                            ? "text-ink bg-[var(--color-surface)]"
+                            ? "text-ink bg-charcoal-surface2"
                             // Inactive: text-ink-secondary (0.72) not text-ink-muted
                             // (0.50). Muted fell below AA 4.5:1 on the glass-elevated
                             // track for labels like 'DAILY BRIEF'; secondary clears
@@ -618,7 +625,7 @@ export default function Layout({ children, currentPageName }) {
                 reservation covers both. */}
             <div
               className="flex-1 min-h-0 content-bottom-clearance"
-              style={{ "--content-pb": "calc(var(--dock-clearance) + 32px + env(safe-area-inset-bottom))" }}
+              style={{ "--content-pb": "calc(var(--dock-clearance) + 16px)" }}
             >
               {children}
             </div>
@@ -636,14 +643,16 @@ export default function Layout({ children, currentPageName }) {
       {showDock && (
       <nav
         data-mobile-dock
-        className="glass-elevated z-[9999] lg:hidden rounded-full grid items-center px-[9px] py-2"
+        aria-label="Primary"
+        className="lg:hidden fixed inset-x-0 z-[9999] grid items-stretch bg-charcoal-surface border-t border-charcoal-border shadow-elev-2 px-2"
         style={{
-          position: "fixed",
-          left: 18,
-          right: 18,
-          // --keyboard-inset keeps the dock glued to the VISUAL viewport bottom on
-          // iOS instead of drifting to mid-screen while the keyboard is open.
-          bottom: "calc(12px + env(safe-area-inset-bottom) + var(--keyboard-inset))",
+          // Full-bleed flat dock: 64px body + the bottom safe area. The body
+          // height is covered by --dock-total-height (80px) so content and
+          // floated bars always clear it. --keyboard-inset keeps it on the
+          // visual viewport bottom while the iOS keyboard is open.
+          bottom: "var(--keyboard-inset)",
+          height: "calc(64px + env(safe-area-inset-bottom))",
+          paddingBottom: "env(safe-area-inset-bottom)",
           gridTemplateColumns: `repeat(${dockItems.length + 1}, minmax(0, 1fr))`,
         }}
       >
@@ -656,7 +665,7 @@ export default function Layout({ children, currentPageName }) {
             aria-haspopup="menu"
             aria-expanded={quickAddOpen}
             data-testid="quick-add-button"
-            className="flex items-center justify-center w-12 h-12 -mt-4 rounded-full bg-[var(--color-brand)] text-[var(--color-action-dark)] shadow-[0_4px_12px_rgba(0,0,0,0.35)] transition-transform duration-150 [transition-timing-function:var(--ease)] active:scale-95"
+            className="flex items-center justify-center w-12 h-12 rounded-control bg-brand text-charcoal shadow-elev-2 transition-transform duration-fast ease-out active:scale-[0.94]"
           >
             <Plus className="w-6 h-6" strokeWidth={2.5} />
           </button>

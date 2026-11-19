@@ -1,9 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
-  <!-- OptiGains mark: the Instrument. 270-degree arc, flat ends, one reading tick.
-       Off-white on transparent; no brand hue (see BRAND guide). -->
-  <g transform="translate(0 22)">
-    <path d="M161.2 350.8 A134 134 0 1 1 350.8 350.8" fill="none" stroke="#ECEEF1" stroke-opacity="0.16" stroke-width="40"/>
-    <path d="M161.2 350.8 A134 134 0 1 1 371.3 187.8" fill="none" stroke="#ECEEF1" stroke-width="40"/>
-    <path d="M354.1 198.0 L414.4 162.3" stroke="#ECEEF1" stroke-width="12" fill="none"/>
-  </g>
+  <!-- OptiGains mark: the Gauge. 270-degree arc, butt caps, one reading tick. #ECEEF1, flat. -->
+  <path d="M149.9 362.1 A150 150 0 1 1 362.1 362.1" stroke="#ECEEF1" stroke-width="44" stroke-linecap="butt"/>
+  <path d="M284.3 227.7 L326.7 185.3" stroke="#ECEEF1" stroke-width="28" stroke-linecap="butt"/>
 </svg>
