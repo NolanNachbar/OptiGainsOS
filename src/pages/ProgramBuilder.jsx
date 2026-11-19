@@ -6,10 +6,8 @@ import { getSmartRestDuration } from "@/utils/fatigueManagement";
 import { parseProgramJson } from "@/utils/programIO";
 import { DndContext, DragOverlay, pointerWithin } from "@dnd-kit/core";
 import DraggableWorkoutCard from "@/components/programs/DraggableWorkoutCard";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { LoadingScreen } from "@/components/ui/loading-spinner";
-import { ArrowLeft, ArrowRight, Save, Check, X } from "lucide-react";
+import { Button, IconButton, PageHeader, LoadingState, ErrorState, cn } from "@/components/ui";
+import { ArrowLeft, ArrowRight, Save, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import ScheduleAfterCreateModal from "@/components/workouts/ScheduleAfterCreateModal";
@@ -125,20 +123,18 @@ export default function ProgramBuilder() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [program.cycle_length]);
 
-  if (editId && loadingExisting) return <LoadingScreen />;
+  if (editId && loadingExisting) return (
+    <div className="max-w-2xl mx-auto">
+      <PageHeader title="Edit program" />
+      <LoadingState rows={4} />
+    </div>
+  );
   if (editId && errorExisting) return (
-    <div className="min-h-screen bg-charcoal flex items-center justify-center px-4">
-      <Card className="max-w-sm w-full">
-        <CardContent className="pt-6 text-center space-y-4">
-          <div>
-            <p className="type-display text-title text-ink">Program not loaded</p>
-            <p className="text-ink-muted text-body mt-1">Check your connection and try again.</p>
-          </div>
-          <Button variant="primary" onClick={() => window.location.reload()} className="w-full min-h-[44px]">
-            Try again
-          </Button>
-        </CardContent>
-      </Card>
+    <div className="max-w-2xl mx-auto">
+      <PageHeader title="Edit program" />
+      <ErrorState title="Could not load program" onRetry={() => window.location.reload()}>
+        Check your connection and try again.
+      </ErrorState>
     </div>
   );
 
@@ -425,33 +421,14 @@ export default function ProgramBuilder() {
   const editingWorkout = editingDay != null ? workouts.find((w) => w.day_index === editingDay) : null;
 
   return (
-    <div className="p-4 md:p-6 bg-charcoal transition-colors duration-300">
-      <div className="max-w-5xl mx-auto">
-        {/* Header — single row: step eyebrow + name, actions, progress bar.
-            Collapses the old Layout-title + page-title double chrome. */}
-        <div className="mb-5">
-          <div className="flex items-center justify-between gap-3">
-            {/* Eyebrow + step title suppressed on mobile — the Layout mobile
-                header already owns the top row ("Program Builder" + date), so a
-                second in-page title would double-stack the chrome. Desktop has
-                no Layout header, so it keeps this title. */}
-            <div className="min-w-0 hidden md:block">
-              <p className="section-label">
-                Step {step + 1}/{STEPS.length}
-              </p>
-              <p className="type-display text-title text-ink mt-0.5 truncate">
-                {STEPS[step]}
-              </p>
-            </div>
-            {/* Mobile wayfinding shares the action row instead of stacking its
-                own bar, the Layout header owns the top title, so a compact
-                "Step 1/4 · Details" eyebrow here is enough to orient. */}
-            <p className="section-label md:hidden min-w-0 truncate">
-              <span className="font-numeral tabular-nums">Step {step + 1}/{STEPS.length}</span>
-              {" · "}
-              {STEPS[step]}
-            </p>
-            <div className="flex items-center gap-2 shrink-0">
+    <div className="bg-charcoal pb-4">
+      <div className="max-w-2xl mx-auto">
+        <PageHeader
+          eyebrow={`Step ${step + 1} of ${STEPS.length}`}
+          title={editId ? "Edit program" : "New program"}
+          meta={STEPS[step]}
+          action={
+            <div className="flex items-center gap-2">
               {!editId && (
                 <>
                   <input
@@ -461,45 +438,22 @@ export default function ProgramBuilder() {
                     className="hidden"
                     onChange={handleImportJson}
                   />
-                  {/* Import JSON is a power-user shortcut, not the page's job —
-                      keep it a quiet `dim` utility so it sits in the same chrome
-                      tier as Cancel (X) and never competes with naming the
-                      program. One muted cluster, not two action groups. */}
-                  <Button
-                    variant="outline"
-                    size="default"
-                    onClick={() => importFileRef.current?.click()}
-                    className="min-h-[44px]"
-                  >
+                  <Button variant="outline" size="sm" onClick={() => importFileRef.current?.click()}>
                     Import JSON
                   </Button>
                 </>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate("/workouts")}
-                aria-label="Cancel"
-                className="min-h-[44px] min-w-[44px] px-0"
-              >
-                <X className="w-4 h-4" />
-              </Button>
+              <IconButton icon={X} label="Cancel" onClick={() => navigate("/workouts")} />
             </div>
-          </div>
-
-          {/* Step indicator */}
-          <div className="flex gap-1 mt-2 md:mt-3">
-            {STEPS.map((s, i) => (
-              <div
-                key={s}
-                className={`h-1.5 flex-1 rounded-pill transition-colors duration-200 ease-[var(--ease)] ${
-                  i <= step
-                    ? "bg-brand"
-                    : "bg-track"
-                }`}
-              />
-            ))}
-          </div>
+          }
+        />
+        <div className="flex gap-1 px-gutter pb-3" role="presentation">
+          {STEPS.map((s, i) => (
+            <div
+              key={s}
+              className={cn("h-1.5 flex-1 rounded-pill transition-colors duration-base", i <= step ? "bg-brand" : "bg-track")}
+            />
+          ))}
         </div>
 
         {/* Documented exception to the system's 8px RISE entrance: this is a
@@ -513,7 +467,7 @@ export default function ProgramBuilder() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -8 }}
             transition={{ duration: 0.24, ease: [0.2, 0.7, 0.3, 1] }}
-            className="pb-[calc(env(safe-area-inset-bottom)+80px)] md:pb-0"
+            className="pb-4"
           >
             {step === 0 && (
               <StepDetails
@@ -566,49 +520,18 @@ export default function ProgramBuilder() {
           </motion.div>
         </AnimatePresence>
 
-        {/* Navigation buttons — a true bottom-anchored bar above the floating
-            mobile dock, not a floated guess. Sits on the shared
-            --floating-chrome-bottom token (= dock's full painted footprint +
-            safe-area + a 12px gap), the one clearance every floated action bar
-            shares, so it can never occlude Step-1 fields. (Previously anchored on
-            --dock-clearance + env(safe-area-inset-bottom), which double-counted
-            the safe-area inset that --dock-clearance already folds in.) The
-            scroll container reserves matching dock clearance below (see the
-            motion.div pb above) so Description + Tags clear both this bar and the
-            dock at 390px.
-
-            On desktop (md+) it un-sticks and reads as a CardFooter of the form
-            card above (pdm-5): a continuous hairline top border + a tight 12px
-            gap (md:mt-3) glue Next to the card bottom so it owns the form's
-            action, no floating gap.
-
-            This route renders with showDock=false, so there is no floating dock
-            to clear: the bar bottom-anchors directly to the safe-area inset + a
-            12px gap (program-builder-1) instead of reserving the dock's painted
-            footprint via --floating-chrome-bottom. The scroll container above
-            reserves only this bar's own height (no +88px dock band). */}
         <div
-          className="sticky z-20 -mx-4 md:mx-0 mt-6 md:mt-3 px-4 md:px-4 py-3 md:pt-3 md:pb-0 flex flex-wrap items-center gap-x-3 gap-y-1.5 glass-elevated md:bg-transparent md:shadow-none md:rounded-none md:border-x-0 md:border-b-0 md:border-t md:border-solid md:[border-top-color:var(--color-border-soft)]"
-          style={{ bottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
+          className="sticky z-20 px-gutter py-3 flex items-center gap-3 bg-charcoal-surface border-t border-charcoal-border shadow-elev-2"
+          style={{ bottom: "env(safe-area-inset-bottom)" }}
         >
           {step > 0 && (
-            <Button variant="outline" onClick={back} className="flex-1 min-h-[44px]">
+            <Button variant="secondary" onClick={back} className="flex-1">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
           )}
           {step < STEPS.length - 1 ? (
-            <Button
-              variant="primary"
-              onClick={next}
-              disabled={!canProceed()}
-              // Disabled Next falls to the shared volt disabled rule: neutral
-              // charcoal-surface inert with faint ink — no brand-channel border or
-              // background, so coral stays the single action color and a locked
-              // control never borrows it. The inline helper under Program Name
-              // ("Name your program to continue") carries WHY it's locked.
-              className="flex-1 md:flex-none md:ml-auto md:px-8 font-bold min-h-[44px]"
-            >
+            <Button variant="primary" onClick={next} disabled={!canProceed()} className="flex-1">
               Next
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
@@ -617,7 +540,7 @@ export default function ProgramBuilder() {
               variant="primary"
               onClick={handleSubmit}
               disabled={createMutation.isPending || updateMutation.isPending}
-              className="flex-1 md:flex-none md:ml-auto md:px-8 font-bold min-h-[44px]"
+              className="flex-1"
             >
               <Save className="w-4 h-4 mr-2" />
               {createMutation.isPending || updateMutation.isPending

@@ -86,7 +86,7 @@ export default function CycleDayGrid({
             {!compact && (
               <div className="flex items-center gap-2 mb-2">
                 <span
-                  className={`inline-flex items-center rounded-pill px-2.5 py-0.5 text-caption font-bold border border-charcoal-border ${
+                  className={`inline-flex items-center rounded-pill px-2.5 py-0.5 text-caption font-semibold border border-charcoal-border ${
                     cycle === currentCycle
                       ? "bg-charcoal-surface2 text-ink"
                       : "bg-track text-ink-muted"
@@ -116,26 +116,26 @@ export default function CycleDayGrid({
                     ? addDays(startDate, (cycleIdx * cycleLength) + dayIndex - 1)
                     : null;
 
-                  let cellClasses = "rounded-control border-[0.5px] p-2 text-left transition-all duration-200 ease-[cubic-bezier(.2,.7,.3,1)] min-h-[60px] min-w-0 overflow-hidden ";
+                  let cellClasses = "rounded-control border-[0.5px] p-2 text-left transition-colors duration-base ease-out min-h-[60px] min-w-0 overflow-hidden ";
                   if (isCompleted) {
                     cellClasses += " border-leaf/20 bg-leaf/[0.08]";
                   } else if (isCurrent) {
                     // Non-coral "you are here" treatment — coral is reserved for
-                    // the Start CTA. A brighter ink hairline + inset specular lift
+                    // the Start CTA. A brighter ink hairline + surface lift
                     // distinguishes the current cell without poaching the action hue.
-                    cellClasses += " glass-inset border-ink/30 shadow-[inset_0_1px_0_var(--glass-specular)]";
+                    cellClasses += " bg-charcoal-surface2 border-ink/30";
                   } else if (isPast) {
                     cellClasses += " border-charcoal-border bg-charcoal-surface opacity-60";
                   } else {
-                    cellClasses += " glass-inset border-charcoal-border hover:bg-charcoal-surface2";
+                    cellClasses += " bg-charcoal-surface border-charcoal-border hover:bg-charcoal-surface2";
                   }
                   if (onCellClick) cellClasses += " cursor-pointer ";
 
                   const labelClass = isCompleted
-                    ? "text-caption font-medium line-clamp-2 leading-tight text-leaf"
+                    ? "text-caption line-clamp-2 leading-tight text-leaf"
                     : isCurrent
                     ? "text-caption font-semibold line-clamp-2 leading-tight text-ink"
-                    : "text-caption font-medium line-clamp-2 leading-tight text-ink-muted";
+                    : "text-caption line-clamp-2 leading-tight text-ink-muted";
 
                   const hasCardio = workout?.cardio_sessions?.length > 0;
 
@@ -188,7 +188,7 @@ export default function CycleDayGrid({
                       {!compact && hasCardio && (
                         <div className="flex flex-wrap gap-0.5 mt-1">
                           {workout.cardio_sessions.map((c, i) => (
-                            <span key={i} className="inline-flex items-center gap-0.5 text-caption bg-carb/[0.14] text-carb px-1.5 py-0.5 rounded-pill font-medium">
+                            <span key={i} className="inline-flex items-center gap-0.5 text-caption bg-carb/[0.14] text-carb px-1.5 py-0.5 rounded-pill">
                               <Activity className="w-2.5 h-2.5" />
                               {c.title}
                             </span>
@@ -250,14 +250,14 @@ function DroppableDaySlot({ dayIndex, workout, onCellClick, onClearDay }) {
     <div
       ref={setNodeRef}
       onClick={() => onCellClick?.(workout, 1, dayIndex)}
-      className={`glass-inset rounded-control border-[0.5px] p-3 min-h-[100px] min-w-0 overflow-hidden transition-[border-color,background] duration-200 ease-[cubic-bezier(.2,.7,.3,1)] cursor-pointer ${
+      className={`bg-charcoal-surface rounded-control border-[0.5px] p-3 min-h-[100px] min-w-0 overflow-hidden transition-colors duration-base ease-out cursor-pointer ${
         isOver
           ? "border-brand bg-brand/5"
           : "border-charcoal-border hover:border-brand/40"
       }`}
     >
       <div className="flex items-center justify-between mb-1">
-        <span className="text-caption font-semibold text-ink-muted flex items-center gap-1">
+        <span className="text-micro text-ink-muted flex items-center gap-1">
           Day {dayIndex}
           {isHighLoad && <span className="w-1.5 h-1.5 rounded-pill bg-brand inline-block" title="High-load day" />}
         </span>
@@ -273,17 +273,17 @@ function DroppableDaySlot({ dayIndex, workout, onCellClick, onClearDay }) {
 
       {hasWorkout ? (
         <div>
-          <p className="text-body font-medium text-ink leading-snug line-clamp-2 mb-1">{workout.title}</p>
+          <p className="text-emph text-ink leading-snug line-clamp-2 mb-1">{workout.title}</p>
           {hasExercises && (
             <p className="text-caption text-ink-muted">{workout.exercises.length} exercises</p>
           )}
           {workout.focus && (
-            <Badge variant="outline" className="text-caption mt-1 capitalize">{workout.focus}</Badge>
+            <Badge variant="outline" className="mt-1 capitalize">{workout.focus}</Badge>
           )}
           {hasCardio && (
             <div className="flex flex-wrap gap-1 mt-1.5">
               {workout.cardio_sessions.map((c, i) => (
-                <span key={i} className="inline-flex items-center gap-0.5 text-caption bg-carb/[0.14] text-carb px-1.5 py-0.5 rounded-pill font-medium leading-tight">
+                <span key={i} className="inline-flex items-center gap-0.5 text-caption bg-carb/[0.14] text-carb px-1.5 py-0.5 rounded-pill leading-tight">
                   <Activity className="w-2.5 h-2.5 shrink-0" />
                   <span className="line-clamp-1">{c.title}</span>
                 </span>
@@ -294,10 +294,10 @@ function DroppableDaySlot({ dayIndex, workout, onCellClick, onClearDay }) {
       ) : (
         <div className="flex flex-col items-center justify-center h-12 text-ink-muted">
           {isOver ? (
-            <p className="text-caption font-medium text-brand">Drop here</p>
+            <p className="text-caption text-brand">Drop here</p>
           ) : (
             <>
-              <p className="text-body font-medium text-ink-muted">Rest</p>
+              <p className="text-body text-ink-muted">Rest</p>
               <p className="text-caption mt-0.5">Click or drop to add</p>
             </>
           )}

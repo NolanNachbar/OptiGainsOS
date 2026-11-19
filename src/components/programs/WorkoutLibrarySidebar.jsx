@@ -7,7 +7,7 @@ import { queryKeys } from "@/lib/queryKeys";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, Library, ChevronDown, ChevronUp, Plus, FolderOpen } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, Plus, FolderOpen } from "lucide-react";
 import DraggableWorkoutCard from "./DraggableWorkoutCard";
 
 const TYPE_FILTERS = [
@@ -58,10 +58,9 @@ export default function WorkoutLibrarySidebar() {
         className="flex items-center justify-between mb-3 cursor-pointer"
         onClick={() => setCollapsed(!collapsed)}
       >
-        <h3 className="text-body font-semibold text-ink-muted flex items-center gap-1.5">
-          <Library className="w-4 h-4" />
+        <h3 className="text-emph text-ink flex items-center gap-2">
           Workout Library
-          <Badge variant="outline" className="text-caption ml-1">
+          <Badge variant="outline">
             {workouts.length}
           </Badge>
         </h3>
@@ -70,14 +69,14 @@ export default function WorkoutLibrarySidebar() {
             to="/create-workout"
             onClick={(e) => e.stopPropagation()}
           >
-            <Button size="sm" variant="secondary" className="h-6 px-2 text-caption gap-1">
+            <Button size="sm" variant="secondary" className="gap-1">
               <Plus className="w-3 h-3" />
               New Workout
             </Button>
           </Link>
-          <button className="text-ink-muted">
+          <span className="text-ink-muted" aria-hidden="true">
             {collapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
-          </button>
+          </span>
         </div>
       </div>
 
@@ -89,7 +88,7 @@ export default function WorkoutLibrarySidebar() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search workouts..."
-              className="pl-8 h-8 text-body"
+              className="pl-8"
             />
           </div>
 
@@ -99,9 +98,8 @@ export default function WorkoutLibrarySidebar() {
               <Button
                 key={value}
                 size="sm"
-                variant={filter === value ? "default" : "outline"}
+                variant={filter === value ? "secondary" : "outline"}
                 onClick={() => setFilter(value)}
-                className="h-6 text-caption px-2"
               >
                 {label}
               </Button>
@@ -114,9 +112,8 @@ export default function WorkoutLibrarySidebar() {
               <FolderOpen className="w-3.5 h-3.5 text-ink-muted" />
               <Button
                 size="sm"
-                variant={folderFilter === "all" ? "default" : "outline"}
+                variant={folderFilter === "all" ? "secondary" : "outline"}
                 onClick={() => setFolderFilter("all")}
-                className="h-6 text-caption px-2"
               >
                 All Folders
               </Button>
@@ -124,18 +121,16 @@ export default function WorkoutLibrarySidebar() {
                 <Button
                   key={folder}
                   size="sm"
-                  variant={folderFilter === folder ? "default" : "outline"}
+                  variant={folderFilter === folder ? "secondary" : "outline"}
                   onClick={() => setFolderFilter(folder)}
-                  className="h-6 text-caption px-2"
                 >
                   {folder}
                 </Button>
               ))}
               <Button
                 size="sm"
-                variant={folderFilter === "unfiled" ? "default" : "outline"}
+                variant={folderFilter === "unfiled" ? "secondary" : "outline"}
                 onClick={() => setFolderFilter("unfiled")}
-                className="h-6 text-caption px-2"
               >
                 Unfiled
               </Button>
@@ -143,10 +138,10 @@ export default function WorkoutLibrarySidebar() {
           )}
 
           {filtered.length === 0 ? (
-            <div className="text-center py-4">
+            <div className="py-4">
               <p className="text-caption text-ink-muted">
                 {workouts.length === 0
-                  ? "No workouts yet, click a day slot to build exercises inline."
+                  ? "No workouts yet. Select a day slot to build exercises inline."
                   : "No workouts match your filters."}
               </p>
             </div>

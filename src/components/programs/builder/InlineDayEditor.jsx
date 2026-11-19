@@ -3,15 +3,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/api/supabaseClient";
 import { queryKeys } from "@/lib/queryKeys";
 import CycleDayGrid from "@/components/programs/CycleDayGrid";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button, Card, CardContent, CardHeader, CardTitle, EmptyState, IconButton, SectionLabel } from "@/components/ui";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { WORKOUT_TYPES } from "@/lib/constants";
-import { Plus, Copy, ChevronUp, Dumbbell, X, Activity } from "lucide-react";
+import { Plus, Copy, ChevronUp, X } from "lucide-react";
 import ExerciseEditor from "./ExerciseEditor";
 
 export default function InlineDayEditor({
@@ -40,37 +39,35 @@ export default function InlineDayEditor({
     <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-body flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2">
             {/* Day label is a static identifier, not an action — neutral outline
                 Badge, matching CycleDayGrid + StepConfirm. Coral is action-only. */}
-            <Badge variant="outline" className="text-caption">
+            <Badge variant="outline">
               Day {dayIndex}
             </Badge>
             Editing Exercises
           </CardTitle>
-          <Button variant="outline" size="sm" onClick={onClose} aria-label="Close editor" className="min-h-[44px] min-w-[44px] px-0">
-            <ChevronUp className="w-4 h-4" />
-          </Button>
+          <IconButton icon={ChevronUp} label="Close editor" onClick={onClose} />
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
         {/* Workout title + type */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label className="text-caption">Title</Label>
+            <Label className="text-micro text-ink-muted">Title</Label>
             <Input
               value={workout.title}
               onChange={(e) => updateWorkoutByDay(dayIndex, "title", e.target.value)}
-              className="mt-0.5 text-body"
+              className="mt-0.5"
             />
           </div>
           <div>
-            <Label className="text-caption">Type</Label>
+            <Label className="text-micro text-ink-muted">Type</Label>
             <Select
               value={workout.focus || "strength"}
               onValueChange={(v) => updateWorkoutByDay(dayIndex, "focus", v)}
             >
-              <SelectTrigger className="mt-0.5 text-body">
+              <SelectTrigger className="mt-0.5">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -86,20 +83,9 @@ export default function InlineDayEditor({
 
         {/* Exercises */}
         {(workout.exercises || []).length === 0 && (
-          <div className="text-center py-6 text-ink-muted">
-            <Dumbbell className="w-8 h-8 mx-auto mb-2 opacity-40" />
-            <p className="text-body mb-3">No exercises yet, start building this day.</p>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => addExercise(dayIndex)}
-              className="min-h-[44px]"
-            >
-              <Plus className="w-3 h-3 mr-1" />
-              Add Exercise
-            </Button>
-          </div>
+          <EmptyState title="No exercises yet">
+            Add the first exercise to build this day.
+          </EmptyState>
         )}
 
         {(workout.exercises || []).map((ex, exIdx) => (
@@ -119,9 +105,8 @@ export default function InlineDayEditor({
           <Button
             type="button"
             size="sm"
-            variant="outline"
+            variant="secondary"
             onClick={() => addExercise(dayIndex)}
-            className="min-h-[44px]"
           >
             <Plus className="w-3 h-3 mr-1" />
             Add Exercise
@@ -130,7 +115,7 @@ export default function InlineDayEditor({
           <Select
             onValueChange={(targetDay) => onCopyDay(dayIndex, parseInt(targetDay))}
           >
-            <SelectTrigger className="w-auto min-h-[44px] min-w-[44px] text-caption">
+            <SelectTrigger className="w-auto">
               <Copy className="w-3 h-3 mr-1" />
               Copy to...
             </SelectTrigger>
@@ -147,11 +132,8 @@ export default function InlineDayEditor({
         </div>
 
         {/* Cardio Workouts */}
-        <div className="border-t hairline pt-3">
-          <Label className="text-caption font-semibold flex items-center gap-1.5 mb-2">
-            <Activity className="w-3.5 h-3.5 text-ink-muted" />
-            Cardio Workouts
-          </Label>
+        <div className="border-t border-charcoal-borderSoft pt-3">
+          <SectionLabel className="mb-2">Cardio workouts</SectionLabel>
           <Select
             value=""
             onValueChange={(workoutId) => {
@@ -165,7 +147,7 @@ export default function InlineDayEditor({
               });
             }}
           >
-            <SelectTrigger className="min-h-[44px] text-caption text-ink-muted">
+            <SelectTrigger className="text-ink-muted">
               <SelectValue placeholder={cardioLibrary.length ? "Add cardio workout…" : "No cardio workouts in library yet"} />
             </SelectTrigger>
             <SelectContent>
@@ -176,12 +158,11 @@ export default function InlineDayEditor({
           </Select>
           <div className="space-y-1.5 mt-2">
             {(workout.cardio_sessions || []).map((c, i) => (
-              <div key={i} className="flex items-center gap-2 glass-inset px-3 py-1.5">
-                <Activity className="w-3.5 h-3.5 text-ink-muted shrink-0" />
-                <span className="text-caption font-medium text-ink flex-1 truncate">{c.title}</span>
+              <Card key={i} variant="inset" className="flex items-center gap-2 px-3 py-1.5">
+                <span className="text-body text-ink flex-1 truncate">{c.title}</span>
                 <span className="font-numeral tabular-nums text-caption text-ink-muted shrink-0">{c.duration_minutes} min</span>
                 <Select value={c.time_of_day} onValueChange={(v) => updateCardioWorkout(dayIndex, i, "time_of_day", v)}>
-                  <SelectTrigger className="w-24 min-h-[44px] text-body shrink-0">
+                  <SelectTrigger className="w-24 shrink-0">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -190,23 +171,21 @@ export default function InlineDayEditor({
                     <SelectItem value="anytime">Anytime</SelectItem>
                   </SelectContent>
                 </Select>
-                <button type="button" aria-label="Remove cardio" onClick={() => removeCardioWorkout(dayIndex, i)} className="min-h-[44px] min-w-[44px] -my-2 flex items-center justify-center text-ink-muted hover:text-bad transition-colors shrink-0">
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
+                <IconButton icon={X} label="Remove cardio" onClick={() => removeCardioWorkout(dayIndex, i)} className="-my-2 shrink-0" />
+              </Card>
             ))}
           </div>
         </div>
 
         {/* Notes */}
         <div>
-          <Label className="text-caption">Notes</Label>
+          <Label className="text-micro text-ink-muted">Notes</Label>
           <Textarea
             value={workout.notes || ""}
             onChange={(e) => updateWorkoutByDay(dayIndex, "notes", e.target.value)}
             placeholder="Workout notes…"
             rows={2}
-            className="mt-0.5 text-body"
+            className="mt-0.5"
           />
         </div>
       </CardContent>

@@ -1,6 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Check } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, ListRow, SectionLabel, Stat } from "@/components/ui";
 import { GOALS } from "./constants";
 
 export default function StepConfirm({ program, workouts }) {
@@ -16,88 +14,61 @@ export default function StepConfirm({ program, workouts }) {
     (w) => w.exercises?.length > 0 || w.cardio_sessions?.length > 0
   ).length;
 
+  const goalLabel = GOALS.find((g) => g.value === program.goal)?.label || program.goal?.replace("_", " ");
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Review & Confirm</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          {/* Name spans both columns so the remaining four stats pair off evenly
-              and the 5th ('Training Days') never orphans on its own row. */}
+    <div className="flex flex-col gap-stack">
+      <Card>
+        <CardHeader>
+          <CardTitle>Review & Confirm</CardTitle>
+          {program.description && <CardDescription>{program.description}</CardDescription>}
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
-            <p className="text-caption text-ink-muted">Name</p>
-            <p className="font-semibold">{program.name}</p>
+            <Stat size="sm" label="Name" value={program.name} />
           </div>
-          <div>
-            <p className="text-caption text-ink-muted">Cycle</p>
-            <p className="font-numeral tabular-nums font-semibold">{program.cycle_length}-day cycle &times; {program.num_cycles}</p>
-          </div>
-          <div>
-            <p className="text-caption text-ink-muted">Total days</p>
-            <p className="font-numeral tabular-nums font-semibold">{program.cycle_length * program.num_cycles} days</p>
-          </div>
-          <div>
-            <p className="text-caption text-ink-muted">Goal</p>
-            <p className="font-semibold">{GOALS.find(g => g.value === program.goal)?.label || program.goal?.replace("_", " ")}</p>
-          </div>
-          <div>
-            <p className="text-caption text-ink-muted">Training days</p>
-            <p className="font-numeral tabular-nums font-semibold">{filledDays} of {program.cycle_length} days</p>
-          </div>
-        </div>
+          <Stat size="sm" label="Cycle" value={`${program.cycle_length}-day x ${program.num_cycles}`} />
+          <Stat size="sm" label="Total days" value={program.cycle_length * program.num_cycles} unit="days" />
+          <Stat size="sm" label="Goal" value={goalLabel} />
+          <Stat size="sm" label="Training days" value={`${filledDays} of ${program.cycle_length}`} />
+        </CardContent>
+      </Card>
 
-        {program.description && (
-          <div>
-            <p className="text-caption text-ink-muted">Description</p>
-            <p className="text-body text-ink-muted">{program.description}</p>
-          </div>
-        )}
-
-        <div className="border-t hairline pt-4">
-          <h3 className="section-label mb-3">Cycle template</h3>
-          <div className="space-y-2">
-            {workouts.map((w) => {
-              const hasExercises = w.exercises?.length > 0;
-              const hasCardio = w.cardio_sessions?.length > 0;
-              const isEmpty = !hasExercises && !hasCardio;
-              return (
-                <div
-                  key={w.day_index}
-                  className={`flex items-center justify-between glass-inset p-2 text-body ${
-                    isEmpty ? "opacity-60" : ""
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-caption">
-                      Day {w.day_index}
-                    </Badge>
-                    <span className="font-medium">
-                      {isEmpty ? "Rest" : w.title}
-                    </span>
-                  </div>
-                  <span className="text-caption text-ink-muted">
-                    {[
-                      hasExercises && `${w.exercises.length} exercises`,
-                      hasCardio && `${w.cardio_sessions.length} cardio`,
-                    ].filter(Boolean).join(" · ") || "Rest"}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+      <Card>
+        <CardHeader>
+          <SectionLabel>Cycle template</SectionLabel>
+        </CardHeader>
+        <div>
+          {workouts.map((w) => {
+            const hasExercises = w.exercises?.length > 0;
+            const hasCardio = w.cardio_sessions?.length > 0;
+            const isEmpty = !hasExercises && !hasCardio;
+            const detail =
+              [
+                hasExercises && `${w.exercises.length} exercises`,
+                hasCardio && `${w.cardio_sessions.length} cardio`,
+              ]
+                .filter(Boolean)
+                .join(" · ") || "Rest";
+            return (
+              <ListRow
+                key={w.day_index}
+                title={isEmpty ? "Rest" : w.title}
+                detail={detail}
+                value={`Day ${w.day_index}`}
+                className={isEmpty ? "opacity-60" : ""}
+              />
+            );
+          })}
         </div>
+      </Card>
 
-        <div className="flex items-center gap-2 glass-inset p-3 text-body text-ink-secondary">
-          <Check className="w-4 h-4 shrink-0 text-ink" />
-          <span>
-            Ready to save: {filledDays} training days
-            {totalExercises > 0 && `, ${totalExercises} exercises`}
-            {totalCardioSessions > 0 && `, ${totalCardioSessions} cardio sessions`}
-            , repeated {program.num_cycles} time{program.num_cycles !== 1 ? "s" : ""}.
-          </span>
-        </div>
-      </CardContent>
-    </Card>
+      <p className="px-gutter text-caption text-ink-muted">
+        {`Ready to save: ${filledDays} training days`}
+        {totalExercises > 0 && `, ${totalExercises} exercises`}
+        {totalCardioSessions > 0 && `, ${totalCardioSessions} cardio sessions`}
+        {`, repeated ${program.num_cycles} time${program.num_cycles !== 1 ? "s" : ""}.`}
+      </p>
+    </div>
   );
 }

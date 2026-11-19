@@ -1,5 +1,5 @@
 import { lookupExercise } from "@/ml/exerciseDB";
-import { Button } from "@/components/ui/button";
+import { Button, Card } from "@/components/ui";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -20,12 +20,12 @@ export default function ExerciseEditor({
   const isCardio = workoutType === "cardio" || workoutType === "hiit";
 
   return (
-    <div className="glass-inset p-3 space-y-2">
+    <Card variant="inset" className="p-3 space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-caption font-semibold text-ink-muted">#{index + 1}</span>
+            <span className="text-caption text-ink-muted">#{index + 1}</span>
             {detected && (
-              <Badge variant="outline" className="text-caption capitalize">
+              <Badge variant="outline" className="capitalize">
                 {detected.type}
               </Badge>
             )}
@@ -41,7 +41,7 @@ export default function ExerciseEditor({
               variant="secondary"
               size="sm"
               aria-label="Remove exercise"
-              className="min-h-[44px] min-w-[44px] p-0 -my-2"
+              size="icon" className="-my-2"
               onClick={() => removeExercise(dayIndex, index)}
             >
               <Trash2 className="w-3.5 h-3.5 text-bad" />
@@ -138,7 +138,7 @@ export default function ExerciseEditor({
             </div>
           )}
         </div>
-    </div>
+    </Card>
   );
 }
 

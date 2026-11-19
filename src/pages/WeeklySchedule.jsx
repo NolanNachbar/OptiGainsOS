@@ -3,7 +3,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format, addDays, addWeeks, subWeeks, startOfWeek, isSameDay } from "date-fns";
-import { ChevronLeft, ChevronRight, ChevronDown, Dumbbell, Timer, Moon, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, Moon, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/api/supabaseClient";
 import { useCardioCompletions } from "@/hooks/useCardioCompletions";
@@ -13,6 +13,10 @@ import { getProgramSchedule } from "@/utils/programSchedule";
 import WeekTemplateSwap from "@/components/program/WeekTemplateSwap";
 import { getWorkoutMuscleGroups } from "@/utils/fatigueManagement";
 import { workSets } from "@/utils/setTypes";
+import {
+  Button, Card, CardContent, CardHeader, CardTitle, EmptyState, ErrorState, IconButton,
+  ListRow, LoadingState, PageHeader, SectionLabel, Stat, cn,
+} from "@/components/ui";
 
 const RUN_NAMES = ["zone 2 run", "zone2 run", "400m sprint", "sprint", "run", "cardio"];
 const isRun = (ex) => RUN_NAMES.some(k => ex.name?.toLowerCase().includes(k));
@@ -40,32 +44,13 @@ function formatDuration(seconds) {
   return `${h}:${String(m).padStart(2, "0")}`;
 }
 
-// Vapor × Macro day-type pills — neutral by default; only CARDIO owns its
-// on-semantic blue (carbs/cardio). Strength/mixed/two-a-day stay neutral so
-// the strict hue grammar isn't borrowed as a categorical palette.
-const TYPE_PILLS = {
-  STRENGTH:  { bg: "var(--color-border-soft)",         fg: "var(--text-secondary)", label: "STRENGTH" },
-  CARDIO:    { bg: "rgba(var(--hue-blue-rgb) / 0.14)", fg: "var(--hue-blue)",       label: "CARDIO" },
-  MIXED:     { bg: "var(--color-border-soft)",         fg: "var(--text-secondary)", label: "MIXED" },
-  TWO_A_DAY: { bg: "var(--color-border-soft)",         fg: "var(--text-secondary)", label: "TWO-A-DAY" },
-  REST:      { bg: "var(--color-border-soft)",         fg: "var(--text-secondary)", label: "REST" },
+const TYPE_LABELS = {
+  STRENGTH: "Strength",
+  CARDIO: "Cardio",
+  MIXED: "Mixed",
+  TWO_A_DAY: "Two-a-day",
+  REST: "Rest",
 };
-
-// Shared chip primitive for this page: the day-type pill and the "Show all /
-// Show less" micro-label both render through the SAME chip so the page has one
-// chip voice instead of two hand-rolled ones. Typography rides .section-label
-// (the og-cap: Manrope 700, 0.06em, uppercase) so casing/tracking/weight match
-// every other label on the page; only the fill/ink tint varies per call.
-function Chip({ children, bg = "var(--color-border-soft)", fg, className = "" }) {
-  return (
-    <span
-      className={`section-label inline-block rounded-pill px-2 py-[3px] whitespace-nowrap ${className}`}
-      style={{ background: bg, ...(fg ? { color: fg } : null) }}
-    >
-      {children}
-    </span>
-  );
-}
 
 function dayType(entries, log) {
   const entry = entries[0];
@@ -256,7 +241,7 @@ export default function WeeklySchedule() {
 
   // ── Hero block for the selected day ──────────────────────────────────────
   // The selected day's session is the page's protagonist, so it leads with ONE
-  // hero-metric figure (the largest text element on the page): the exercise
+  // headline figure (the largest text element on the page): the exercise
   // count. The week-row list + program stat tiles below are subordinate to it.
   // Title + eyebrow live HERE so the cards below don't restate the day echo —
   // the day name appears in exactly one band.
@@ -312,559 +297,313 @@ export default function WeeklySchedule() {
   const visibleMuscleVolume = showAllMuscles ? muscleVolume : muscleVolume.slice(0, MUSCLE_PREVIEW);
   const hiddenMuscleCount = muscleVolume.length - MUSCLE_PREVIEW;
 
+  const openEntry = (entry) =>
+    navigate(`/workout-detail?source=program&enrollmentId=${entry.enrollmentId}&programWorkoutId=${entry.programWorkoutId}`);
+  const weekRange = `${format(weekStart, "MMM d")} to ${format(addDays(weekStart, 6), "MMM d")}`;
+
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 pb-6">
-
-      {/* Week nav */}
-      <div className="flex items-center justify-between mb-3 px-1 rise-in">
-        <button
-          // Move the selected day with the week so the highlighted row, the
-          // detail card, and the "today's session" CTA all stay inside the
-          // visible week (they were independent state, so paging desynced them).
-          onClick={() => { setWeekStart(w => subWeeks(w, 1)); setSelectedDay(d => subWeeks(d, 1)); setShowCompleted(false); }}
-          aria-label="Previous week"
-          className="w-11 h-11 rounded-pill flex items-center justify-center glass-inset text-ink-muted hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        <span className="font-numeral tabular-nums text-body font-bold text-ink">
-          {format(weekStart, "MMM d")}, {format(addDays(weekStart, 6), "MMM d")}
-        </span>
-        <button
-          onClick={() => { setWeekStart(w => addWeeks(w, 1)); setSelectedDay(d => addWeeks(d, 1)); setShowCompleted(false); }}
-          aria-label="Next week"
-          className="w-11 h-11 rounded-pill flex items-center justify-center glass-inset text-ink-muted hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
-
-      <WeekTemplateSwap
-        programId={activeEnrollment?.program_id}
-        weekDates={weekDays.map((d) => format(d, "yyyy-MM-dd"))}
-        today={getTodayString(profile?.timezone)}
+    <div className="max-w-2xl mx-auto pb-[var(--dock-clearance)]">
+      <PageHeader
+        eyebrow={activeEnrollment?.program?.title}
+        title="Schedule"
+        meta={weekRange}
+        action={
+          <div className="flex items-center gap-1">
+            <IconButton
+              icon={ChevronLeft}
+              label="Previous week"
+              variant="plain"
+              // Move the selected day with the week so the highlighted row and
+              // the detail card stay inside the visible week.
+              onClick={() => { setWeekStart(w => subWeeks(w, 1)); setSelectedDay(d => subWeeks(d, 1)); setShowCompleted(false); }}
+            />
+            <IconButton
+              icon={ChevronRight}
+              label="Next week"
+              variant="plain"
+              onClick={() => { setWeekStart(w => addWeeks(w, 1)); setSelectedDay(d => addWeeks(d, 1)); setShowCompleted(false); }}
+            />
+          </div>
+        }
       />
 
-      {/* Week rows — date · type pill · detail · status */}
-      <div className="glass px-3.5 pt-2.5 pb-2 mb-4 rise-in">
-        {logsLoading || enrollmentsLoading ? (
-          weekDays.map((_, i) => (
-            <div key={i} className="data-row">
-              <div className="w-[38px] h-9 rounded bg-track pulse-loop shrink-0" />
-              <div className="flex-1 h-4 rounded-pill bg-track pulse-loop" />
-            </div>
-          ))
-        ) : logsError || enrollmentsError ? (
-          <div className="py-4 flex flex-col items-center gap-2">
-            <p className="text-caption font-semibold text-ink-muted">Could not load your schedule.</p>
-            <button onClick={() => refetchLogs()} className="cta-ghost text-caption px-4 py-1.5 min-h-[44px]">
-              Retry
-            </button>
-          </div>
-        ) : weekDays.map((day, i) => {
-          const log = getLogForDay(day);
-          const entries = getEntriesForDay(day);
-          const isSelected = isSameDay(day, selectedDay);
-          const isCurrentDay = isSameDay(day, nowInTz(profile?.timezone));
-          const type = dayType(entries, log);
-          const pill = TYPE_PILLS[type];
-          // Non-logged, non-program days fall back to a designed muted 'Rest'
-          // label rather than a bare em-dash, so an empty slot never reads as a
-          // raw placeholder ambiguous between rest and missing data.
-          const detail = log
-            ? getWorkoutSplitTitle(log, entries[0]?.title)
-            : entries[0]?.title || null;
-          // Suppress the day-type pill when it repeats the prior row's type so
-          // the dominant repeated value (e.g. TWO-A-DAY every day) stops reading
-          // as noise; the workout title then carries the row's identity.
-          const prevDay = i > 0 ? weekDays[i - 1] : null;
-          const prevType = prevDay ? dayType(getEntriesForDay(prevDay), getLogForDay(prevDay)) : null;
-          const showPill = type !== "REST" && type !== prevType;
-          const isRest = type === "REST";
+      <div className="flex flex-col gap-stack">
+        <div className="px-gutter">
+          <WeekTemplateSwap
+            programId={activeEnrollment?.program_id}
+            weekDates={weekDays.map((d) => format(d, "yyyy-MM-dd"))}
+            today={getTodayString(profile?.timezone)}
+          />
+        </div>
 
-          // Rest days carry no session, so they get a compact single-line row
-          // (date inline, no stacked DD numeral, no trailing slot). This stops
-          // four empty "—" rows from eating the same tall height as the two real
-          // sessions and weakening the first-paint scan toward what's actionable.
-          if (isRest) {
+        {/* Week rows: date, workout, day type, status */}
+        <Card>
+          {logsLoading || enrollmentsLoading ? (
+            <LoadingState rows={7} label="Loading schedule" />
+          ) : logsError || enrollmentsError ? (
+            <ErrorState title="Could not load your schedule" onRetry={() => refetchLogs()}>
+              Check your connection and retry.
+            </ErrorState>
+          ) : weekDays.map((day, i) => {
+            const log = getLogForDay(day);
+            const entries = getEntriesForDay(day);
+            const isSelected = isSameDay(day, selectedDay);
+            const isCurrentDay = isSameDay(day, nowInTz(profile?.timezone));
+            const type = dayType(entries, log);
+            const isRest = type === "REST";
+            const detail = log
+              ? getWorkoutSplitTitle(log, entries[0]?.title)
+              : entries[0]?.title || null;
+            // The day type shows only when it differs from the prior row.
+            const prevDay = i > 0 ? weekDays[i - 1] : null;
+            const prevType = prevDay ? dayType(getEntriesForDay(prevDay), getLogForDay(prevDay)) : null;
+            const showType = !isRest && type !== prevType;
             return (
-              <button
+              <ListRow
                 key={i}
+                selected={isSelected}
                 onClick={() => selectDay(day)}
-                // Today reads as today even on a rest row: a neutral ink inset
-                // bar (an ::before pseudo via relative positioning) plus the
-                // glass-inset fill makes the current-day signal unambiguous
-                // without spending the single teal action color on row state
-                // (teal stays reserved for the one action; today is a neutral
-                // emphasis, not a second teal accent). The bar is inset so it
-                // respects the row's 13px radius instead of squaring off a
-                // border-l sliver against the rounded corner.
-                className={`data-row relative w-full min-h-[44px] items-center py-1.5 text-left transition-colors duration-200 [transition-timing-function:var(--ease)] active:bg-track ${isCurrentDay ? "glass-inset -mx-1.5 pl-2.5 pr-1.5" : isSelected ? "glass-inset -mx-1.5 px-1.5" : ""}`}
-              >
-                {isCurrentDay && (
-                  // Inset today bar: a short ink rule centered vertically inside
-                  // the row so it respects the 13px glass-inset radius instead of
-                  // squaring off a full-height border-l sliver at the corner.
-                  <span aria-hidden="true" className="absolute left-1 top-1/2 -translate-y-1/2 h-4 w-[3px] rounded-pill" style={{ background: "var(--text-primary)" }} />
-                )}
-                <span className={`w-[38px] shrink-0 text-center font-numeral tabular-nums text-caption font-bold tracking-[0.08em] ${isCurrentDay ? "text-ink" : "text-ink-muted"}`}>
-                  {format(day, "EEE").slice(0, 2).toUpperCase()} {format(day, "d")}
-                </span>
-                <span className={`flex-1 min-w-0 text-caption font-semibold ${isCurrentDay ? "text-ink" : "text-ink-muted"}`}>Rest</span>
-                {/* Empty trailing slot mirrors the session rows' w-[68px] status
-                    column so the Rest row's content area, and thus its selected
-                    highlight's right edge, aligns flush with the other rows
-                    instead of stopping short. */}
-                <span className="w-[68px] shrink-0" aria-hidden="true" />
-              </button>
+                chevron={!isRest && !log && !isCurrentDay}
+                leading={
+                  <span className={cn("w-[38px] text-center tabular-nums", isCurrentDay ? "text-ink" : "text-ink-muted")}>
+                    <span className="block text-micro font-semibold uppercase tracking-[0.08em]">{format(day, "EEE").slice(0, 2)}</span>
+                    <span className="block text-emph font-semibold">{format(day, "d")}</span>
+                  </span>
+                }
+                title={<span className={cn(isRest && "text-ink-muted font-normal", log && "text-ink-secondary")}>{isRest ? "Rest" : detail || "Session"}</span>}
+                detail={showType ? TYPE_LABELS[type] : undefined}
+                trailing={
+                  isCurrentDay && !isRest && !log ? (
+                    <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink">Up next</span>
+                  ) : log && !isSelected ? (
+                    <CheckCircle2 aria-label="Logged" className="w-4 h-4 text-leaf" />
+                  ) : null
+                }
+              />
             );
-          }
+          })}
+        </Card>
 
-          return (
-            <button
-              key={i}
-              onClick={() => selectDay(day)}
-              className={`data-row relative w-full min-h-[44px] items-center py-2 text-left transition-colors duration-200 [transition-timing-function:var(--ease)] active:bg-track ${isCurrentDay ? "glass-inset -mx-1.5 pl-2.5 pr-1.5" : isSelected ? "glass-inset -mx-1.5 px-1.5" : ""}`}
-            >
-              {isCurrentDay && (
-                // Inset today bar (see rest-row note): centered ink rule that
-                // respects the row's 13px radius rather than a squared border-l.
-                <span aria-hidden="true" className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-pill" style={{ background: "var(--text-primary)" }} />
-              )}
-              <div className="w-[38px] shrink-0 text-center font-numeral tabular-nums">
-                <span className={`block text-caption font-bold tracking-[0.08em] ${isCurrentDay ? "text-ink" : "text-ink-muted"}`}>
-                  {format(day, "EEE").slice(0, 2).toUpperCase()}
-                </span>
-                <span className={`block text-body font-bold text-ink`}>
-                  {format(day, "d")}
-                </span>
-              </div>
-              <div className={`flex-1 min-w-0 ${log ? "opacity-70" : ""}`}>
-                {detail ? (
-                  <div className="text-caption font-semibold text-ink truncate">
-                    {detail}
-                  </div>
-                ) : (
-                  <span className="section-label !text-faint">Rest</span>
-                )}
-                {showPill && (
-                  <Chip bg={pill.bg} fg={pill.fg} className="mt-0.5">{pill.label}</Chip>
-                )}
-              </div>
-              {/* Shared fixed-width trailing status slot so completed / up-next /
-                  future rows align on one scan column instead of a ragged rail.
-                  The high-contrast (ink) trailing slot is RESERVED for the one
-                  actionable day, today's 'UP NEXT' + chevron, so the page still
-                  answers "what's next" even when today is fully logged. A logged
-                  day reads as a quiet neutral check; its minute count is demoted
-                  into the expandable detail card below (it was poaching the
-                  attention the next action needs). */}
-              <div className="w-[68px] shrink-0 flex items-center justify-end text-right">
-                {isCurrentDay && type !== "REST" && !log ? (
-                  <span className="flex items-center gap-0.5 whitespace-nowrap">
-                    <span className="section-label !text-ink">UP NEXT</span>
-                    <ChevronRight className="w-3.5 h-3.5 text-ink" />
-                  </span>
-                ) : log ? (
-                  // The expanded completed card below already shows a check for the
-                  // selected day, so suppress the row check there — keep a single
-                  // completion affordance per session so the two don't compete.
-                  // Done state is a NEUTRAL ink check (not leaf/green): the
-                  // physiological spectrum is reserved for biometrics, so a logged
-                  // session reads as quiet neutral confirmation, not a "good"
-                  // biometric. Still distinct from the empty/no-check not-done rows.
-                  isSelected ? null : <CheckCircle2 className="w-4 h-4 text-ink-muted fill-white/10" />
-                ) : type !== "REST" ? (
-                  <ChevronRight className="w-4 h-4 text-faint" />
-                ) : null}
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Selected day — each card's own section-label now carries the day echo
-          ("FRI, COMPLETED" / "FRI, STRENGTH"), so the standalone day caption is
-          dropped to avoid a redundant header above the card that repeats it. */}
-      <div className="mb-6">
+        {/* Selected day */}
         {!hasAnything ? (
-          // A rest day carries no session. The identity stays a compact strip
-          // (icon + label), but the one meaningful rest-day move — logging
-          // recovery — is the page's single primary action, so it's a full-width
-          // teal brand CTA that owns the action color and sits low enough to fall
-          // in the thumb zone rather than floating mid-screen above a dead gap.
-          <div className="rise-in-2 flex flex-col">
-            {/* A rest day owns the fold with a fuller recovery card (icon +
-                headline + one-line prompt) rather than a thin strip above a
-                void, so the upper area is intentional content. On a non-today
-                rest day it stays a compact identity card; today it also carries
-                the recovery CTA below. */}
-            <div className="glass px-4 py-6 flex flex-col items-center text-center gap-2.5">
-              {isToday ? (
-                // Neutral eyebrow: teal is reserved for the single action (the
-                // "Log recovery" CTA below + app chrome), so the today label
-                // reads as a muted caption rather than a second teal accent.
-                // The eyebrow names the current day, so the headline drops the
-                // weekday (it would otherwise name today twice).
-                <span className="section-label !text-ink-muted">Today</span>
-              ) : (
-                <span className="section-label !text-ink-muted">{dayEcho}</span>
-              )}
-              <span className="grid place-items-center w-11 h-11 rounded-pill glass-inset">
-                <Moon className="w-5 h-5 text-faint" />
-              </span>
-              <h2 className="type-display text-title">Rest day</h2>
-              <p className="text-body font-semibold text-ink-muted max-w-[15rem]">
-                {isToday
-                  ? "No session on the plan today. Log how recovery is going. Tomorrow's targets use it."
-                  : "No session scheduled. A planned rest day is part of the program."}
-              </p>
-              {/* Fill the fold with context instead of an empty band: surface
-                  the week's weekly-volume tally (already computed for the
-                  program section below) so the rest day still answers "where is
-                  my training week at". Each datum keeps its own muted ink. */}
-              {(totalWeeklySets > 0 || completedCount > 0) && (
-                <div className="mt-2 w-full max-w-[18rem] flex items-stretch gap-2">
-                  {totalWeeklySets > 0 && (
-                    <div className="flex-1 glass-inset rounded-control px-3 py-2.5 flex flex-col items-center gap-0.5">
-                      <span className="hero-metric text-ink text-title tabular-nums">{totalWeeklySets}</span>
-                      <span className="section-label !text-ink-muted">Sets this week</span>
-                    </div>
-                  )}
-                  {activeEnrollment?.program && (
-                    <div className="flex-1 glass-inset rounded-control px-3 py-2.5 flex flex-col items-center gap-0.5">
-                      <span className="hero-metric text-ink text-title tabular-nums">{progressPct}%</span>
-                      <span className="section-label !text-ink-muted">Program done</span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-            {isToday && (
-              // 'Log recovery' sits in flow directly under the rest card with a
-              // fixed gap. The Layout already reserves bottom clearance for the
-              // dock, so this CTA clears it without a flex spacer pushing it down
-              // into a tall empty band.
-              <button
-                onClick={() => navigate("/recovery")}
-                className="cta-action w-full mt-6"
-              >
-                Log recovery
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-3">
-
-            {/* ── Hero block — the selected day's session is the page
-                protagonist. ONE hero-metric figure (exercise count) is the
-                largest text element on the page; the week-row list and program
-                stat tiles read as subordinate context. The eyebrow owns the day
-                echo so the cards below don't restate it (date in one band). */}
-            <div className="glass px-4 pt-4 pb-4 rise-in-2">
-              <p className="section-label !text-ink-muted mb-1">{heroEyebrow}</p>
-              <h2 className="type-display text-title leading-tight mb-3">{heroTitle}</h2>
-              <div className="flex items-baseline gap-2">
-                <span className="hero-metric text-ink text-hero tabular-nums">{heroCount}</span>
-                <span className="font-numeral tabular-nums text-body font-bold text-ink-muted mb-1">
-                  {heroCount === 1 ? "exercise" : "exercises"}
-                </span>
-                {heroDur && (
-                  <span className="font-numeral tabular-nums text-caption font-semibold text-ink-muted ml-auto mb-1 tabular-nums">
-                    {heroDur}
-                  </span>
-                )}
+          <Card>
+            <EmptyState
+              icon={Moon}
+              title="Rest day"
+              action={isToday ? (
+                <Button variant="primary" size="lg" onClick={() => navigate("/recovery")}>
+                  Log recovery
+                </Button>
+              ) : null}
+            >
+              {isToday
+                ? "No session on the plan today. Log how recovery is going. Tomorrow's targets use it."
+                : "No session scheduled. A planned rest day is part of the program."}
+            </EmptyState>
+            {(totalWeeklySets > 0 || activeEnrollment?.program) && (
+              <div className="flex gap-4 px-gutter pb-4">
+                {totalWeeklySets > 0 && <Stat size="sm" label="Sets this week" value={totalWeeklySets} />}
+                {activeEnrollment?.program && <Stat size="sm" label="Program done" value={`${progressPct}%`} />}
               </div>
-            </div>
+            )}
+          </Card>
+        ) : (
+          <>
+            <Card>
+              <CardHeader>
+                <SectionLabel>{heroEyebrow}</SectionLabel>
+                <CardTitle>{heroTitle}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Stat
+                  size="md"
+                  value={heroCount}
+                  unit={heroCount === 1 ? "exercise" : "exercises"}
+                  delta={heroDur || undefined}
+                />
+              </CardContent>
+            </Card>
 
-            {/* ── Completed lift from log — collapsed by default so it doesn't
-                dominate the fold and bury the 'Log another session' CTA. ── */}
             {selectedLog && (() => {
               const logLifts = (selectedLog.exercises || []).filter(ex => !isRun(ex));
               const logRuns = (selectedLog.exercises || []).filter(isRun);
               return (
-                <div className="glass overflow-hidden rise-in-2">
-                  {/* The hero block above owns the session identity + summary
-                      (title · exercise count · duration), so this card is a pure
-                      disclosure into the per-exercise breakdown. No leaf tick: a
-                      logged session is neutral confirmation, not a "good"
-                      biometric (the spectrum is reserved for biometrics). */}
+                <Card>
                   <button
                     onClick={() => setShowCompleted(v => !v)}
                     aria-expanded={showCompleted}
-                    className="w-full min-h-[44px] px-4 py-3 flex items-center justify-between gap-3 text-left transition-colors duration-200 [transition-timing-function:var(--ease)] active:bg-track"
+                    className="w-full min-h-tap px-gutter py-3 flex items-center justify-between gap-3 text-left transition-colors duration-base active:bg-charcoal-surface2"
                   >
-                    <span className="section-label">
+                    <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">
                       {showCompleted ? "Hide exercises" : "View exercises"}
                     </span>
-                    <ChevronDown className={`w-4 h-4 text-ink-muted shrink-0 transition-transform duration-200 [transition-timing-function:var(--ease)] ${showCompleted ? "rotate-180" : ""}`} />
+                    <ChevronDown className={cn("w-4 h-4 text-ink-muted shrink-0 transition-transform duration-base", showCompleted && "rotate-180")} />
                   </button>
                   {showCompleted && (
-                    <div className="rise-in">
-                      {logLifts.length > 0 && (
-                        <div className="px-4 pb-3.5">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <Dumbbell className="w-3 h-3 text-ink-muted" />
-                            <span className="section-label">Exercises</span>
-                          </div>
-                          <div>
-                            {logLifts.map((ex, j) => (
-                              <div key={j} className="data-row justify-between gap-2">
-                                <span className="text-body font-semibold text-ink truncate">{ex.name}</span>
-                                <span className="pill-value pill-value--sm text-ink-muted shrink-0">{formatSets(ex)}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {logRuns.length > 0 && (
-                        <div className="px-4 pb-3.5">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <Timer className="w-3 h-3 text-carb" />
-                            <span className="section-label !text-carb">Cardio</span>
-                          </div>
-                          <div>
-                            {logRuns.map((ex, j) => (
-                              <div key={j} className="data-row justify-between gap-2">
-                                <span className="text-body font-semibold text-ink truncate">{ex.name}</span>
-                                <span className="pill-value pill-value--sm text-ink-muted shrink-0">{formatSets(ex)}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                    <div>
+                      {logLifts.map((ex, j) => (
+                        <ListRow key={`l${j}`} title={ex.name} value={formatSets(ex)} />
+                      ))}
+                      {logRuns.length > 0 && <SectionLabel className="px-gutter pt-3 pb-1">Cardio</SectionLabel>}
+                      {logRuns.map((ex, j) => (
+                        <ListRow key={`r${j}`} title={ex.name} value={formatSets(ex)} />
+                      ))}
                     </div>
                   )}
-                </div>
+                </Card>
               );
             })()}
 
-            {/* ── Upcoming program workout (no log yet) ── */}
             {!selectedLog && selectedEntries.map((entry, idx) => {
               const lifts = (entry.exercises || []).filter(ex => !isRun(ex));
               return (
-                <div key={idx} className="glass overflow-hidden rise-in-2">
-                  {/* The hero block above owns the day echo + session title, so
-                      this card drops its own eyebrow/title and leads straight
-                      into the prescribed breakdown (date in exactly one band). */}
+                <Card key={idx}>
                   {lifts.length > 0 && (
-                    <div className="px-4 pt-3.5 pb-2">
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <Dumbbell className="w-3 h-3 text-ink-muted" />
-                        <span className="section-label">{isTwoADay ? "AM, Lifting" : "Lifting"}</span>
-                      </div>
-                      <div>
-                        {lifts.map((ex, j) => (
-                          <div key={j} className="data-row justify-between">
-                            <span className="text-body font-semibold text-ink truncate">{ex.name}</span>
-                            <span className="pill-value pill-value--sm text-ink-muted shrink-0">{formatPrescribed(ex)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    <>
+                      <CardHeader className="pb-1">
+                        <SectionLabel>{isTwoADay ? "AM, Lifting" : "Lifting"}</SectionLabel>
+                      </CardHeader>
+                      {lifts.map((ex, j) => (
+                        <ListRow key={j} title={ex.name} value={formatPrescribed(ex)} />
+                      ))}
+                    </>
                   )}
-                  <div className="px-4 pb-4 pt-2">
+                  <div className="px-gutter py-4">
                     {isToday ? (
-                      <button
-                        className="cta-action w-full"
-                        onClick={() => navigate(`/workout-detail?source=program&enrollmentId=${entry.enrollmentId}&programWorkoutId=${entry.programWorkoutId}`)}
-                      >
+                      <Button variant="primary" size="lg" className="w-full" onClick={() => openEntry(entry)}>
                         Start Session
-                      </button>
+                      </Button>
                     ) : (
-                      <button
-                        className="cta-ghost w-full"
-                        onClick={() => navigate(`/workout-detail?source=program&enrollmentId=${entry.enrollmentId}&programWorkoutId=${entry.programWorkoutId}`)}
-                      >
+                      <Button variant="secondary" size="lg" className="w-full" onClick={() => openEntry(entry)}>
                         View Workout
-                      </button>
+                      </Button>
                     )}
                   </div>
-                </div>
+                </Card>
               );
             })}
 
-            {/* ── Prescribed cardio with check-off ── */}
             {selectedEntries.map((entry, idx) => {
               const runs = entry.cardio_sessions || [];
               if (!runs.length) return null;
               return (
-                <div key={idx} className="glass overflow-hidden rise-in-3">
-                  <div className="px-4 py-3.5">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <Timer className="w-3.5 h-3.5 text-carb" />
-                      <span className="section-label !text-carb">{isTwoADay ? "PM, Run" : "Cardio"}</span>
-                    </div>
-                    {isTwoADay && (
-                      <p className="text-caption font-semibold text-ink-muted mb-3">
-                        ~6h separation from AM session
-                      </p>
-                    )}
-                    <div className="space-y-3 mt-2">
-                      {runs.map((ex, j) => {
-                        const name = ex.title || `${ex.zone || 'Z2'} ${ex.activity_type || 'run'}`;
-                        const done = isCardioDone(name);
-                        return (
-                          <div key={j} className="flex items-center justify-between gap-3">
-                            <div className={`min-w-0 ${done ? "opacity-50" : ""}`}>
-                              <span className={`text-body font-semibold text-ink ${done ? "line-through text-ink-muted" : ""}`}>{name}</span>
-                              {ex.notes && <p className="text-caption text-ink-muted mt-0.5">{ex.notes}</p>}
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              <span className="pill-value pill-value--sm text-ink-muted tabular-nums">{ex.duration_minutes} min</span>
-                              <button
-                                onClick={() => toggleCardio(name)}
-                                aria-label={done ? `Mark ${name} not done` : `Mark ${name} done`}
-                                aria-pressed={done}
-                                className="shrink-0 p-2.5 -m-2.5 rounded-pill transition-transform duration-200 [transition-timing-function:var(--ease)] active:scale-95"
-                              >
-                                <span className={`w-6 h-6 rounded-pill flex items-center justify-center transition-all duration-200 [transition-timing-function:var(--ease)] ${
-                                  done
-                                    ? "glass-inset text-carb"
-                                    : "bg-track"
-                                }`}>
-                                  {done && <CheckCircle2 className="w-4 h-4" />}
-                                </span>
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
+                <Card key={`c${idx}`}>
+                  <CardHeader className="pb-1">
+                    <SectionLabel>{isTwoADay ? "PM, Run" : "Cardio"}</SectionLabel>
+                    {isTwoADay && <p className="text-caption text-ink-muted">About 6 h after the AM session</p>}
+                  </CardHeader>
+                  {runs.map((ex, j) => {
+                    const name = ex.title || `${ex.zone || 'Z2'} ${ex.activity_type || 'run'}`;
+                    const done = isCardioDone(name);
+                    return (
+                      <ListRow
+                        key={j}
+                        title={<span className={cn(done && "line-through text-ink-muted")}>{name}</span>}
+                        detail={ex.notes || undefined}
+                        value={ex.duration_minutes}
+                        unit="min"
+                        trailing={
+                          <IconButton
+                            icon={CheckCircle2}
+                            label={done ? `Mark ${name} not done` : `Mark ${name} done`}
+                            aria-pressed={done}
+                            onClick={() => toggleCardio(name)}
+                            className={cn("-mr-3", done ? "text-leaf" : "text-ink-faint")}
+                          />
+                        }
+                      />
+                    );
+                  })}
+                </Card>
               );
             })}
+          </>
+        )}
 
+        {isToday && !hasInlineProgramCta && hasAnything && (
+          <div className="px-gutter">
+            <Button variant="primary" size="lg" className="w-full" onClick={() => navigate("/quick-workout")}>
+              {selectedLog ? "Log another session" : "Start today's session"}
+            </Button>
           </div>
         )}
 
-        {/* Persistent primary action — the selected day always has a clear next
-            step even when the inline program card doesn't render its own CTA. */}
-        {isToday && !hasInlineProgramCta && hasAnything && (
-          selectedLog ? (
-            // Logged today still gets the single teal action in the thumb zone —
-            // the day's next move (log another session) is the one action, so it
-            // owns the action color rather than reading as a neutral afterthought.
-            <button
-              className="cta-action w-full mt-3 rise-in-3"
-              onClick={() => navigate("/quick-workout")}
-            >
-              Log another session
-            </button>
-          ) : (
-            <button
-              className="cta-action w-full mt-3 rise-in-3"
-              onClick={() => navigate("/quick-workout")}
-            >
-              Start today's session
-            </button>
-          )
-        )}
-
-        {/* Logged state with no program: the "This Program" section below is
-            absent, leaving a dead band above the dock. Fill it with the week's
-            logged-session tally via the same glass-inset stat-tile pattern as
-            the rest-day card (479-494) so the page still answers "where is my
-            training week at". Each datum keeps its own muted ink. */}
         {selectedLog && !hasProgramSection && loggedSessionsThisWeek > 0 && (
-          <div className="mt-3 flex items-stretch gap-2 rise-in-3">
-            <div className="flex-1 glass-inset rounded-control px-3 py-2.5 flex flex-col items-center gap-0.5">
-              <span className="hero-metric text-ink text-title tabular-nums">{loggedSessionsThisWeek}</span>
-              <span className="section-label !text-ink-muted">{loggedSessionsThisWeek === 1 ? "Session this week" : "Sessions this week"}</span>
-            </div>
+          <div className="flex gap-4 px-gutter">
+            <Stat size="sm" label="This week" value={loggedSessionsThisWeek} unit={loggedSessionsThisWeek === 1 ? "session" : "sessions"} />
             {loggedExercisesThisWeek > 0 && (
-              <div className="flex-1 glass-inset rounded-control px-3 py-2.5 flex flex-col items-center gap-0.5">
-                <span className="hero-metric text-ink text-title tabular-nums">{loggedExercisesThisWeek}</span>
-                <span className="section-label !text-ink-muted">{loggedExercisesThisWeek === 1 ? "Exercise logged" : "Exercises logged"}</span>
-              </div>
+              <Stat size="sm" label="Logged" value={loggedExercisesThisWeek} unit={loggedExercisesThisWeek === 1 ? "exercise" : "exercises"} />
             )}
           </div>
         )}
-      </div>
 
-      {/* This Program — Weekly Volume + Program progress share one section label
-          so the two teal viz-1 bars read as members of one group ("this program"
-          analytics) rather than two instances of the same metric. */}
-      {(muscleVolume.length > 0 || activeEnrollment?.program) && (
-      <section aria-label="This program" className="rise-in-3">
-        <p className="section-label mb-2 px-1">This program</p>
-        <div className="space-y-3">
-      {/* Weekly volume — secondary analytics, collapsed by default so the
-          selected-day session + action lead the page. Tap to expand the
-          per-muscle set breakdown. */}
-      {muscleVolume.length > 0 && (
-        <div className="glass px-4 py-3.5">
-          <button
-            onClick={() => setShowVolume(v => !v)}
-            aria-expanded={showVolume}
-            className="w-full min-h-[44px] flex items-center justify-between rounded-control transition-colors duration-200 [transition-timing-function:var(--ease)] active:bg-track"
-          >
-            <span className="section-label">Weekly volume</span>
-            <span className="flex items-center gap-2">
-              <span className="font-numeral tabular-nums text-caption font-bold text-ink-muted tabular-nums">
-                {totalWeeklySets} sets · {muscleVolume.length} muscles
-              </span>
-              <ChevronDown className={`w-4 h-4 text-ink-muted transition-transform duration-200 [transition-timing-function:var(--ease)] ${showVolume ? "rotate-180" : ""}`} />
-            </span>
-          </button>
-          {showVolume && (
-            <div className="rise-in">
-              <div className="space-y-1.5 mt-2.5">
-                {visibleMuscleVolume.map(([muscle, sets]) => (
-                  <div key={muscle} className="data-row gap-2 flex-col !items-stretch">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-body font-semibold text-ink capitalize truncate">
-                        {muscle.replace(/_/g, " ")}
-                      </span>
-                      <span className="pill-value pill-value--sm text-ink-muted shrink-0">
-                        {sets} <span className="text-caption font-semibold">sets</span>
-                      </span>
-                    </div>
-                    <div className="h-1 bg-track rounded-pill overflow-hidden">
-                      <div
-                        className="h-full bg-viz-1 rounded-pill transition-[width] duration-200 [transition-timing-function:var(--ease)]"
-                        style={{ width: `${maxMuscleSets > 0 ? Math.round((sets / maxMuscleSets) * 100) : 0}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {hiddenMuscleCount > 0 && (
+        {(muscleVolume.length > 0 || activeEnrollment?.program) && (
+          <section aria-label="This program" className="flex flex-col gap-stack">
+            {muscleVolume.length > 0 && (
+              <Card>
                 <button
-                  onClick={() => setShowAllMuscles(v => !v)}
-                  aria-expanded={showAllMuscles}
-                  className="w-full mt-2.5 py-2 min-h-[44px] flex items-center justify-center transition-colors duration-200 [transition-timing-function:var(--ease)]"
+                  onClick={() => setShowVolume(v => !v)}
+                  aria-expanded={showVolume}
+                  className="w-full min-h-tap px-gutter py-3 flex items-center justify-between transition-colors duration-base active:bg-charcoal-surface2"
                 >
-                  <Chip>{showAllMuscles ? "Show less" : `Show all ${muscleVolume.length}`}</Chip>
+                  <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Weekly volume</span>
+                  <span className="flex items-center gap-2">
+                    <span className="text-caption text-ink-muted tabular-nums">
+                      {totalWeeklySets} sets · {muscleVolume.length} muscles
+                    </span>
+                    <ChevronDown className={cn("w-4 h-4 text-ink-muted transition-transform duration-base", showVolume && "rotate-180")} />
+                  </span>
                 </button>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+                {showVolume && (
+                  <div>
+                    {visibleMuscleVolume.map(([muscle, sets]) => (
+                      <div key={muscle} className="px-gutter py-2 border-t border-charcoal-borderSoft">
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <span className="text-body text-ink capitalize truncate">{muscle.replace(/_/g, " ")}</span>
+                          <span className="text-emph tabular-nums text-ink shrink-0">
+                            {sets} <span className="text-caption font-normal text-ink-muted">sets</span>
+                          </span>
+                        </div>
+                        <div className="h-1 bg-track rounded-pill overflow-hidden">
+                          <div
+                            className="h-full bg-brand rounded-pill transition-[width] duration-slow ease-out"
+                            style={{ width: `${maxMuscleSets > 0 ? Math.round((sets / maxMuscleSets) * 100) : 0}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                    {hiddenMuscleCount > 0 && (
+                      <button
+                        onClick={() => setShowAllMuscles(v => !v)}
+                        aria-expanded={showAllMuscles}
+                        className="w-full min-h-tap flex items-center justify-center text-caption text-ink-muted hover:text-ink border-t border-charcoal-borderSoft transition-colors duration-base"
+                      >
+                        {showAllMuscles ? "Show less" : `Show all ${muscleVolume.length}`}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </Card>
+            )}
 
-      {/* Program progress */}
-      {activeEnrollment?.program && (
-        <div className="glass px-4 py-3">
-          <div className="flex items-center justify-between mb-1.5">
-            <p className="section-label truncate flex-1 mr-2">
-              {activeEnrollment.program.title}
-            </p>
-            <span className="font-numeral tabular-nums text-caption font-bold text-ink-muted shrink-0 tabular-nums">{progressPct}%</span>
-          </div>
-          <div className="h-1 bg-track rounded-pill overflow-hidden mb-1.5">
-            <div className="h-full bg-viz-1 rounded-pill transition-[width] duration-200 [transition-timing-function:var(--ease)]" style={{ width: `${progressPct}%` }} />
-          </div>
-          <p className="font-numeral tabular-nums text-caption font-semibold text-ink-muted">
-            Week {activeEnrollment.current_week || 1} of {activeEnrollment.program.num_cycles || activeEnrollment.program.duration_weeks || "?"}
-            {" · "}{completedCount} sessions logged
-          </p>
-        </div>
-      )}
-        </div>
-      </section>
-      )}
+            {activeEnrollment?.program && (
+              <Card>
+                <CardContent className="pt-4 flex flex-col gap-2">
+                  <Stat
+                    size="sm"
+                    label={activeEnrollment.program.title}
+                    value={`${progressPct}%`}
+                    reason={`Week ${activeEnrollment.current_week || 1} of ${activeEnrollment.program.num_cycles || activeEnrollment.program.duration_weeks || "?"} · ${completedCount} sessions logged`}
+                  />
+                  <div className="h-1 bg-track rounded-pill overflow-hidden">
+                    <div className="h-full bg-brand rounded-pill transition-[width] duration-slow ease-out" style={{ width: `${progressPct}%` }} />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </section>
+        )}
+      </div>
     </div>
   );
 }

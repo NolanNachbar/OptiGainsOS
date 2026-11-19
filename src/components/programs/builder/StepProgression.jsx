@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { projectProgression } from "@/utils/programProgression";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, EmptyState } from "@/components/ui";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { TrendingUp } from "lucide-react";
 
 export default function StepProgression({ exercises, totalCycles, projectionWeights, setProjectionWeights }) {
   const [selectedExercise, setSelectedExercise] = useState(exercises[0]?.name || "");
@@ -12,14 +11,9 @@ export default function StepProgression({ exercises, totalCycles, projectionWeig
   if (exercises.length === 0) {
     return (
       <Card>
-        <CardContent className="pb-6 text-center">
-          <div className="pt-6 pb-6">
-            <TrendingUp className="w-10 h-10 text-ink-muted mx-auto mb-3" />
-            <p className="text-body text-ink-muted">
-              No exercises found. Go back and add exercises to see projections.
-            </p>
-          </div>
-        </CardContent>
+        <EmptyState title="No exercises yet">
+          Go back and add exercises to see projections.
+        </EmptyState>
       </Card>
     );
   }
@@ -35,12 +29,11 @@ export default function StepProgression({ exercises, totalCycles, projectionWeig
     <Card>
       <CardHeader>
         <CardTitle>Progression preview</CardTitle>
-        <p className="text-body text-ink-muted mb-3">
-          Enter starting weights to see projected progression. These are estimates
-          assuming progression every session (best case).
-        </p>
+        <CardDescription className="mb-3">
+          Projection assumes a weight step every session, the best case. Enter a starting weight per exercise.
+        </CardDescription>
         <div className="w-full">
-          <Label className="text-body font-medium mb-2 block">Select exercise</Label>
+          <Label className="text-micro text-ink-muted mb-2 block">Select exercise</Label>
           <Select value={selectedExercise} onValueChange={setSelectedExercise}>
             <SelectTrigger>
               <SelectValue placeholder="Choose an exercise" />
@@ -56,19 +49,19 @@ export default function StepProgression({ exercises, totalCycles, projectionWeig
         </div>
       </CardHeader>
       <CardContent>
-        <div className="glass-inset p-4">
+        <Card variant="inset" className="p-4">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="font-medium text-body">{currentExercise.name}</p>
-              <p className="text-body text-ink-muted mt-1">
+              <p className="text-emph">{currentExercise.name}</p>
+              <p className="text-caption text-ink-muted mt-1">
                 {typeof currentExercise.sets === "number" ? currentExercise.sets : Array.isArray(currentExercise.sets) ? currentExercise.sets.length : 3} sets &times; {currentExercise.rep_target} reps &middot; +
-                {currentExercise.progression?.weight_increment || 5} lbs/session
+                {currentExercise.progression?.weight_increment || 5} lb/session
               </p>
             </div>
             <div className="flex items-center gap-2">
               <Input
                 type="number" inputMode="decimal"
-                placeholder="Start lbs"
+                placeholder="Start lb"
                 className="w-28 text-body"
                 value={projectionWeights[currentExercise.name] || ""}
                 onChange={(e) =>
@@ -78,14 +71,13 @@ export default function StepProgression({ exercises, totalCycles, projectionWeig
                   }))
                 }
               />
-              <span className="text-body text-ink-muted">lbs</span>
+              <span className="text-caption text-ink-muted">lb</span>
             </div>
           </div>
 
           {projections.length > 0 ? (
-            // The strip already sits ON a glass-inset card, so the per-cycle
-            // chips drop their own glass (no inset-on-inset) and read as flat
-            // bg-track tiles with a hairline. The horizontal mask fades the
+            // The strip sits on an inset card, so the per-cycle chips read as flat
+            // bg-track tiles. The horizontal mask fades the
             // edges so a scrollable overflow is legible without a scrollbar.
             <div
               className="flex gap-2 overflow-x-auto no-scrollbar pb-1 [mask-image:linear-gradient(to_right,transparent,#000_16px,#000_calc(100%-16px),transparent)]"
@@ -96,16 +88,16 @@ export default function StepProgression({ exercises, totalCycles, projectionWeig
                   className="flex-shrink-0 text-center px-4 py-2 rounded-control bg-track"
                 >
                   <p className="text-caption text-ink-muted">Cycle {p.week}</p>
-                  <p className="font-numeral tabular-nums text-body font-bold text-ink mt-1">{p.weight} lbs</p>
+                  <p className="font-numeral tabular-nums text-emph text-ink mt-1">{p.weight} lb</p>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-ink-muted text-body">
+            <div className="text-center py-8 text-ink-muted text-caption">
               Enter a starting weight to see progression
             </div>
           )}
-        </div>
+        </Card>
       </CardContent>
     </Card>
   );

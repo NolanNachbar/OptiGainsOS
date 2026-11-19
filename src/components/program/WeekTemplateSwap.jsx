@@ -4,11 +4,11 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
-import { LayoutTemplate, Loader2 } from "lucide-react";
+import { LayoutTemplate } from "lucide-react";
 import { toast } from "sonner";
 import { db, supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
-import { Button, cn } from "@/components/ui";
+import { Button, LoadingState, cn } from "@/components/ui";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
   templateFolders, planTemplateWeek, useApplyWeekTemplate, useClearWeekTemplate, TEMPLATE_SOURCE_PREFIX,
@@ -85,15 +85,15 @@ export default function WeekTemplateSwap({ programId, weekDates, today }) {
     <>
       <div className="flex items-center justify-between gap-2 mb-3 px-1">
         <span className="text-caption text-ink-muted truncate">
-          {activeTemplate ? <>Running <span className="text-ink font-semibold">{activeTemplate}</span> this week</> : "Engine plan"}
+          {activeTemplate ? <>Running <span className="text-ink">{activeTemplate}</span> this week</> : "Engine plan"}
         </span>
         <div className="flex gap-2 shrink-0">
           {activeTemplate && (
-            <Button variant="outline" size="sm" onClick={onClear} disabled={clear.isPending} className="min-h-tap">
+            <Button variant="outline" size="sm" onClick={onClear} disabled={clear.isPending}>
               {clear.isPending ? "Resetting..." : "Use engine plan"}
             </Button>
           )}
-          <Button variant="secondary" size="sm" onClick={() => setOpen(true)} className="min-h-tap">
+          <Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
             <LayoutTemplate className="w-3.5 h-3.5 mr-1.5" /> Use a template
           </Button>
         </div>
@@ -110,9 +110,7 @@ export default function WeekTemplateSwap({ programId, weekDates, today }) {
           </DialogHeader>
 
           {libLoading && (
-            <div className="flex items-center gap-2 text-body text-ink-muted py-4">
-              <Loader2 className="w-4 h-4 animate-spin" /> Loading workouts
-            </div>
+            <LoadingState rows={2} />
           )}
           {!libLoading && folders.length === 0 && (
             <p className="text-body text-ink-muted py-2">
@@ -130,7 +128,7 @@ export default function WeekTemplateSwap({ programId, weekDates, today }) {
                   folder === f.folder ? "border-brand bg-charcoal-surface2" : "border-charcoal-border"
                 )}
               >
-                <span className="block font-semibold text-body">{f.folder}</span>
+                <span className="block text-emph">{f.folder}</span>
                 <span className="block text-caption text-ink-muted truncate">{f.workouts.map((w) => w.title).join(" · ")}</span>
               </button>
             ))}
@@ -150,7 +148,7 @@ export default function WeekTemplateSwap({ programId, weekDates, today }) {
                         <span className="truncate text-right">
                           <span className="text-ink-muted">{row.title || "Rest"}</span>
                           <span className="text-ink-muted">{" > "}</span>
-                          <span className="text-ink font-semibold">{workout.title}</span>
+                          <span className="text-ink">{workout.title}</span>
                         </span>
                       </li>
                     ))}
