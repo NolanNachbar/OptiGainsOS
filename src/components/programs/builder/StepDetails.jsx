@@ -31,7 +31,7 @@ export default function StepDetails({ program, setProgram, tagInput, setTagInput
     <Card>
       <CardContent className="space-y-3 pt-5">
         <div>
-          <Label className="text-micro">Program Name *</Label>
+          <Label className="text-micro">Program name</Label>
           <Input
             value={program.name}
             onChange={(e) => update("name", e.target.value)}
@@ -54,7 +54,7 @@ export default function StepDetails({ program, setProgram, tagInput, setTagInput
             keeps its own full-width row; all three rejoin 3-up on desktop. */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
           <div>
-            <Label className="text-micro">Cycle Length *</Label>
+            <Label className="text-micro">Cycle length</Label>
             <NumberStepper
               value={program.cycle_length}
               onChange={(v) => update("cycle_length", v)}
@@ -65,7 +65,7 @@ export default function StepDetails({ program, setProgram, tagInput, setTagInput
             <p className="text-caption text-ink-muted mt-0.5">Days per cycle · rest days included</p>
           </div>
           <div>
-            <Label className="text-micro">Cycles *</Label>
+            <Label className="text-micro">Cycles</Label>
             <NumberStepper
               value={program.num_cycles}
               onChange={(v) => update("num_cycles", v)}
