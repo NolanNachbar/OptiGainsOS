@@ -188,6 +188,14 @@ function SupplementForm({ initial, onSave, onClose }) {
 }
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
+// Units show in lowercase whatever was typed or seeded ("G" -> "g",
+// "MG" -> "mg"), except IU, which stays an uppercase abbreviation.
+function formatUnit(u) {
+  if (!u) return "";
+  const t = String(u).trim();
+  return /^iu$/i.test(t) ? "IU" : t.toLowerCase();
+}
+
 export default function Supplements({ embedded = false }) {
   const { user } = useAuth();
   const { profile } = useProfile();
@@ -373,7 +381,7 @@ export default function Supplements({ embedded = false }) {
                         type="number" inputMode="decimal"
                         value={dose}
                         onChange={e => setLogDoses(prev => ({ ...prev, [type.id]: e.target.value }))}
-                        placeholder={type.default_dose ? `${type.default_dose} ${type.unit || ""}` : "dose"}
+                        placeholder={type.default_dose ? `${type.default_dose} ${formatUnit(type.unit)}` : "dose"}
                         className="min-h-[44px] text-caption normal-case flex-1 glass-inset"
                       />
                       <Button
@@ -405,7 +413,7 @@ export default function Supplements({ embedded = false }) {
                     <span className="text-body text-ink font-medium">{log.supplement_name}</span>
                     {log.dose && (
                       <Badge variant="outline" className="text-caption normal-case text-muted-2 hairline bg-transparent">
-                        {log.dose} {log.unit || ""}
+                        {log.dose} {formatUnit(log.unit)}
                       </Badge>
                     )}
                   </div>
