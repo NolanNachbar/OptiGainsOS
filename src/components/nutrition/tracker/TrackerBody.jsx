@@ -9,8 +9,38 @@ import { ResponsiveContainer, LineChart, XAxis, YAxis, Tooltip, Line } from "rec
 import MealTemplates from "@/components/nutrition/MealTemplates";
 import RecipeBuilder from "@/components/nutrition/RecipeBuilder";
 import MealPlanIdeas from "@/components/nutrition/MealPlanIdeas";
-import { ReasonLine } from "@/components/ui";
+import { ChevronRight } from "lucide-react";
+import { useId, useState } from "react";
 import { targetBasis } from "@/components/nutrition/tracker/targetBasis";
+
+// The calorie basis is the point of the line, so it wraps instead of
+// truncating. Same shape as ReasonLine (caption, muted, optional inline detail).
+function BasisLine({ children, detail }) {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  if (!detail) {
+    return <p className="mt-1 text-caption text-ink-muted tabular-nums text-pretty break-words">{children}</p>;
+  }
+  return (
+    <div className="mt-1">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={id}
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full min-h-[24px] items-start gap-1 text-left text-caption text-ink-muted tabular-nums text-pretty break-words hover:text-ink-secondary transition-colors duration-150"
+      >
+        <span className="min-w-0 flex-1">{children}</span>
+        <ChevronRight aria-hidden="true" className={`mt-0.5 h-3 w-3 shrink-0 transition-transform duration-200 ease-out ${open ? "rotate-90" : ""}`} />
+      </button>
+      {open && (
+        <div id={id} className="mt-1.5 border-l border-charcoal-border pl-3 text-caption text-ink-secondary tabular-nums">
+          {detail}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Extracted from FoodTracker.jsx (no behavior change).
 export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntries, calorieTrend, deleteFoodMutation, entriesError, entriesLoading, foodEntries, fuelNutritionView, intakeStats, mealGroups, openActionsId, planFit, plannedCount, profile, quickRelogFood, recentFoods, refetchEntries, selectedDate, setCopyFromDate, setCopySelection, setFuelNutritionViewPersist, setNewFood, setOpenActionsId, setSelectedDate, setShowAddDialog, setShowCopyDayDialog, setShowGoalsModal, setShowIntakeStats, setShowMoreSheet, setShowNewRecipe, setShowSaveTemplateDialog, setShowStatsModal, setSidebarTab, setStatsWindow, setSwapEntry, setTemplateEntries, setTemplateMealType, showIntakeStats, showNewRecipe, sidebarTab, startEditEntry, statsWindow, targets, tdee, togglePlannedMutation, totals }) {
@@ -44,6 +74,9 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
             {/* 7-day strip (DESIGN.md/directions "B · Fuel" .wk): a kcal bar per
                 day against a dashed goal tick, today highlighted, tap to select —
                 reuses the same selectedDate state the date-nav pill above drives. */}
+            {calorieTrend.every((d) => !(d.calories > 0)) ? (
+              <p className="text-caption text-ink-muted px-1">Nothing logged this week yet. Your week fills in as you log.</p>
+            ) : (
             <div className="grid grid-cols-7 gap-1.5">
               {calorieTrend.map((day) => {
                 const isSelected = day.date === selectedDate;
@@ -113,6 +146,7 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                 );
               })}
             </div>
+            )}
 
             {/* Intake vs pace (DESIGN.md/directions "B · Fuel" .mod/.cols): kcal
                 left leads the module header, then flat 8px eaten/target bars for
@@ -153,7 +187,7 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
                         )}
                       </div>
                       <div className="text-caption text-ink-muted mt-1.5 truncate">{headCaption}</div>
-                      {basis && <ReasonLine className="mt-1" detail={basis.detail}>{basis.line}</ReasonLine>}
+                      {basis && <BasisLine detail={basis.detail}>{basis.line}</BasisLine>}
                     </div>
                     {isToday && (
                       <SegmentedControl
@@ -473,67 +507,54 @@ export default function TrackerBody({ activePhase, addFoodMutation, allFoodEntri
             </div>
             )}
 
-            {/* Templates / recipes / ideas: always visible, one tap each (phone). */}
-            <div className="lg:hidden grid grid-cols-3 gap-2">
-              {[
-                { id: 'templates', label: 'Templates', Icon: Bookmark },
-                { id: 'recipes', label: 'Recipes', Icon: BookOpen },
-                { id: 'ideas', label: 'Meal ideas', Icon: UtensilsCrossed },
-              ].map(({ id, label, Icon }) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => { setSidebarTab(id); setShowMoreSheet(true); }}
-                  // All three open the one "Templates, recipes & ideas" sheet on
-                  // their tab; Recipes (the old single entry's landing tab)
-                  // keeps that sheet's name after its own word.
-                  aria-label={id === 'recipes' ? 'Recipes: Templates, recipes & ideas' : undefined}
-                  className="glass glass-interactive min-h-[68px] flex flex-col items-center justify-center gap-1.5 text-body font-semibold text-ink-secondary hover:text-ink active:scale-[0.98] transition-[color,transform] duration-200 [transition-timing-function:var(--ease)]"
-                >
-                  <Icon className="w-4 h-4 text-brand" />
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="dim"
-                size="sm"
-                className="min-h-[44px] w-full"
-                onClick={() => {
-                  // Default to the most recent logged day before this one, so
-                  // the dialog opens on something rather than an empty date.
-                  const prior = eatenOnly(allFoodEntries)
-                    .map((e) => e.date)
-                    .filter((d) => d < selectedDate)
-                    .sort()
-                    .pop();
-                  setCopyFromDate(prior || format(subDays(parseISO(selectedDate), 1), "yyyy-MM-dd"));
-                  setCopySelection({});
-                  setShowCopyDayDialog(true);
-                }}
-              >
-                <Bookmark className="w-3.5 h-3.5 mr-1.5" /> Copy a day
-              </Button>
-              <Button variant="dim" size="sm" className="min-h-[44px] w-full" onClick={() => setShowIntakeStats((v) => !v)}>
-                <Calculator className="w-3.5 h-3.5 mr-1.5" /> Intake stats
-                {showIntakeStats ? <ChevronUp className="w-3.5 h-3.5 ml-1.5" /> : <ChevronDown className="w-3.5 h-3.5 ml-1.5" />}
-              </Button>
-              {foodEntries.length > 0 && (
-                <Button
-                  variant="dim"
-                  size="sm"
-                  className="min-h-[44px] w-full"
-                  onClick={() => { setTemplateEntries(foodEntries); setTemplateMealType(null); setShowSaveTemplateDialog(true); }}
-                >
-                  <Save className="w-3.5 h-3.5 mr-1.5" /> Save day as template
-                </Button>
-              )}
-              <Button variant="dim" size="sm" className="min-h-[44px] w-full" onClick={() => setShowGoalsModal(true)}>
-                <Pencil className="w-3.5 h-3.5 mr-1.5" /> Edit goals
-              </Button>
-            </div>
+            {/* One "More" list instead of seven equal-weight buttons; the per-meal
+                Add stays the action. Templates, recipes and ideas share one sheet. */}
+            {(() => {
+              const rowCls = "flex w-full min-h-[48px] items-center gap-3 px-4 text-left text-body font-semibold text-ink-secondary hover:text-ink active:bg-charcoal-surface2/60 transition-colors duration-150";
+              const rows = [
+                { key: 'sheet', label: 'Templates, recipes and ideas', Icon: BookOpen, mobileOnly: true,
+                  aria: 'Recipes: Templates, recipes & ideas',
+                  onClick: () => { setSidebarTab('recipes'); setShowMoreSheet(true); } },
+                { key: 'copy', label: 'Copy a day', Icon: Bookmark,
+                  onClick: () => {
+                    // Default to the most recent logged day before this one, so
+                    // the dialog opens on something rather than an empty date.
+                    const prior = eatenOnly(allFoodEntries)
+                      .map((e) => e.date)
+                      .filter((d) => d < selectedDate)
+                      .sort()
+                      .pop();
+                    setCopyFromDate(prior || format(subDays(parseISO(selectedDate), 1), "yyyy-MM-dd"));
+                    setCopySelection({});
+                    setShowCopyDayDialog(true);
+                  } },
+                { key: 'stats', label: 'Intake stats', Icon: Calculator, expanded: showIntakeStats,
+                  onClick: () => setShowIntakeStats((v) => !v) },
+                ...(foodEntries.length > 0 ? [{ key: 'save', label: 'Save day as template', Icon: Save,
+                  onClick: () => { setTemplateEntries(foodEntries); setTemplateMealType(null); setShowSaveTemplateDialog(true); } }] : []),
+                { key: 'goals', label: 'Edit goals', Icon: Pencil, onClick: () => setShowGoalsModal(true) },
+              ];
+              return (
+                <div className="glass divide-y hairline overflow-hidden">
+                  {rows.map(({ key, label, Icon, onClick, aria, expanded, mobileOnly }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={onClick}
+                      aria-label={aria}
+                      aria-expanded={expanded}
+                      className={`${rowCls} ${mobileOnly ? 'lg:hidden' : ''}`}
+                    >
+                      <Icon className="w-4 h-4 shrink-0 text-ink-muted" />
+                      <span className="flex-1 min-w-0">{label}</span>
+                      {expanded !== undefined
+                        ? (expanded ? <ChevronUp className="w-4 h-4 text-ink-faint" /> : <ChevronDown className="w-4 h-4 text-ink-faint" />)
+                        : <ChevronRight className="w-4 h-4 text-ink-faint" />}
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
 
             {showIntakeStats && (
               <div className="glass px-4 sm:px-5 py-3.5">
