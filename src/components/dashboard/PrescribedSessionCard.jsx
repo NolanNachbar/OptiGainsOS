@@ -265,7 +265,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
     if (compact) {
       return (
         <div className="sess flex items-center min-h-[56px]">
-          <Link to="/quick-workout" className="cta-ghost w-full">
+          <Link to="/quick-workout" className={`${demoteCta ? "cta-ghost" : "cta-action"} w-full`}>
             Log a workout
           </Link>
         </div>

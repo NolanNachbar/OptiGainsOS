@@ -47,7 +47,7 @@ import DailyBriefCard from "@/components/dashboard/DailyBriefCard";
 import TodayActions from "@/components/dashboard/TodayActions";
 import { MetricTile, SectionLabel, SegmentedControl, Module, MiniRing } from "@/components/ui/system";
 import { PageHeader, Stat } from "@/components/ui";
-import { Activity, AlertTriangle, ChevronRight, Apple, ChevronDown, Flame, Check } from "lucide-react";
+import { Activity, AlertTriangle, ChevronRight, ChevronDown, Flame, Check } from "lucide-react";
 import { format, parseISO, addDays } from "date-fns";
 
 const fmt = (n, d = 0) => (n == null || Number.isNaN(Number(n)) ? "--" : Number(n).toFixed(d));
@@ -516,8 +516,12 @@ export default function Today() {
   //                primary (no prescription / rest / already logged).
   // The active-session "tap to continue" banner is deliberately neutral bg-charcoal-surface border border-charcoal-border and
   // never the teal primary, so it doesn't enter this decision.
+  // The session row owns the one primary whenever there is something to start:
+  // a prescription, a program day, or (no engine call yet) the plain "Log a
+  // workout" fallback. Rest days, an already-logged day and a live session
+  // (whose continue row leads instead) demote it.
   const tealPrimary =
-    ((!!prescription && prescription.mpc_action !== "REST") || !!todayProgramWorkout) &&
+    prescription?.mpc_action !== "REST" &&
     !loggedToday &&
     !activeSession
       ? "session"
@@ -539,8 +543,16 @@ export default function Today() {
         ? `Train as planned at ${intensity.toFixed(2)}x intensity.`
         : "Train as planned.";
     }
+    // No engine prescription yet: the verdict must still agree with the
+    // readiness number shown above it, so read it from the score itself.
+    if (score != null) {
+      const s = Math.round(score);
+      if (s >= 70) return "Ready to train. No engine prescription yet, so go by plan.";
+      if (s >= 50) return "Train, but hold intensity moderate today.";
+      return "Low readiness. Keep it easy or take recovery.";
+    }
     return "No verdict yet. The engine needs a few more days of data.";
-  }, [prescription, intensity]);
+  }, [prescription, intensity, score]);
 
   // Readiness basis: the inputs behind the score, or the default-state line.
   const readinessBasis = useMemo(() => {
@@ -562,14 +574,6 @@ export default function Today() {
     { value: "brief", label: "Brief" },
     { value: "state", label: "State" },
     { value: "muscle", label: "Muscle" },
-  ];
-
-  // Hue-coded morning metrics — each datum owns one hue.
-  const morningMetrics = [
-    { k: "HRV", v: fmt(recovery?.hrv), u: "ms", hue: "var(--hue-teal-2)" },
-    { k: "RHR", v: fmt(recovery?.resting_hr), u: "bpm", hue: "var(--hue-coral)" },
-    { k: "Sleep", v: fmt(recovery?.sleep_score), u: "", hue: "var(--hue-violet)" },
-    { k: "Batt", v: fmt(recovery?.body_battery), u: "%", hue: "var(--hue-green)" },
   ];
 
   const dailyTargets = useDailyTargets(today);
@@ -692,7 +696,7 @@ export default function Today() {
     >
       <PageHeader
         className="px-0 max-lg:[&_h1]:hidden"
-        eyebrow={format(nowInTz(profile?.timezone), "EEE d MMM")}
+        meta={format(nowInTz(profile?.timezone), "EEE d MMM")}
         title="Today"
       />
 
@@ -916,7 +920,9 @@ export default function Today() {
               rate line has nothing real to report: don't show a green
               "on goal" rate alongside a blank headline number. Show only the
               "log a few weigh-ins" hint instead. */}
-          {latestWeight && trend.value !== "--" ? (
+          {/* The engine rate and the sparkline must agree: with fewer than
+              2 weigh-ins in the window there is no trend, so no rate line. */}
+          {latestWeight && weightSpark && trend.value !== "--" ? (
             <p
               className="text-body font-semibold mt-1"
               style={{ color: trendAligned ? "var(--hue-green)" : "var(--text-secondary)" }}
@@ -993,21 +999,6 @@ export default function Today() {
             row. Now demoted below the four primary modules; still behind a
             mobile disclosure so it doesn't add scroll weight when collapsed. */}
         <div className="surface overflow-hidden -mx-4 sm:-mx-6 lg:mx-0">
-          <div className="px-4 pt-3 lg:pt-4">
-            <SectionLabel>Vitals</SectionLabel>
-            <div className="vit4 grid grid-cols-2 sm:grid-cols-4 gap-[7px] mt-2">
-              {morningMetrics.map((m) => (
-                <MetricTile
-                  key={m.k}
-                  label={m.k}
-                  value={m.v}
-                  unit={m.u || undefined}
-                  accent={m.hue}
-                  className="!py-2 !px-2.5"
-                />
-              ))}
-            </div>
-          </div>
           {/* Mobile-only disclosure trigger — ≥44px tap target. */}
           <button
             type="button"
@@ -1082,20 +1073,6 @@ export default function Today() {
           </div>
         </div>
 
-        {/* Old "Quick actions" Log-food tile — demoted here as a secondary
-            shortcut now that Log Food is a primary FAB action and Nutrition ·
-            remaining above already links to /fuel. */}
-        <div className="bg-charcoal-surface border border-charcoal-border px-4 pt-3 pb-3">
-          <SectionLabel className="mb-2">Quick actions</SectionLabel>
-          <Link
-            to="/food-tracker?addFood=true"
-            className="bg-charcoal-surface2 rounded-control hover:bg-charcoal-surface2 transition-colors duration-base flex items-center justify-center gap-2.5 min-h-[64px]"
-          >
-            <Apple className="w-[18px] h-[18px] text-muted-2" />
-            <span className="text-body font-extrabold text-ink leading-none">Log food</span>
-            
-          </Link>
-        </div>
       </div>
     </div>
   );
