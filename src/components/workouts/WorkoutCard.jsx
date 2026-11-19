@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MoreVertical, Edit, Copy, Trash2, FolderOpen, Download } from "lucide-react";
@@ -14,17 +14,14 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
   const [flipUp, setFlipUp] = useState(false);
   const menuRef = useRef(null);
   const triggerRef = useRef(null);
-  const navigate = useNavigate();
 
   // Rise-in only on the card's first mount. "Show 8 more" re-renders the whole
   // list; cards keyed by workout.id keep their instance, so this ref stays true
   // for them and they don't re-trigger the stagger — only the freshly revealed
   // batch (new instances) animates in.
-  const firstMount = useRef(true);
-  const riseClass = firstMount.current ? RISE[index % 3] : "";
-  useEffect(() => {
-    firstMount.current = false;
-  }, []);
+  // Lazy initial state: computed once on mount, and an animation class that
+  // stays applied does not replay.
+  const [riseClass] = useState(() => RISE[index % 3]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {

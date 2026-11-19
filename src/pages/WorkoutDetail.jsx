@@ -1,148 +1,51 @@
-import { useState, useEffect, useLayoutEffect, useRef, useMemo, Fragment } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useMemo } from "react";
 import { db } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useProfile, isExerciseLiked, useToggleExerciseLike, useExerciseShotNotes } from "@/hooks/useUserQueries";
+import { useProfile, useToggleExerciseLike, useExerciseShotNotes } from "@/hooks/useUserQueries";
 import { useTodayPrescription } from "@/hooks/useEngineQueries";
 import { useWorkoutExercises } from "@/hooks/useWorkoutExercises";
 import { useLogProgramWorkout } from "@/hooks/useProgramQueries";
 import { resolveProgramLibraryWorkoutId } from "@/lib/resolveProgramLibraryWorkoutId";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { LoadingScreen } from "@/components/ui/loading-spinner";
 import { queryKeys, invalidateSchedule, invalidateWorkoutLogs, invalidateWorkouts, invalidatePrograms } from "@/lib/queryKeys";
-import { ArrowLeft, Clock, Target, Dumbbell, Edit, Copy, Activity, RotateCw, ChevronDown, Camera } from "lucide-react";
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import SortableExerciseRow from "@/components/workouts/SortableExerciseRow";
+import { ArrowLeft, Edit, Copy } from "lucide-react";
+import { PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { getTodayString } from "@/utils/dateUtils";
 import { toast } from "sonner";
 import { calculateDailyTargets, transferProgressionState } from "@/utils/programProgression";
 import { getTodayProgramWorkout } from "@/utils/programSchedule";
 import { getWorkoutBodyData } from "@/utils/muscleVolumeUtils";
-import MuscleHeatMap from "@/components/MuscleHeatMap";
 import { SegmentedControl } from "@/components/ui/system";
 import ExerciseCard from "@/components/workouts/ExerciseCard";
 import WorkoutLoggingHeader from "@/components/workouts/WorkoutLoggingHeader";
-import FinishSummary from "@/components/workouts/FinishSummary";
 import AddExerciseForm from "@/components/workouts/AddExerciseForm";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { getLastExercisePerformance, getExerciseE1rmHistory } from "@/utils/exerciseStats";
+import { getLastExercisePerformance } from "@/utils/exerciseStats";
 import { isWarmupSet, baseType } from "@/utils/setTypes";
-import { buildLoadWhy } from "@/utils/loadRationale";
 import { currentE1rm, loadForTarget } from "@/utils/e1rm";
-import { blockProgressionWeight, exerciseProgressionWeight, doubleSeed } from "@/utils/progressionRules";
-import { applyEquipmentProfile, applyEquipmentProfileToWorkout, substituteFor } from "@/utils/equipmentProfile";
-import EquipmentProfileToggle from "@/components/workouts/EquipmentProfileToggle";
-import OverrideProgramWorkout from "@/components/workouts/OverrideProgramWorkout";
+import { exerciseProgressionWeight, doubleSeed } from "@/utils/progressionRules";
+import { applyEquipmentProfileToWorkout, substituteFor } from "@/utils/equipmentProfile";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
 import { useWeighInGate } from "@/hooks/useWeighInGate";
 import { STALE_SESSION_MS, AUTO_FINISH_STALE_MS, AUTO_FINISH_MAX_AGE_MS } from "@/lib/workoutSessionFlag";
 import { sessionSilenceMs } from "@/lib/buildWorkoutLogFromSession";
 
-const isRunEx = (ex) => /\b(run|sprint|cardio|zone ?2)\b/i.test(ex.name || '');
+import { isRunEx, scaleWeightToReps, parseRirFromNotes, parseRirTarget, baseLiftName } from "@/components/workouts/detail/workoutDetailUtils";
+import { buildInitialLogs } from "@/components/workouts/detail/buildInitialLogs";
+import WorkoutDetailDialogs from "../components/workouts/detail/WorkoutDetailDialogs";
+import WorkoutViewMode from "../components/workouts/detail/WorkoutViewMode";
+import WorkoutLogger from "../components/workouts/detail/WorkoutLogger";
+import AnatomySidebar from "../components/workouts/detail/AnatomySidebar";
+import SessionCard from "../components/workouts/detail/SessionCard";
+import SessionChips from "../components/workouts/detail/SessionChips";
 
 // Name a prescribed run by its type; drop the "Garmin Zx-Zy. " provenance prefix
 // from the notes so the interval/tempo structure shows on its own.
-const CARDIO_TYPE_LABEL = {
-  interval: "Intervals", threshold: "Threshold", tempo: "Tempo",
-  long: "Long run", easy: "Easy run", recovery: "Recovery run",
-};
-const cardioStructure = (notes) => String(notes || "").replace(/^Garmin\s+[^.]*\.\s*/i, "").trim();
-
-// Renders a program day's conditioning (run/swim) sessions. Reads the real
-// cardio_sessions shape (activity_type / run_type / zone / duration_minutes /
-// pace / notes) plus any run-named exercises. Shared by logging + view mode so
-// the run detail — type, pace, and rep structure — is visible either way.
-function CardioSessions({ programWorkout }) {
-  const runExercises = (programWorkout?.exercises || []).filter(isRunEx).map((ex) => ({
-    _name: ex.name, run_type: ex.run_type || null, zone: ex.zone || null,
-    duration_minutes: ex.duration_minutes || null, time_of_day: ex.time_of_day || null,
-    pace: ex.pace || null, notes: ex.notes || null,
-  }));
-  const allCardio = [...runExercises, ...(programWorkout?.cardio_sessions || [])];
-  if (allCardio.length === 0) return null;
-  return (
-    <div className="space-y-2">
-      <p className="section-label">Conditioning</p>
-      {allCardio.map((c, i) => {
-        const rtype = String(c.run_type || "").toLowerCase();
-        const name = c._name || CARDIO_TYPE_LABEL[rtype] || (c.zone ? `${c.zone} ${c.activity_type || "run"}` : "Run");
-        const structure = cardioStructure(c.notes);
-        const meta = [
-          c.duration_minutes ? `${c.duration_minutes} min` : null,
-          c.pace ? `${c.pace}${/^\d+:\d{2}$/.test(String(c.pace)) ? "/mi" : ""}` : null,
-          c.zone || null,
-          c.time_of_day && c.time_of_day !== "anytime" ? c.time_of_day.toUpperCase() : null,
-        ].filter(Boolean).join(" · ");
-        return (
-          <div key={`cardio-${i}`} className="flex items-start justify-between px-3.5 py-3 glass-inset">
-            <div className="flex items-start gap-2.5">
-              <Activity className="w-4 h-4 text-carb mt-0.5 shrink-0" />
-              <div>
-                <p className="text-[13.5px] font-bold text-ink">{name}</p>
-                {meta && <p className="font-technical text-[11px] font-semibold text-ink-muted">{meta}</p>}
-                {structure && <p className="text-[11px] text-ink-muted mt-0.5 leading-snug">{structure}</p>}
-              </div>
-            </div>
-            <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-ink-muted border border-charcoal-border rounded-full px-2.5 py-1 shrink-0">Cardio</span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// Epley e1RM scaling with progressive overload projection.
-// If last session hit target reps (or exceeded them), nudge the suggested weight
-// up by 2.5 lbs — the smallest standard plate increment.
-// Rounds to nearest 2.5 so suggested weights are always rackable.
-const scaleWeightToReps = (lastWeight, lastReps, targetReps) => {
-  if (!lastWeight || !lastReps || lastReps <= 0 || targetReps <= 0) return lastWeight || 0;
-  const e1rm = lastWeight * (1 + 0.0333 * lastReps);
-  const scaled = e1rm / (1 + 0.0333 * targetReps);
-  const overload = lastReps >= targetReps ? 2.5 : 0;
-  return Math.round((scaled + overload) / 2.5) * 2.5;
-};
-
-// Use the LOWER end of rep ranges (e.g. "8-12" → 8) so the autofill defaults
-// to the heavier end of the rep range. Default is 8, not 10.
-const parseRepTarget = (repTarget) => {
-  const s = String(repTarget || '8').trim();
-  const m = s.match(/^(\d+)\s*[-–]\s*(\d+)/);
-  return m ? parseInt(m[1], 10) : (parseInt(s, 10) || 8);
-};
-
-// Engine-generated workouts carry the RIR target in the exercise notes ("RIR 2",
-// "RIR 3 · ..."). No RIR in notes → 0, matching how scaleWeightToReps treats reps.
-const parseRirFromNotes = (notes) => {
-  const m = String(notes || '').match(/RIR\s*(\d+)/i);
-  return m ? parseInt(m[1], 10) : 0;
-};
-
-const parseRirTarget = (v) => {
-  if (v == null || v === '') return null;
-  const n = parseInt(String(v), 10);
-  return Number.isFinite(n) ? n : null;
-};
-
-// "Back Squat (Top Set)" / "Back Squat (Back-off)" → "back squat"
-const baseLiftName = (name) =>
-  String(name || '').toLowerCase().replace(/\s*\([^)]*\)\s*$/, '').trim();
-
-const formatTimeAgo = (startTimeStr) => {
-  if (!startTimeStr) return "recently";
-  const ms = Date.now() - new Date(startTimeStr).getTime();
-  const minutes = Math.floor(ms / 60000);
-  if (minutes < 60) return `${minutes} minute${minutes !== 1 ? "s" : ""} ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} hour${hours !== 1 ? "s" : ""} ago`;
-  const days = Math.floor(hours / 24);
-  return `${days} day${days !== 1 ? "s" : ""} ago`;
-};
+import { useRestTimer } from "@/components/workouts/detail/useRestTimer";
+import CardioSessions from "@/components/workouts/detail/CardioSessions";
+import WorkoutLoadError from "../components/workouts/detail/WorkoutLoadError";
 
 export default function WorkoutDetail() {
   const navigate = useNavigate();
@@ -156,13 +59,9 @@ export default function WorkoutDetail() {
   const [postWorkoutNotes, setPostWorkoutNotes] = useState("");
   const [showPostWorkoutDialog, setShowPostWorkoutDialog] = useState(false);
   const [startTime, setStartTime] = useState(null);
-  const [restTimer, setRestTimer] = useState(null); // seconds remaining for rest (display only)
-  const [restDuration, setRestDuration] = useState(90); // default rest duration
   const [muscleView, setMuscleView] = useState("anterior");
   const [resumeSession, setResumeSession] = useState(null); // session data to offer resume for
   const [showShotList, setShowShotList] = useState(false); // "Shot list" toggle — off by default, per-exercise shot notes
-  const restTimerRef = useRef(null); // setInterval handle
-  const restTimerEndRef = useRef(null); // absolute end timestamp for the rest timer
 
   // "Keep the important things in sight" (Nolan, r4d review): while a workout
   // is actively logging, the only persistent chrome is this page's own logging
@@ -605,251 +504,13 @@ export default function WorkoutDetail() {
     // to pick up the real load_lbs once the prescription query resolves.
     if (isProgramSource && isTodayPrescriptionLoading) return;
     if (workout && isLogging && exerciseLogs.length === 0) {
-      let initialLogs;
-
-      // `sets` arrives in two shapes across sources: a COUNT (number, e.g. seeded
-      // templates `sets: 4`) or an ARRAY of set objects (real saved workouts /
-      // log format). Array.from({length: <array>}) coerces the array to NaN for
-      // length != 1, seeding ZERO rows — so multi-set exercises rendered with
-      // nothing to log. Normalize to a count for both init paths.
-      const resolveSetCount = (sets, fallback = 3) =>
-        Array.isArray(sets) ? (sets.length || fallback) : (Number(sets) || fallback);
-
-      if (isProgramSource && programWorkout?.exercises && enrollment) {
-        // Program mode: initialize with set types and target weights
-        // The weekly plan is only regenerated on Sunday, so an equipment_profile
-        // change mid-week leaves it listing movements the athlete can't perform.
-        // The daily engine re-filters against the profile every run, so when
-        // today's prescription exists, treat its movement list as authoritative
-        // and drop anything the plan still carries that the engine dropped.
-        // Guarded on a non-empty block so a missing/failed prescription seeds
-        // the full plan rather than an empty session.
-        // Filtering only SUBTRACTS, which is right while the engine pinned today
-        // to the plan. On a re-planned day it isn't: the plan was written for a
-        // full gym, the engine rebuilt the session from what's actually available
-        // and SUBSTITUTED (Zercher Squat for a racked squat on a Casper day).
-        // Those substitutes are absent from the plan, so subtracting would seed a
-        // logger missing exactly the lifts he's about to do. plan_pinned, stamped
-        // by session_generator, says which case this is. The engine's rows use
-        // reps/rir where the plan uses rep_target/rir_target, so reshape rather
-        // than special-case the seeding below. Runs live in the plan only and are
-        // carried through untouched.
-        const engineReplanned =
-          todayPrescription?.prescription?.plan_pinned === false && engineByName.size > 0;
-        const asPlanShape = (ex) => ({
-          ...ex,
-          rep_target: ex.rep_target ?? ex.reps,
-          rir_target: ex.rir_target ?? ex.rir,
-          set_scheme: Array.isArray(ex.set_scheme)
-            ? ex.set_scheme.map((b) => ({
-                ...b,
-                rep_target: b.rep_target ?? b.reps,
-                rir_target: b.rir_target ?? b.rir,
-              }))
-            : ex.set_scheme,
-        });
-        const engineSelected = engineReplanned
-          ? [
-              ...(todayPrescription?.prescription?.strength_block || []).map(asPlanShape),
-              ...programWorkout.exercises.filter(isRunEx),
-            ]
-          : engineByName.size > 0
-            ? programWorkout.exercises.filter(ex => isRunEx(ex) || engineByName.has(ex.name))
-            : programWorkout.exercises;
-        // The header renders the substituted list; seed the logger from the same
-        // one or the cards would still show the racked squat on a Casper day.
-        // A no-op when the engine already re-planned around the profile, since
-        // what it picked is by definition something the profile can run.
-        const engineFiltered = applyEquipmentProfile(engineSelected, equipmentProfile).exercises;
-        initialLogs = engineFiltered.filter(ex => !isRunEx(ex)).map((ex, index) => {
-          // The plan's set_scheme carries no load_lbs — it's the static weekly
-          // shape, not the day's autoregulated numbers. Match today's engine row
-          // (training_prescription.strength_block) by set_type so real e1RM-based
-          // loads seed the session instead of a from-history Epley guess.
-          // Keyed by label first: two blocks (e.g. "Back-off Vol" / "Back-off Int")
-          // can share set_type "backoff", and keying on set_type alone would
-          // collapse them so the last one's load wins for both.
-          const engineBlocksByLabel = new Map(
-            (engineByName.get(ex.name)?.set_scheme || []).map((b) => [b.label || b.set_type, b])
-          );
-          const targets = progressionTargetsMap[ex.name];
-          const numSets = resolveSetCount(ex.sets);
-
-          // Get last performance for autofill. A merged lift is logged under its
-          // base name ("Bench Press") but everything before the merge was logged
-          // under the variant names it was built from, so fall back to those —
-          // otherwise every merged lift shows an empty history and seeds at zero.
-          const lastPerf = getLastExercisePerformance(allWorkoutLogs, ex.name)
-            || (ex.components || []).reduce(
-                 (found, c) => found || getLastExercisePerformance(allWorkoutLogs, c), null);
-
-          const loadStep = weightUnit === 'kg' ? 2.5 : 5;
-          const e1 = currentE1rm(allWorkoutLogs, ex.name, { components: ex.components || [], anchor: ex.e1rm_anchor });
-          const e1Load = (reps, rir) => loadForTarget(e1, reps, parseRirTarget(rir), loadStep);
-          const targetReps = parseRepTarget(ex.rep_target);
-          // Double progression: prefill per-set rep targets (last reps + 1, or lo after a weight jump).
-          const dSeed = !ex.set_scheme && ex.progression?.type === 'double'
-            ? doubleSeed(allWorkoutLogs, ex) : null;
-          const scaledWeight = lastPerf?.lastWeight && lastPerf?.lastReps
-            ? scaleWeightToReps(lastPerf.lastWeight, lastPerf.lastReps, targetReps)
-            : lastPerf?.lastWeight || 0;
-
-          // A lift the engine merged (heavy top set, then back-offs) arrives as ONE
-          // exercise carrying a set_scheme: blocks of sets that each have their own
-          // reps, RIR and load. Seed straight from the blocks so the card shows the
-          // prescription as written instead of flattening it to one uniform target.
-          // Everything else has no scheme and keeps the uniform seed.
-          const scheme = Array.isArray(ex.set_scheme) ? ex.set_scheme : null;
-          const sets = scheme
-            ? scheme.flatMap((block) => {
-                const blockReps = parseRepTarget(block.rep_target ?? ex.rep_target);
-                const engineBlock = engineBlocksByLabel.get(block.label || block.set_type)
-                  || engineBlocksByLabel.get(block.set_type);
-                const blockWeight = engineBlock?.load_lbs
-                  || block.load_lbs
-                  || blockProgressionWeight(allWorkoutLogs, ex, block)
-                  || e1Load(blockReps, block.rir_target ?? ex.rir_target)
-                  || (lastPerf?.lastWeight && lastPerf?.lastReps
-                      ? scaleWeightToReps(lastPerf.lastWeight, lastPerf.lastReps, blockReps)
-                      : targets?.workingWeight || scaledWeight);
-                return Array.from({ length: Number(block.sets) || 1 }, () => ({
-                  reps: blockReps,
-                  weight: blockWeight,
-                  completed: false,
-                  rpe: null,
-                  rir: null, // never prefill the target as a logged value
-                  rir_target: block.rir_target ?? ex.rir_target ?? null,
-                  set_type: block.set_type || 'working',
-                  set_label: block.label || null,
-                }));
-              }).map((s, setIndex) => ({ ...s, set_number: setIndex + 1 }))
-            // All sets default to working type at working weight
-            : Array.from({ length: numSets }, (_, setIndex) => ({
-                set_number: setIndex + 1,
-                reps: dSeed?.reps[setIndex] ?? targetReps,
-                weight: exerciseProgressionWeight(allWorkoutLogs, ex)
-                  || e1Load(targetReps, ex.rir_target) || targets?.workingWeight || scaledWeight,
-                completed: false,
-                rpe: null,
-                rir: null, // never prefill the target as a logged value
-                rir_target: ex.rir_target ?? null,
-                set_type: 'working',
-              }));
-
-          return {
-            name: ex.name,
-            exercise_index: index,
-            sets,
-          };
-        });
-      } else {
-        // Standard mode: autofill with last used weight, scaled to target reps via Epley.
-        // Two passes: first compute each exercise's own-history suggestion, then
-        // derive back-off weights from the SAME DAY's top set instead of the
-        // back-off's own logged history. History-based back-off fill self-
-        // perpetuates bad data (a back-off once logged at top-set weight keeps
-        // getting suggested at top-set weight forever); anchoring to the top
-        // set's e1RM with the back-off's reps+RIR gives the intended drop
-        // (e.g. top 3@RIR2 vs back-off 5@RIR3 → ~92% of top weight).
-        const suggestions = workout.exercises?.map((exercise) => {
-          const lastPerf = getLastExercisePerformance(allWorkoutLogs, exercise.name);
-          const targetReps = parseRepTarget(exercise.reps);
-          const weight = loadForTarget(
-              currentE1rm(allWorkoutLogs, exercise.name),
-              targetReps, parseRirFromNotes(exercise.notes) || null, weightUnit === 'kg' ? 2.5 : 5)
-            || (lastPerf?.lastWeight && lastPerf?.lastReps
-              ? scaleWeightToReps(lastPerf.lastWeight, lastPerf.lastReps, targetReps)
-              : lastPerf?.lastWeight || 0);
-          return { exercise, targetReps, weight };
-        }) || [];
-
-        for (const s of suggestions) {
-          if (!/\(back-?off/i.test(s.exercise.name)) continue;
-          const top = suggestions.find(
-            (t) => t !== s &&
-              /\(top set\)/i.test(t.exercise.name) &&
-              baseLiftName(t.exercise.name) === baseLiftName(s.exercise.name)
-          );
-          if (!top?.weight) continue;
-          const topE1rm = top.weight * (1 + 0.0333 * (top.targetReps + parseRirFromNotes(top.exercise.notes)));
-          const boPct = 1 + 0.0333 * (s.targetReps + parseRirFromNotes(s.exercise.notes));
-          s.weight = Math.round((topE1rm / boPct) / 2.5) * 2.5;
-        }
-
-        initialLogs = suggestions.map((s, index) => ({
-          name: s.exercise.name,
-          exercise_index: index,
-          sets: Array.from({ length: resolveSetCount(s.exercise.sets) }, (_, setIndex) => ({
-            set_number: setIndex + 1,
-            reps: s.targetReps,
-            weight: s.weight,
-            completed: false,
-            rpe: null,
-            set_type: 'working',
-          })),
-        }));
-      }
-
+      const initialLogs = buildInitialLogs({ workout, isProgramSource, programWorkout, enrollment, progressionTargetsMap, allWorkoutLogs, engineByName, todayPrescription, equipmentProfile, weightUnit });
       setExerciseLogs(initialLogs);
       // startTime is set by handleStartLogging (or handleResumeSession for resumed sessions)
     }
   }, [workout, isLogging, isProgramSource, programWorkout, enrollment, progressionTargetsMap, allWorkoutLogs, exerciseLogs.length, setExerciseLogs, engineByName, todayPrescription, isTodayPrescriptionLoading, equipmentProfile]);
 
-  // Hand the rest deadline to the service worker, which is the only thing here
-  // that can still fire once the phone locks. See the message handler in
-  // /home/nolan/projects/OptiGains/public/sw.js.
-  const postRest = (message) => {
-    if (!("serviceWorker" in navigator)) return;
-    navigator.serviceWorker.ready
-      .then((reg) => reg.active?.postMessage(message))
-      .catch(() => {});
-  };
-
-  // Rest timer — uses absolute end timestamp so it's accurate when tab is backgrounded or revisited
-  useEffect(() => {
-    const tick = () => {
-      if (restTimerEndRef.current === null) return;
-      const remaining = Math.max(0, Math.ceil((restTimerEndRef.current - Date.now()) / 1000));
-      setRestTimer(remaining);
-      if (remaining <= 0) {
-        restTimerEndRef.current = null;
-        // Deliberately no notification here. This tick only runs while the page
-        // is alive and visible, and in that state the countdown he is looking at
-        // has just hit zero on its own. The worker covers the case that actually
-        // needs an alert — screen off, app backgrounded — and skips when a window
-        // is visible, so exactly one of the two speaks at any moment.
-      }
-    };
-    restTimerRef.current = setInterval(tick, 500);
-    return () => clearInterval(restTimerRef.current);
-  }, []);
-
-  // A scheduled rest alarm outlives the page. Cancel it on unmount so leaving
-  // mid-rest does not buzz him three minutes into whatever he did next.
-  useEffect(() => () => postRest({ type: "CANCEL_REST" }), []);
-
-  const startRestTimer = (duration) => {
-    setRestDuration(duration);
-    const endsAt = Date.now() + duration * 1000;
-    restTimerEndRef.current = endsAt;
-    setRestTimer(duration);
-    postRest({ type: "SCHEDULE_REST", at: endsAt });
-  };
-
-  const skipRestTimer = () => {
-    restTimerEndRef.current = null;
-    setRestTimer(null);
-    postRest({ type: "CANCEL_REST" });
-  };
-
-  const addRestTime = (seconds) => {
-    if (restTimerEndRef.current !== null) {
-      restTimerEndRef.current += seconds * 1000;
-      postRest({ type: "SCHEDULE_REST", at: restTimerEndRef.current });
-      setRestDuration(prev => prev + seconds);
-    }
-  };
-
+  const { restTimer, restDuration, startRestTimer, skipRestTimer, addRestTime } = useRestTimer();
 
   const cloneWorkoutMutation = useMutation({
     mutationFn: async () => {
@@ -1411,49 +1072,7 @@ export default function WorkoutDetail() {
 
   if (loadFailed) {
     return (
-      <div className="max-w-6xl mx-auto p-4 md:p-6 min-h-[calc(100dvh-var(--layout-header-height,56px)-var(--dock-clearance))] flex flex-col items-center justify-center">
-        <Card className="w-full max-w-md mx-auto rise-in">
-          <CardContent className="py-12 text-center">
-            <i className="w-10 h-10 rounded-xl glass-inset text-ink-muted flex items-center justify-center not-italic mx-auto mb-3">
-              <Dumbbell className="w-5 h-5" />
-            </i>
-            {programLoadError ? (
-              <>
-                <h2 className="type-display text-2xl text-ink mb-2">Couldn&apos;t load this workout</h2>
-                <p className="text-[13px] font-semibold text-ink-muted mb-6">
-                  Couldn&apos;t load this program workout, try again.
-                </p>
-                <div className="flex flex-col sm:flex-row sm:justify-center gap-3">
-                  <Button
-                    variant="volt"
-                    size="lg"
-                    className="w-full sm:w-auto"
-                    onClick={() => { refetchEnrollment(); refetchProgramWorkout(); }}
-                  >
-                    <RotateCw className="w-4 h-4 mr-2" />
-                    Try again
-                  </Button>
-                  <Button variant="ghost" size="lg" className="w-full sm:w-auto" onClick={() => navigate("/workouts")}>
-                    <ArrowLeft className="w-4 h-4 mr-2" />
-                    Back to Workouts
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <>
-                <h2 className="type-display text-2xl text-ink mb-2">Workout not found</h2>
-                <p className="text-[13px] font-semibold text-ink-muted mb-6">
-                  This workout may have been deleted, or the link is no longer valid.
-                </p>
-                <Button variant="volt" size="lg" className="w-full sm:w-auto" onClick={() => navigate("/workouts")}>
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Workouts
-                </Button>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      <WorkoutLoadError navigate={navigate} programLoadError={programLoadError} refetchEnrollment={refetchEnrollment} refetchProgramWorkout={refetchProgramWorkout} />
     );
   }
 
@@ -1469,52 +1088,7 @@ export default function WorkoutDetail() {
   // about when each chip appears. Defined after the loading/not-found guards
   // above (not a hook, so this is safe) since it reads workout.focus/exercises.
   const chipsRow = (
-    <div className="flex flex-wrap gap-2">
-      <Badge variant="outline" className="capitalize">
-        {workout.focus}
-      </Badge>
-      {isProgramSource && (
-        <Badge variant="slate">Program Workout</Badge>
-      )}
-      <EquipmentProfileToggle swaps={equipmentSwaps} />
-      {isProgramSource && !isLogging && (
-        <OverrideProgramWorkout
-          programWorkout={programWorkout}
-          onDone={refetchProgramWorkout}
-        />
-      )}
-      {isLogging && (
-        <Badge variant="slate">Logging Active</Badge>
-      )}
-      {isLogging && (
-        <button
-          type="button"
-          onClick={() => setShowShotList((v) => !v)}
-          aria-pressed={showShotList}
-          className="min-h-[44px] -my-2 inline-flex items-center"
-        >
-          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold border transition-colors ${
-            showShotList
-              ? 'bg-brand/[0.16] border-brand/40 text-brand'
-              : 'border-charcoal-border text-ink-muted hover:border-brand/30 hover:text-ink'
-          }`}>
-            <Camera className="w-3.5 h-3.5" />
-            Shot list
-          </span>
-        </button>
-      )}
-      {/* Diagnostic status while the toggle is on — a silent fetch failure
-          or an empty result otherwise looks identical to "feature missing". */}
-      {isLogging && showShotList && (shotNotesError || shotNotesLoading || shotNoteCount === 0) && (
-        <span className="text-[11px] font-semibold text-warn self-center">
-          {shotNotesError
-            ? `Shot notes failed to load: ${shotNotesError.message || String(shotNotesError)}`
-            : shotNotesLoading
-              ? "Loading shot notes…"
-              : "No shot notes found for this account"}
-        </span>
-      )}
-    </div>
+    <SessionChips equipmentSwaps={equipmentSwaps} isLogging={isLogging} isProgramSource={isProgramSource} programWorkout={programWorkout} refetchProgramWorkout={refetchProgramWorkout} setShowShotList={setShowShotList} shotNoteCount={shotNoteCount} shotNotesError={shotNotesError} shotNotesLoading={shotNotesLoading} showShotList={showShotList} workout={workout} />
   );
 
   const muscleToggleRow = workout.exercises?.length > 0 && getWorkoutBodyData(workout.exercises).length > 0 ? (
@@ -1592,536 +1166,23 @@ export default function WorkoutDetail() {
             list (rendered further down, in the isLogging branch), so the
             focused exercise sits at the top of the page instead of under this
             card. */}
-        {!isLogging && (
-        <Card className="mb-6">
-          <CardHeader className="pt-4 pb-2">
-            <div className="flex items-center justify-between">
-              {chipsRow}
-              {muscleToggleRow}
-            </div>
-          </CardHeader>
-          <CardContent className="flex flex-col md:flex-row md:gap-8">
-            <div className="flex-1 min-w-0">
-              {/* Title + description */}
-              <CardTitle className="type-display text-2xl mb-1">{workout.title}</CardTitle>
-              {workout.description && workout.description.trim().toLowerCase() !== (workout.title || "").trim().toLowerCase() && (
-                <p className="text-[13px] font-semibold text-ink-muted mb-4">{workout.description}</p>
-              )}
-              {/* wd-5: one HERO figure (Exercises — always present, the core
-                  count for the session) reads as the hero-metric; Duration is
-                  subordinate (smaller, muted) so the two summary numbers form a
-                  clear hierarchy instead of two equal-weight twins. */}
-              <div className="flex flex-wrap items-end gap-x-8 gap-y-3 mb-6">
-                  <div className="flex items-center gap-2.5">
-                    <Target className="w-6 h-6 text-ink-muted" />
-                    <div>
-                      <div className="section-label">Exercises</div>
-                      <div className="hero-metric text-[28px] text-ink">{workout.exercises?.length || 0} <span className="text-[12px] font-semibold text-ink-muted">{(workout.exercises?.length || 0) === 1 ? 'exercise' : 'exercises'}</span></div>
-                    </div>
-                  </div>
-                  {workout.duration_minutes != null && (
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-ink-faint" />
-                      <div>
-                        <div className="section-label">Duration</div>
-                        <div className="font-technical font-bold text-[14px] text-ink-secondary">{workout.duration_minutes} <span className="text-[11px] font-semibold text-ink-muted">min</span></div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-
-                {!resumeSession && (
-                  <div className="space-y-3">
-                    <Button
-                      onClick={handleStartLogging}
-                      variant="volt"
-                      size="lg"
-                      className="w-full hidden lg:flex"
-                    >
-                      <Dumbbell className="w-5 h-5 mr-2" />
-                      Start Logging Workout
-                    </Button>
-                    {workout.created_by === user.id && (
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => navigate(`/create-workout?edit=${workout.id}`)}
-                          variant="outline"
-                          size="lg"
-                          className="flex-1"
-                        >
-                          <Edit className="w-4 h-4 mr-2" />
-                          Edit Workout
-                        </Button>
-                        <Button
-                          onClick={() => cloneWorkoutMutation.mutate()}
-                          variant="outline"
-                          size="lg"
-                          className="flex-1"
-                          disabled={cloneWorkoutMutation.isPending}
-                        >
-                          <Copy className="w-4 h-4 mr-2" />
-                          Clone
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Right: muscle figure sidebar */}
-              {workout.exercises?.length > 0 && (() => {
-                const bodyData = getWorkoutBodyData(workout.exercises);
-                return bodyData.length > 0 ? (
-                  <div className="flex flex-col items-center mt-4 md:mt-0 md:w-64 md:shrink-0 lg:hidden">
-                    <MuscleHeatMap data={bodyData} view={muscleView} className="flex-1" maxWidth={150} />
-                  </div>
-                ) : null;
-              })()}
-          </CardContent>
-        </Card>
-        )}
+        <SessionCard chipsRow={chipsRow} cloneWorkoutMutation={cloneWorkoutMutation} handleStartLogging={handleStartLogging} isLogging={isLogging} muscleToggleRow={muscleToggleRow} muscleView={muscleView} navigate={navigate} resumeSession={resumeSession} user={user} workout={workout} />
 
         {isLogging ? (
           // Logging Mode - Show editable exercise logs
-          <div className="space-y-6">
-            {/* Zero-exercise fallback: with no exercises there's no focused
-                card, so its kebab (the only other place "Cancel workout"
-                lives after Phase A removed the header's own kebab) never
-                renders. Keep Cancel reachable here instead. */}
-            {exerciseLogs.length === 0 && (
-              <div className="glass px-4 py-3 flex items-center justify-between gap-3">
-                <p className="text-xs font-semibold text-ink-muted">No exercises in this workout yet.</p>
-                <button
-                  type="button"
-                  onClick={() => setShowCancelConfirm(true)}
-                  className="text-xs font-bold text-bad flex-shrink-0"
-                >
-                  Cancel workout
-                </button>
-              </div>
-            )}
-
-            <DndContext sensors={dragSensors} collisionDetection={closestCenter} onDragEnd={handleExerciseDragEnd}>
-              <SortableContext
-                items={exerciseLogs.map((_, i) => String(i))}
-                strategy={verticalListSortingStrategy}
-              >
-                {exerciseLogs.map((exerciseLog, exerciseIndex) => {
-                  // "Next" / "last time" module header (mockup .mod/.mh):
-                  // printed once, directly above the first UPCOMING compact
-                  // row (the exercise right after the focused one) — not
-                  // above already-done compact rows before it, which read as
-                  // history rather than "next".
-                  const showNextHeader = exerciseIndex === effectiveFocusIndex + 1;
-                  const lastPerformance = getLastExercisePerformance(allWorkoutLogs, exerciseLog.name);
-                  // e1RM sparkline data — computed ONLY for the focused
-                  // exercise (fetch/compute scoped to what's on screen, per
-                  // the coordinator's e1RM module requirement), reusing the
-                  // exact same history function Lifts.jsx uses.
-                  const e1rmHistory = exerciseIndex === effectiveFocusIndex
-                    ? getExerciseE1rmHistory(allWorkoutLogs, exerciseLog.name)
-                    : null;
-                  const programEx = isProgramSource ? programWorkout?.exercises?.find(ex => ex.name === exerciseLog.name) || null : null;
-                  const targets = programEx ? progressionTargetsMap[programEx.name] : null;
-                  // Match the template entry BY NAME, like programEx above. This was
-                  // `workout.exercises[exerciseIndex]` — a positional lookup into an
-                  // array that removeExercise never filters. Delete exercise 2 and
-                  // exercise 3 slides into index 2 while the template at index 2 is
-                  // still the deleted one, so the dead exercise's notes AND its
-                  // target sets x reps (ExerciseCard renders both from this prop)
-                  // reappear on the exercise below it.
-                  const originalEx = workout?.exercises?.find(e => e.name === exerciseLog.name) || null;
-                  return (
-                    <Fragment key={exerciseIndex}>
-                    {showNextHeader && (
-                      <div className="flex items-baseline justify-between px-1 pt-3 pb-1 mt-1 border-t border-charcoal-border">
-                        <span className="text-[11px] font-bold uppercase tracking-[0.04em] text-ink-muted">Next</span>
-                        <span className="text-[11px] font-bold uppercase tracking-[0.04em] text-ink-muted">last time</span>
-                      </div>
-                    )}
-                    <SortableExerciseRow
-                      id={String(exerciseIndex)}
-                      exerciseIndex={exerciseIndex}
-                      // Scroll the card (and the active set row it contains) clear of
-                      // the floating Cancel/Finish bar when focus/scrollIntoView lands
-                      // here, matching the bar's measured footprint.
-                      className="scroll-mb-[calc(var(--logging-bar-clearance,132px)+16px)] lg:scroll-mb-0"
-                    >
-                      {(dragHandleProps) => (
-                        <ExerciseCard
-                          exercise={exerciseLog}
-                          exerciseIndex={exerciseIndex}
-                          weightUnit={weightUnit}
-                          onUpdateSet={handleUpdateSet}
-                          onAddSet={addSet}
-                          onRemoveSet={handleRemoveSet}
-                          onRemoveExercise={handleRemoveExercise}
-                          onUpdateNotes={updateExerciseNotes}
-                          onUpdateName={updateExerciseName}
-                          originalExercise={originalEx}
-                          lastPerformance={lastPerformance}
-                          loadWhy={isProgramSource ? buildLoadWhy(engineByName.get(exerciseLog.name), exerciseLog.sets, weightUnit) : null}
-                          programExercise={programEx}
-                          progressionTargets={targets}
-                          onReplaceExercise={handleReplaceExercise}
-                          dayFocus={workout.focus || "Full Body"}
-                          goal={profile?.primary_goal || "general_fitness"}
-                          fitnessLevel={profile?.fitness_level || "intermediate"}
-                          equipment={profile?.available_equipment || []}
-                          currentWeekExerciseNames={allExerciseNames}
-                          allExerciseNames={allHistoryExerciseNames}
-                          onStartRestTimer={startRestTimer}
-                          showRIR={profile?.show_rir ?? true}
-                          liked={isExerciseLiked(profile, exerciseLog.name)}
-                          onToggleLike={() => toggleLike.mutate({ profile, exerciseName: exerciseLog.name })}
-                          dragHandleProps={dragHandleProps}
-                          showShotList={showShotList}
-                          shotNote={shotNoteFor(exerciseLog.name)}
-                          isFocused={exerciseIndex === effectiveFocusIndex}
-                          onFocus={() => setFocusedExerciseIndex(exerciseIndex)}
-                          onOpenCalculators={
-                            exerciseIndex === effectiveFocusIndex
-                              ? () => window.dispatchEvent(new Event("open-calculators"))
-                              : null
-                          }
-                          onRequestCancelWorkout={
-                            exerciseIndex === effectiveFocusIndex
-                              ? () => setShowCancelConfirm(true)
-                              : null
-                          }
-                          reorderMode={reorderMode}
-                          onToggleReorderMode={() => setReorderMode((v) => !v)}
-                          isLastRow={
-                            exerciseIndex === exerciseLogs.length - 1
-                            || exerciseIndex + 1 === effectiveFocusIndex
-                          }
-                          e1rmHistory={e1rmHistory}
-                        />
-                      )}
-                    </SortableExerciseRow>
-                    </Fragment>
-                  );
-                })}
-              </SortableContext>
-            </DndContext>
-
-            {/* Cardio sessions (program mode only — separate from lift, not logged as sets) */}
-            {isProgramSource && <CardioSessions programWorkout={programWorkout} />}
-
-            {/* Add Exercise Form */}
-            <AddExerciseForm onAdd={addExercise} exerciseNames={allHistoryExerciseNames} />
-
-            {/* Session details — the chips, hero metrics, muscle-view toggle,
-                and Pre-workout Notes that live in the full session Card when
-                not logging. Collapsed by default (never auto-opens, unlike
-                the old standalone Pre-workout Notes disclosure) and pinned
-                below the logger so the focused exercise stays at the top of
-                the page. Pre-workout Notes still writes the same
-                preWorkoutNotes state either way. */}
-            <details className="glass-inset group mt-2">
-              <summary className="flex items-center justify-between px-4 py-3 cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden min-h-[44px]">
-                <span className="section-label">Session details</span>
-                <ChevronDown className="w-4 h-4 text-ink-muted transition-transform duration-200 group-open:rotate-180" />
-              </summary>
-              <div className="px-4 pb-4 space-y-4">
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  {chipsRow}
-                  {muscleToggleRow}
-                </div>
-                <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
-                  <div className="flex items-center gap-2.5">
-                    <Target className="w-5 h-5 text-ink-muted" />
-                    <div>
-                      <div className="section-label">Exercises</div>
-                      <div className="hero-metric text-[20px] text-ink">{workout.exercises?.length || 0}</div>
-                    </div>
-                  </div>
-                  {workout.duration_minutes != null && (
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-ink-faint" />
-                      <div>
-                        <div className="section-label">Duration</div>
-                        <div className="font-technical font-bold text-[14px] text-ink-secondary">{workout.duration_minutes} <span className="text-[11px] font-semibold text-ink-muted">min</span></div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <label className="section-label block mb-1.5">Pre-workout Notes</label>
-                  <Textarea
-                    value={preWorkoutNotes}
-                    onChange={(e) => setPreWorkoutNotes(e.target.value)}
-                    placeholder="Anything notable going in? Energy, soreness, focus..."
-                    className="bg-transparent border border-charcoal-border rounded-lg px-3 py-2 min-h-[60px] resize-none text-base"
-                  />
-                </div>
-              </div>
-            </details>
-          </div>
+          <WorkoutLogger CardioSessions={CardioSessions} addExercise={addExercise} addSet={addSet} allExerciseNames={allExerciseNames} allHistoryExerciseNames={allHistoryExerciseNames} allWorkoutLogs={allWorkoutLogs} chipsRow={chipsRow} dragSensors={dragSensors} effectiveFocusIndex={effectiveFocusIndex} engineByName={engineByName} exerciseLogs={exerciseLogs} handleExerciseDragEnd={handleExerciseDragEnd} handleRemoveExercise={handleRemoveExercise} handleRemoveSet={handleRemoveSet} handleReplaceExercise={handleReplaceExercise} handleUpdateSet={handleUpdateSet} isProgramSource={isProgramSource} muscleToggleRow={muscleToggleRow} preWorkoutNotes={preWorkoutNotes} profile={profile} programWorkout={programWorkout} progressionTargetsMap={progressionTargetsMap} reorderMode={reorderMode} setFocusedExerciseIndex={setFocusedExerciseIndex} setPreWorkoutNotes={setPreWorkoutNotes} setReorderMode={setReorderMode} setShowCancelConfirm={setShowCancelConfirm} shotNoteFor={shotNoteFor} showShotList={showShotList} startRestTimer={startRestTimer} toggleLike={toggleLike} updateExerciseName={updateExerciseName} updateExerciseNotes={updateExerciseNotes} weightUnit={weightUnit} workout={workout} />
         ) : (
           // View Mode - Show exercises read-only
-          <>
-          <Card className="">
-            <CardHeader className="pt-4 pb-2">
-              <CardTitle className="text-[17px] font-extrabold text-ink">Exercises</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {workout.exercises?.map((exercise, index) => {
-                const isLogFormat = Array.isArray(exercise.sets);
-                return (
-                  <div key={index} className="glass-inset px-4 py-3.5">
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-full glass-inset border border-charcoal-border flex items-center justify-center text-ink-secondary font-technical font-extrabold text-[13px] flex-shrink-0">
-                          {index + 1}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-[15px] font-extrabold text-ink mb-2">{exercise.name}</h4>
-                          {isLogFormat ? (
-                            <table className="w-full text-sm mt-2">
-                              <thead>
-                                <tr className="border-b border-charcoal-border">
-                                  <th className="text-left py-2 px-2 text-[9.5px] font-bold uppercase tracking-[0.08em] text-ink-muted">Set</th>
-                                  <th className="text-left py-2 px-2 text-[9.5px] font-bold uppercase tracking-[0.08em] text-ink-muted">Weight</th>
-                                  <th className="text-left py-2 px-2 text-[9.5px] font-bold uppercase tracking-[0.08em] text-ink-muted">Reps</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {exercise.sets.map((set, si) => (
-                                  <tr key={si} className="border-b border-charcoal-borderSoft">
-                                    <td className="py-2 px-2 font-technical font-extrabold text-ink-muted">{set.set_number}</td>
-                                    <td className="py-2 px-2 font-technical font-semibold text-ink-secondary">{set.weight} <span className="text-[10px] text-ink-faint">{weightUnit}</span></td>
-                                    <td className="py-2 px-2 font-technical font-semibold text-ink-secondary">{set.duration_s != null ? `${set.duration_s}s` : set.reps}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          ) : (
-                            <div className="flex flex-wrap gap-4 text-[12.5px] font-semibold text-ink-muted">
-                              {exercise.sets > 1 && (
-                                <div>
-                                  <span className="text-ink-muted">Sets:</span> <span className="font-technical font-extrabold text-ink-secondary">{exercise.sets}</span>
-                                </div>
-                              )}
-                              <div>
-                                <span className="text-ink-muted">{exercise.sets === 1 ? 'Duration / Target' : 'Reps'}:</span> <span className="font-technical font-extrabold text-ink-secondary">{exercise.reps}</span>
-                              </div>
-                              {exercise.rest_seconds > 0 && (
-                                <div>
-                                  <span className="text-ink-muted">Rest:</span> <span className="font-technical font-extrabold text-ink-secondary">{exercise.rest_seconds}s</span>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          {exercise.notes && (
-                            <p className="text-xs font-semibold text-ink-muted mt-2 italic">{exercise.notes}</p>
-                          )}
-                        </div>
-                      </div>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-
-          {/* Conditioning — read-only run/swim detail (was missing from view mode,
-              so a two-a-day's run had no clickable detail). */}
-          {isProgramSource &&
-            (programWorkout?.cardio_sessions?.length > 0 ||
-              (programWorkout?.exercises || []).some(isRunEx)) && (
-            <Card className="mt-3">
-              <CardContent className="pt-4 pb-4">
-                <CardioSessions programWorkout={programWorkout} />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Sticky thumb-zone primary action — mobile only. Keeps "Start
-              Logging" reachable after scrolling the exercise list. Clears the
-              floating dock via --dock-clearance + safe-area inset.
-              wd-6: the CTA is its own teal action surface, so the wrapping
-              glass-elevated panel (a card around a button) is dropped — the
-              button rides directly in the sticky slot with no redundant chrome
-              behind it. */}
-          <div
-            className="lg:hidden sticky bottom-0 -mx-4 px-4 pt-3 z-30 pointer-events-none"
-            style={{ paddingBottom: 'calc(var(--dock-clearance) + env(safe-area-inset-bottom))' }}
-          >
-            <Button
-              onClick={handleStartLogging}
-              variant="volt"
-              size="lg"
-              className="w-full pointer-events-auto"
-              data-tutorial="start-logging-btn"
-            >
-              <Dumbbell className="w-5 h-5 mr-2" />
-              Start Logging Workout
-            </Button>
-          </div>
-          </>
+          <WorkoutViewMode CardioSessions={CardioSessions} handleStartLogging={handleStartLogging} isProgramSource={isProgramSource} programWorkout={programWorkout} weightUnit={weightUnit} workout={workout} />
         )}
         </div>{/* end main column */}
 
         {/* Sticky anatomy sidebar — desktop only */}
-        {workout.exercises?.length > 0 && (() => {
-          const bodyData = getWorkoutBodyData(workout.exercises);
-          return bodyData.length > 0 ? (
-            <div
-              className="hidden lg:flex flex-col items-center w-52 shrink-0 sticky"
-              style={{ top: isLogging ? 'calc(var(--layout-header-height, 56px) + 8rem)' : 'calc(var(--layout-header-height, 56px) + 1.5rem)' }}
-            >
-              <p className="section-label mb-2 self-start">Muscles worked</p>
-              <SegmentedControl
-                value={muscleView}
-                onChange={setMuscleView}
-                size="md"
-                className="mb-3"
-                options={[
-                  { value: "anterior", label: "Front" },
-                  { value: "posterior", label: "Back" },
-                ]}
-              />
-              <MuscleHeatMap data={bodyData} view={muscleView} maxWidth={200} />
-            </div>
-          ) : null;
-        })()}
+        <AnatomySidebar isLogging={isLogging} muscleView={muscleView} setMuscleView={setMuscleView} workout={workout} />
         </div>{/* end two-column flex */}
       </div>
 
-      {/* Resume previous session prompt. Dismissing via scrim tap must NOT cancel
-          the real in-progress session (that used to fire handleDismissResume, so
-          an accidental tap outside the dialog silently discarded the workout) —
-          onOpenChange is a no-op here; only the explicit "Start Fresh" button may
-          cancel it. */}
-      {weighInGateSheet}
-      <Dialog open={!!resumeSession} onOpenChange={() => {}}>
-        <DialogContent className="max-w-sm" hideClose>
-          <DialogHeader>
-            <DialogTitle>Resume Workout?</DialogTitle>
-          </DialogHeader>
-          <p className="text-[14px] font-medium text-ink-secondary leading-relaxed">
-            You have an unfinished session started {formatTimeAgo(resumeSession?.start_time)}. Would you like to pick up where you left off?
-          </p>
-          <div className="flex gap-3 pt-2">
-            <Button variant="outline" className="flex-1" onClick={handleDismissResume}>
-              Start Fresh
-            </Button>
-            <Button variant="volt" className="flex-1" onClick={handleResumeSession}>
-              Resume
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* "All sets done" confirm: opened only by the transition effect above.
-          "Not yet" just closes it; nothing is saved or ended on its own. */}
-      <Dialog open={showAllDonePrompt} onOpenChange={setShowAllDonePrompt}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>All sets done. Finish workout?</DialogTitle>
-          </DialogHeader>
-          <DialogDescription>
-            That was the last set. Finish and save this session, or keep going if you want to add more.
-          </DialogDescription>
-          <div className="flex gap-3 pt-2">
-            <Button variant="outline" className="flex-1" onClick={() => setShowAllDonePrompt(false)}>
-              Not yet
-            </Button>
-            <Button
-              variant="volt"
-              className="flex-1"
-              onClick={() => { setShowAllDonePrompt(false); handleSaveWorkoutLog(); }}
-            >
-              Finish workout
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Incomplete sets prompt */}
-      <Dialog open={showIncompletePrompt} onOpenChange={(open) => { if (!open) setShowIncompletePrompt(false); }}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Incomplete Sets</DialogTitle>
-          </DialogHeader>
-          <DialogDescription>
-            Some sets haven't been checked off. Would you like to mark them all as complete?
-          </DialogDescription>
-          <div className="flex gap-3 pt-2">
-            <Button variant="outline" className="flex-1" onClick={() => handleIncompleteResponse(false)}>
-              Leave As-Is
-            </Button>
-            <Button variant="volt" className="flex-1" onClick={() => handleIncompleteResponse(true)}>
-              Complete All
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Cancel workout confirm — moved here from WorkoutLoggingHeader's old
-          kebab in the Phase A rebuild; reachable from the focused exercise's
-          kebab, or the zero-exercise fallback link below. */}
-      <Dialog open={showCancelConfirm} onOpenChange={setShowCancelConfirm}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Cancel Workout?</DialogTitle>
-          </DialogHeader>
-          <DialogDescription>
-            Your progress for this workout will be lost. Are you sure you want to cancel?
-          </DialogDescription>
-          <div className="flex gap-3 pt-2">
-            <Button variant="outline" className="flex-1" onClick={() => setShowCancelConfirm(false)}>
-              Keep Going
-            </Button>
-            <Button
-              variant="destructive"
-              className="flex-1"
-              onClick={() => { setShowCancelConfirm(false); handleCancelLogging(); }}
-            >
-              Cancel Workout
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Post-workout notes prompt */}
-      <Dialog open={showPostWorkoutDialog} onOpenChange={setShowPostWorkoutDialog}>
-        <DialogContent className="md:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Finish Workout</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <FinishSummary exercises={exerciseLogs} allWorkoutLogs={allWorkoutLogs} weightUnit={weightUnit} />
-            <div className="space-y-2">
-              <label className="section-label">Workout Notes</label>
-              <Textarea
-                value={postWorkoutNotes}
-                onChange={(e) => setPostWorkoutNotes(e.target.value)}
-                placeholder="What felt good/bad? Any injuries? Pump quality?"
-                rows={4}
-              />
-            </div>
-            <div className="flex gap-3">
-              <Button variant="ghost" size="lg" className="flex-1" onClick={() => setShowPostWorkoutDialog(false)}>
-                Go Back
-              </Button>
-              <Button
-                variant="volt"
-                size="lg"
-                className="flex-[2]"
-                disabled={saveWorkoutLogMutation.isPending || saveWorkoutLogMutation.isSuccess}
-                onClick={() => saveWorkoutLogMutation.mutate()}
-              >
-                {saveWorkoutLogMutation.isPending
-                  ? "Saving..."
-                  : saveWorkoutLogMutation.isSuccess
-                    ? "Saved"
-                    : "Log Workout"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <WorkoutDetailDialogs allWorkoutLogs={allWorkoutLogs} exerciseLogs={exerciseLogs} handleCancelLogging={handleCancelLogging} handleDismissResume={handleDismissResume} handleIncompleteResponse={handleIncompleteResponse} handleResumeSession={handleResumeSession} handleSaveWorkoutLog={handleSaveWorkoutLog} postWorkoutNotes={postWorkoutNotes} resumeSession={resumeSession} saveWorkoutLogMutation={saveWorkoutLogMutation} setPostWorkoutNotes={setPostWorkoutNotes} setShowAllDonePrompt={setShowAllDonePrompt} setShowCancelConfirm={setShowCancelConfirm} setShowIncompletePrompt={setShowIncompletePrompt} setShowPostWorkoutDialog={setShowPostWorkoutDialog} showAllDonePrompt={showAllDonePrompt} showCancelConfirm={showCancelConfirm} showIncompletePrompt={showIncompletePrompt} showPostWorkoutDialog={showPostWorkoutDialog} weighInGateSheet={weighInGateSheet} weightUnit={weightUnit} />
 
     </div>
   );
