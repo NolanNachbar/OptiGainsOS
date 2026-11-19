@@ -39,7 +39,7 @@ const NORMALIZED_DB = EXERCISE_DB.map((ex) => ({
   tokens: new Set(normalize(ex.name).split(" ")),
 }));
 
-function findExercise(name) {
+export function findExercise(name) {
   if (!name) return null;
 
   // 1. Exact match

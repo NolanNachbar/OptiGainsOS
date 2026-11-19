@@ -46,13 +46,13 @@ export const STALE_SESSION_MS = 24 * 60 * 60 * 1000;
 export const AUTO_FINISH_STALE_MS = 3 * 60 * 60 * 1000;
 
 /**
- * Oldest session (by start_time) the auto-finish will log on its own. 48h
- * covers "started it yesterday, forgot Finish". Older in_progress rows date
+ * Oldest session (by start_time) the auto-finish will log on its own. 14 days
+ * covers a forgotten Finish even after a few days away from the app (a 48h cap left a Fri session as a Resume prompt on Mon, 2026-11-16). Older in_progress rows date
  * from before the auto-finish existed and some hold sets ticked seconds after
  * start, so they go to Today's Unfinished sessions card for a manual
  * Log/Discard instead of being back-filled into history.
  */
-export const AUTO_FINISH_MAX_AGE_MS = 48 * 60 * 60 * 1000;
+export const AUTO_FINISH_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000;
 
 const KEY = "optigains-workout-active";
 const EVENT = "optigains-workout-flag-changed";

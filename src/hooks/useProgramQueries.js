@@ -6,6 +6,7 @@ import { updateProgressionState } from "@/utils/programProgression";
 import { normalizeCardioSession, getProgramSchedule } from "@/utils/programSchedule";
 import { useProfile } from "@/hooks/useUserQueries";
 import { getTodayString } from "@/utils/dateUtils";
+import { orderExercisesForFatigue } from "@/utils/exerciseOrder";
 
 // ── Queries ──────────────────────────────────────────────
 
@@ -38,6 +39,7 @@ export function useProgram(id) {
 
       const normalized = sorted.map(w => ({
         ...w,
+        exercises: orderExercisesForFatigue(w.exercises),
         cardio_sessions: (w.cardio_sessions || []).map(normalizeCardioSession),
       }));
       return { ...program, workouts: normalized };

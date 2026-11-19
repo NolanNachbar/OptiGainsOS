@@ -78,6 +78,8 @@ export const clampCutProtein = (protein, weightLb) =>
     ? Math.round(clamp(protein || 0, CUT_PROTEIN_MIN_PER_LB * weightLb, CUT_PROTEIN_MAX_PER_LB * weightLb))
     : protein;
 
+const NO_AGGRESSIVE_CUT_THROUGH = "2026-12-31";
+
 export function useDailyTargets(date) {
   const { user } = useAuth();
   const { profile } = useProfile();
@@ -177,7 +179,11 @@ export function useDailyTargets(date) {
   }
   // An aggressive cut (engine deficit ≥20% or a ≥1.5 lb/wk phase) additionally
   // restricts carbs to pre-workout on training days — enforced by the optimizer.
+  // Hardcoded off through the OCS ship date: the engine's deficit_ratio does not
+  // follow the manual slider, so a moderate deficit still tripped the carb ban and
+  // wiped forced foods. Lapses on its own after the date.
   const aggressiveCut =
+    !(date && date <= NO_AGGRESSIVE_CUT_THROUGH) &&
     isCut &&
     ((recommended?.deficit_ratio || 0) >= 0.2 || Math.abs(activePhase?.weekly_rate || 0) >= 1.5);
 

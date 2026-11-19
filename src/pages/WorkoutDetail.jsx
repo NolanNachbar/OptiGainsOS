@@ -27,6 +27,7 @@ import { isWarmupSet, baseType } from "@/utils/setTypes";
 import { currentE1rm, loadForTarget } from "@/utils/e1rm";
 import { exerciseProgressionWeight, doubleSeed } from "@/utils/progressionRules";
 import { applyEquipmentProfileToWorkout, substituteFor } from "@/utils/equipmentProfile";
+import { orderExercisesForFatigue } from "@/utils/exerciseOrder";
 import { useWorkoutSession } from "@/hooks/useWorkoutSession";
 import { useWeighInGate } from "@/hooks/useWeighInGate";
 import { STALE_SESSION_MS, AUTO_FINISH_STALE_MS, AUTO_FINISH_MAX_AGE_MS } from "@/lib/workoutSessionFlag";
@@ -133,7 +134,10 @@ export default function WorkoutDetail() {
   // Fetch program workout data (program mode only)
   const { data: programWorkout, isError: programWorkoutError, refetch: refetchProgramWorkout } = useQuery({
     queryKey: ['programWorkout', programWorkoutId],
-    queryFn: () => db.entities.ProgramWorkout.get(programWorkoutId),
+    queryFn: async () => {
+      const pw = await db.entities.ProgramWorkout.get(programWorkoutId);
+      return pw ? { ...pw, exercises: orderExercisesForFatigue(pw.exercises) } : pw;
+    },
     enabled: isProgramSource && !!programWorkoutId,
   });
 

@@ -2,6 +2,7 @@ import { getLastExercisePerformance } from "@/utils/exerciseStats";
 import { currentE1rm, loadForTarget } from "@/utils/e1rm";
 import { blockProgressionWeight, exerciseProgressionWeight, doubleSeed } from "@/utils/progressionRules";
 import { applyEquipmentProfile } from "@/utils/equipmentProfile";
+import { orderExercisesForFatigue } from "@/utils/exerciseOrder";
 import { isRunEx, scaleWeightToReps, parseRepTarget, parseRirFromNotes, parseRirTarget, baseLiftName } from "./workoutDetailUtils";
 
 // Seeds the logger's exercise rows when a logging session starts.
@@ -63,7 +64,7 @@ export function buildInitialLogs({ workout, isProgramSource, programWorkout, enr
       // A no-op when the engine already re-planned around the profile, since
       // what it picked is by definition something the profile can run.
       const engineFiltered = applyEquipmentProfile(engineSelected, equipmentProfile).exercises;
-      initialLogs = engineFiltered.filter(ex => !isRunEx(ex)).map((ex, index) => {
+      initialLogs = orderExercisesForFatigue(engineFiltered.filter(ex => !isRunEx(ex))).map((ex, index) => {
         // The plan's set_scheme carries no load_lbs — it's the static weekly
         // shape, not the day's autoregulated numbers. Match today's engine row
         // (training_prescription.strength_block) by set_type so real e1RM-based
