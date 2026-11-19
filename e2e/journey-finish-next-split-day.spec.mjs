@@ -132,7 +132,7 @@ test('finishing today\'s program workout: the next day shows the next day of the
 
     // Same day, back on Today: done, not another Start for the same workout.
     await p1.goto('/today');
-    await expect(p1.getByText('Logged today, nice work.')).toBeVisible({ timeout: 15000 });
+    await expect(p1.getByText('Logged today.')).toBeVisible({ timeout: 15000 });
     await expect(p1.getByRole('button', { name: 'Start', exact: true })).toHaveCount(0);
     await day1.close();
 
@@ -172,7 +172,7 @@ test('finishing today\'s program workout: the next day shows the next day of the
     await signIn(p2, '/today');
     await expect(p2.getByText(DAYS[1].title)).toBeVisible({ timeout: 15000 });
     await expect(p2.getByText(DAYS[0].title)).toHaveCount(0);
-    await expect(p2.getByText('Logged today, nice work.')).toHaveCount(0);
+    await expect(p2.getByText('Logged today.')).toHaveCount(0);
     await expect(p2.getByRole('button', { name: 'Start', exact: true })).toBeVisible();
     // Start on the new day goes to the program logger for day 2's workout.
     const { data: pws } = await db.from('program_workouts').select('id, day_index').eq('program_id', program.id);

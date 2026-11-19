@@ -225,7 +225,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
       if (loggedToday) {
         return (
           <div className="flex items-center gap-2 rounded-lg bg-leaf/[0.12] px-3 min-h-[44px] text-sm font-semibold text-leaf">
-            <Check className="w-4 h-4 shrink-0" /> Logged today, nice work.
+            <Check className="w-4 h-4 shrink-0" /> Logged today.
           </div>
         );
       }
@@ -427,7 +427,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
       return (
         <div className="sess flex items-center gap-2 rounded-lg bg-leaf/[0.12] px-3 min-h-[56px] text-sm font-semibold text-leaf">
           <Check className="w-4 h-4 shrink-0" />
-          <span className="truncate">Logged today, nice work.</span>
+          <span className="truncate">Logged today.</span>
           <Link
             to="/quick-workout"
             state={{ prescribedSession: { title: titleText, exercises: prescribedExercises } }}
@@ -645,7 +645,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
         {!isRest && loggedToday && (
           <div className="mt-3.5 flex items-center gap-2 rounded-lg bg-leaf/[0.12] px-3 min-h-[44px] text-sm font-semibold text-leaf">
             <Check className="w-4 h-4 shrink-0" />
-            <span>Logged today, nice work.</span>
+            <span>Logged today.</span>
             <Link
               to="/quick-workout"
               state={{ prescribedSession: { title: titleText, exercises: prescribedExercises } }}
