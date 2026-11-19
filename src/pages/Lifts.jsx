@@ -4,11 +4,11 @@ import { db } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useUserQueries";
 import { queryKeys } from "@/lib/queryKeys";
-import { PageHeader, Card, CardHeader, CardTitle, CardDescription, ListRow, EmptyState, LoadingState, cn } from "@/components/ui";
+import { PageHeader, Button, Card, CardHeader, CardTitle, CardDescription, ListRow, EmptyState, LoadingState, cn } from "@/components/ui";
 import ExerciseProgressChart from "@/components/progress/ExerciseProgressChart";
 import { getLoggedExerciseSummaries, getRepPRTable } from "@/utils/exerciseStats";
 import { format, parseISO } from "date-fns";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 
 // Body → Lifts (DESIGN.md / IA.md phase-2b): the e1RM progress chart used to
 // be unreachable — ExerciseProgressChart only ever rendered inside
@@ -16,11 +16,15 @@ import { ChevronDown } from "lucide-react";
 // it: every logged exercise, most-recently-lifted first, each row showing its
 // current e1RM and the change over the last 4 weeks; tap a row to expand its
 // full history chart in place.
+const LIFTS_PAGE = 20;
+
 export default function Lifts() {
   const { user } = useAuth();
   const { profile } = useProfile();
   const weightUnit = profile?.weight_unit || "lbs";
   const [expanded, setExpanded] = useState(null);
+  const [query, setQuery] = useState("");
+  const [visibleCount, setVisibleCount] = useState(LIFTS_PAGE);
 
   const { data: workoutLogs = [], isLoading } = useQuery({
     queryKey: queryKeys.workoutLogs(user?.id),
@@ -37,12 +41,28 @@ export default function Lifts() {
     [workoutLogs, expanded]
   );
 
+  const q = query.trim().toLowerCase();
+  const filtered = useMemo(
+    () => (q ? summaries.filter((s) => s.name.toLowerCase().includes(q)) : summaries),
+    [summaries, q]
+  );
+  // An open row stays in view even if the page cut would hide it.
+  const shown = useMemo(() => {
+    const page = filtered.slice(0, visibleCount);
+    if (expanded && !page.some((s) => s.name === expanded)) {
+      const open = filtered.find((s) => s.name === expanded);
+      if (open) page.push(open);
+    }
+    return page;
+  }, [filtered, visibleCount, expanded]);
+  const remaining = filtered.length - visibleCount;
+
   const shell = (children) => (
     <div
       className="min-h-full max-w-[720px] mx-auto"
       style={{ paddingBottom: "calc(var(--floating-chrome-bottom) + 64px)" }}
     >
-      <PageHeader title="Lifts" meta={summaries.length > 0 ? `${summaries.length} logged, latest first` : undefined} />
+      <PageHeader className="max-lg:[&_h1]:sr-only" title="Lifts" meta={summaries.length > 0 ? `${summaries.length} logged, latest first` : undefined} />
       <div className="flex flex-col gap-stack">{children}</div>
     </div>
   );
@@ -65,7 +85,23 @@ export default function Lifts() {
         <CardTitle>e1RM by lift</CardTitle>
         <CardDescription>Estimated from sets of 12 reps or fewer. Change is over the last 4 weeks.</CardDescription>
       </CardHeader>
-      {summaries.map((s) => {
+      <div className="px-gutter pb-3">
+        <label className="flex min-h-tap items-center gap-2 rounded-control border border-charcoal-border bg-charcoal-surface2 px-3 text-ink focus-within:ring-2 focus-within:ring-brand">
+          <Search aria-hidden="true" className="h-4 w-4 shrink-0 text-ink-muted" />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => { setQuery(e.target.value); setVisibleCount(LIFTS_PAGE); }}
+            placeholder="Search lifts"
+            aria-label="Search lifts"
+            className="min-w-0 flex-1 bg-transparent py-2 text-body outline-none placeholder:text-ink-muted"
+          />
+        </label>
+      </div>
+      {filtered.length === 0 && (
+        <p className="px-gutter py-4 text-caption text-ink-muted">No lift matches "{query.trim()}".</p>
+      )}
+      {shown.map((s) => {
         const isOpen = expanded === s.name;
         let value = null;
         let unit = null;
@@ -102,7 +138,7 @@ export default function Lifts() {
                       s.change4w != null && s.change4w > 0 ? "text-leaf" : "text-ink-muted"
                     )}
                   >
-                    {s.change4w == null ? "-- / 4wk" : `${s.change4w > 0 ? "+" : ""}${s.change4w} / 4wk`}
+                    {s.change4w == null ? "" : `${s.change4w > 0 ? "+" : ""}${s.change4w} / 4wk`}
                   </span>
                   <ChevronDown
                     aria-hidden="true"
@@ -155,6 +191,13 @@ export default function Lifts() {
           </div>
         );
       })}
+      {remaining > 0 && (
+        <div className="px-gutter py-3">
+          <Button variant="outline" size="sm" className="w-full min-h-tap" onClick={() => setVisibleCount((n) => n + LIFTS_PAGE)}>
+            Show more ({remaining})
+          </Button>
+        </div>
+      )}
     </Card>
   );
 }

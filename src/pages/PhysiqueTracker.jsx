@@ -332,6 +332,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
     <div className={cn("max-w-3xl mx-auto", hideHeader && "pt-0")}>
       {!hideHeader && (
         <PageHeader
+          className="max-lg:[&_h1]:sr-only"
           title="Physique"
           meta={entries.length > 0 ? `${entries.length} shots${latestDate ? `, latest session ${latestDate}` : ""}` : undefined}
         />
@@ -375,7 +376,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                   value={pose}
                   onChange={setPose}
                   disabled={busy}
-                  className="mb-3 snap-x snap-mandatory scroll-pl-4 [&>button]:snap-start"
+                  className="mb-3 snap-x snap-mandatory scroll-pl-4 [&>button]:snap-start [mask-image:linear-gradient(to_right,black_calc(100%-28px),transparent)]"
                   options={POSES.map((p) => ({ value: p.key, label: p.label }))}
                 />
                 <p className="text-body text-ink-secondary">{POSES.find((p) => p.key === pose)?.cue}</p>
@@ -415,9 +416,6 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                   latestSession.count > 1 ? `avg of ${latestSession.count} shots` : latest.analysis.bodyfat_range || "1 shot"
                 }), ${format(parseISO(latestSession.date), "MMM d, yyyy")}`}
               />
-              {latest.analysis.assessment && (
-                <p className="mt-3 text-body text-ink-secondary line-clamp-2">{latest.analysis.assessment}</p>
-              )}
               {Array.isArray(latest.analysis.focus_areas) && latest.analysis.focus_areas.length > 0 && (
                 <div className="mt-3">
                   <p className="mb-2 text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Focus</p>
@@ -427,11 +425,6 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                     ))}
                   </div>
                 </div>
-              )}
-              {latest.analysis.vs_lean_goal && (
-                <p className="mt-3 text-caption text-ink-muted">
-                  <span className="text-ink-secondary">At a leaner BF: </span>{latest.analysis.vs_lean_goal}
-                </p>
               )}
               <p className="mt-3 text-caption text-ink-faint">
                 Photo estimates run low in accuracy. Read the direction, not the level.
@@ -537,7 +530,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                     variant="chip"
                     value={filterPose}
                     onChange={(v) => { setFilterPose(v); setFilterOpen(false); }}
-                    className="mt-2"
+                    className="mt-2 [mask-image:linear-gradient(to_right,black_calc(100%-28px),transparent)]"
                     options={[
                       { value: null, label: "All" },
                       ...POSES.map((p) => ({ value: p.key, label: p.label })),
@@ -555,8 +548,6 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                   .slice()
                   .reverse();
                 if (poseTimeline.length < 2) return null;
-                const latestDelta = [...poseTimeline].reverse()
-                  .find((e) => e.analysis?.delta?.visual_changes)?.analysis.delta;
                 return (
                   <Card variant="plain" className="mb-3 border border-charcoal-borderSoft rounded-control p-3">
                     <p className="mb-2 text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">{POSE_LABEL[filterPose]} over time</p>
@@ -577,27 +568,25 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                         </div>
                       ))}
                     </div>
-                    {latestDelta?.visual_changes && (
-                      <p className="mt-2 text-caption text-ink-secondary">
-                        <span className="text-ink-muted">Latest read: </span>{latestDelta.visual_changes}
-                      </p>
-                    )}
                   </Card>
                 );
               })()}
 
               {/* Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 grid-flow-dense gap-3">
                 {visibleEntries.map((e) => {
                   const isSelected = compareIds.includes(e.id);
                   return (
                     <div
                       key={e.id}
-                      className="group relative overflow-hidden rounded-control border border-charcoal-borderSoft bg-charcoal-surface2"
+                      className={cn(
+                        "group relative overflow-hidden rounded-control border border-charcoal-borderSoft bg-charcoal-surface2",
+                        !(e.url && e.media_type === "photo") && "col-span-2"
+                      )}
                     >
                       {e.url && e.media_type === "photo"
                         ? <img src={e.url} alt={format(parseISO(e.taken_at), 'MMM d, yyyy')} className="w-full h-48 sm:h-44 object-cover" />
-                        : <div className="w-full h-48 sm:h-44 flex flex-col items-center justify-center gap-2 text-caption text-ink-faint">
+                        : <div className="w-full h-14 flex items-center justify-center gap-2 text-caption text-ink-faint">
                             <Film className="w-5 h-5" aria-hidden="true" /> Video
                           </div>
                       }
@@ -722,9 +711,6 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                       {e.bodyfat_estimate != null && (
                         <p className="text-emph font-semibold text-ink tabular-nums">{e.bodyfat_estimate}% <span className="text-caption font-normal text-ink-muted">est. BF</span></p>
                       )}
-                      {e.analysis?.assessment && (
-                        <p className="pt-1 text-caption text-ink-secondary line-clamp-2">{e.analysis.assessment}</p>
-                      )}
                     </div>
                   </div>
                 ))}
@@ -795,6 +781,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                 value={pose}
                 onChange={setPose}
                 disabled={busy}
+                className="[mask-image:linear-gradient(to_right,black_calc(100%-28px),transparent)]"
                 options={POSES.map((p) => ({ value: p.key, label: p.label }))}
               />
             </div>
