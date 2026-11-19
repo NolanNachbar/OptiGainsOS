@@ -14,6 +14,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState, LoadingState, ErrorState, ReasonLine } from "@/components/ui";
 import {
   Activity, Moon, Zap,
   Info, Calendar, Watch
@@ -172,15 +173,15 @@ export default function RecoveryDetail() {
   const chartMeta = {
     hrv: (() => {
       const d = lastWith("displayHrv");
-      return { value: d ? Math.round(d.displayHrv).toLocaleString() : "—", unit: "ms", label: "Latest HRV", date: d?.formattedDate };
+      return { value: d ? Math.round(d.displayHrv).toLocaleString() : "--", unit: "ms", label: "Latest HRV", date: d?.formattedDate };
     })(),
     steps: (() => {
       const d = lastWith("displaySteps");
-      return { value: d ? Math.round(d.displaySteps).toLocaleString() : "—", unit: "steps", label: "Latest Steps", date: d?.formattedDate };
+      return { value: d ? Math.round(d.displaySteps).toLocaleString() : "--", unit: "steps", label: "Latest Steps", date: d?.formattedDate };
     })(),
     sleep: (() => {
       const d = lastWith("displaySleep");
-      return { value: d ? d.displaySleep.toFixed(1) : "—", unit: "h", label: "Latest Sleep", date: d?.formattedDate };
+      return { value: d ? d.displaySleep.toFixed(1) : "--", unit: "h", label: "Latest Sleep", date: d?.formattedDate };
     })(),
   };
   // `activeChart` is null until the user explicitly picks a tab. While it's
@@ -192,13 +193,7 @@ export default function RecoveryDetail() {
   const resolvedChart =
     activeChart && hasData[activeChart] ? activeChart : firstWithData;
 
-  if (isLoading) return (
-    <div className="p-4 space-y-4">
-      {[1, 2, 3].map(i => (
-        <div key={i} className="h-20 rounded-xl pulse-loop bg-track" />
-      ))}
-    </div>
-  );
+  if (isLoading) return <LoadingState rows={3} />;
 
   return (
     <div className="px-4 py-6 md:px-8 md:py-8 min-h-screen text-ink pb-[var(--fab-clearance)] lg:pb-0">
@@ -207,16 +202,19 @@ export default function RecoveryDetail() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
           <Card className="md:col-span-1 glass-interactive rise-in">
             <CardHeader className="pb-1 md:pb-2">
-              <CardTitle className="section-label">Today's Readiness</CardTitle>
+              <CardTitle className="section-label">Readiness</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col items-center py-1 md:py-3">
-                <div className={`hero-metric ${readinessColor} text-6xl mb-2`}>{score ?? "—"}</div>
+                <div className={`hero-metric ${readinessColor} text-6xl mb-2`}>{score ?? "--"}</div>
                 <Badge className={`${readinessBg} ${readinessColor} text-sm px-4 py-1 rounded-full mb-3 md:mb-4`}>
                   {category.label}
                 </Badge>
+                <ReasonLine className="mb-2">
+                  {[latest?.hrv != null && `HRV ${Math.round(latest.hrv)} ms`, latest?.sleep_score != null && `Sleep ${latest.sleep_score}`, latest?.body_battery != null && `Battery ${latest.body_battery}%`].filter(Boolean).join(" · ") || "No check-in, using defaults."}
+                </ReasonLine>
                 {athleteStateError && (
-                  <p className="text-xs text-warn mb-2">Recovery scores estimated (engine unavailable)</p>
+                  <p className="text-xs text-warn mb-2">Estimated from raw biometrics. Engine unavailable.</p>
                 )}
                 {/* The supporting biometric pair stays quiet so readiness 78 is
                     the only display-weight number in the card: font-technical at
@@ -227,13 +225,13 @@ export default function RecoveryDetail() {
                     <div className="section-label mb-1 flex items-center justify-center gap-1.5">
                       <i className="w-[5px] h-[5px] rounded-full bg-leaf" /> Body Battery
                     </div>
-                    <div className="font-technical text-lg text-ink-secondary">{latest?.body_battery ?? "—"}</div>
+                    <div className="font-technical text-lg text-ink-secondary">{latest?.body_battery ?? "--"}</div>
                   </div>
                   <div className="text-center">
                     <div className="section-label mb-1 flex items-center justify-center gap-1.5">
                       <i className="w-[5px] h-[5px] rounded-full bg-violet" /> Sleep Score
                     </div>
-                    <div className="font-technical text-lg text-ink-secondary">{latest?.sleep_score ?? "—"}</div>
+                    <div className="font-technical text-lg text-ink-secondary">{latest?.sleep_score ?? "--"}</div>
                   </div>
                 </div>
               </div>
@@ -254,7 +252,7 @@ export default function RecoveryDetail() {
                       text-ink-muted) so it never reads as a second colored hero;
                       it only earns the physiological spectrum once it leaves the
                       0.8–1.3 band (warn/bad). */}
-                  <div className={`font-technical text-3xl font-numeral md:text-5xl tabular-nums ${acwrColor} mb-1`}>{acwr != null ? acwr.toFixed(2) : "—"}</div>
+                  <div className={`font-technical text-3xl font-numeral md:text-5xl tabular-nums ${acwrColor} mb-1`}>{acwr != null ? acwr.toFixed(2) : "--"}</div>
                   <div className="section-label">Current Ratio</div>
                 </div>
                 <div className="w-full md:flex-1">
@@ -338,50 +336,21 @@ export default function RecoveryDetail() {
         </Button>
 
         {error ? (
-          <Card className="mb-6 glass">
-            <CardContent className="pb-6">
-              <div className="pt-6 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <Info className="w-5 h-5 text-warn shrink-0" />
-                  <div>
-                    <p className="text-sm font-semibold text-ink">Couldn't load recovery data</p>
-                    <p className="text-xs text-ink-muted mt-0.5">
-                      Check your connection and try again.
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  className="shrink-0 text-ink-muted hover:text-ink"
-                  onClick={() => queryClient.invalidateQueries({ queryKey: ["recoveryMetrics"] })}
-                >
-                  Retry
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <ErrorState
+            className="mb-6"
+            title="Could not load recovery data"
+            onRetry={() => queryClient.invalidateQueries({ queryKey: ["recoveryMetrics"] })}
+          >
+            Check your connection and retry.
+          </ErrorState>
         ) : (!hasHrv && !hasSteps && !hasSleep) ? (
-          <Card className="mb-6 glass">
-            <CardContent className="pb-6">
-              <div className="pt-6 flex items-center gap-3">
-                <Info className="w-5 h-5 text-ink-muted shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-ink">No biometric trends yet</p>
-                  <p className="text-xs text-ink-muted mt-0.5">
-                    Connect your wearable to populate HRV, step, and sleep charts.
-                  </p>
-                </div>
-                <Button
-                  variant="coralGhost"
-                  size="sm"
-                  className="shrink-0"
-                  onClick={goToSync}
-                >
-                  Sync
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <EmptyState
+            className="mb-6"
+            title="No biometric trends yet"
+            action={<Button variant="secondary" size="sm" onClick={goToSync}>Sync</Button>}
+          >
+            Connect a wearable to populate HRV, steps and sleep. Charts draw after 3 days of data.
+          </EmptyState>
         ) : (
         <div className="mb-6">
           <Card className="glass-interactive overflow-hidden rise-in-3">
@@ -403,7 +372,7 @@ export default function RecoveryDetail() {
                       role="tab"
                       aria-selected={isActive}
                       onClick={() => setActiveChart(id)}
-                      className={`flex flex-1 items-center justify-center gap-1.5 h-9 rounded-full text-[11px] font-bold uppercase tracking-[0.06em] transition-colors duration-200 [transition-timing-function:var(--ease)] ${
+                      className={`flex flex-1 items-center justify-center gap-1.5 h-9 rounded-full text-micro font-bold uppercase tracking-[0.06em] transition-colors duration-200 [transition-timing-function:var(--ease)] ${
                         isActive
                           ? "bg-elevated text-ink shadow-[inset_0_1px_0_var(--glass-specular)]"
                           : "text-ink-muted hover:text-ink"

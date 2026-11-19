@@ -1,8 +1,9 @@
 import { useMemo } from "react";
-import { Navigate, useSearchParams, Link } from "react-router-dom";
-import { Brain, ChevronRight } from "lucide-react";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { Brain } from "lucide-react";
 import { useProfile } from "@/hooks/useUserQueries";
 import { getTodayString } from "@/utils/dateUtils";
+import { PageHeader, ListRow } from "@/components/ui";
 import DailyBriefCard from "@/components/dashboard/DailyBriefCard";
 
 // Analyze owns the AI daily brief only. The old tab strip is gone — Athlete
@@ -12,6 +13,7 @@ import DailyBriefCard from "@/components/dashboard/DailyBriefCard";
 export default function Insights() {
   const { profile } = useProfile();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const tab = searchParams.get("tab");
 
   // Compute all hooks unconditionally BEFORE any early return (Rules of Hooks).
@@ -23,11 +25,12 @@ export default function Insights() {
 
   return (
     <div className="bg-charcoal min-h-screen text-ink">
-      <div className="max-w-3xl mx-auto px-4 py-4 space-y-3 pb-[calc(var(--dock-total-height)+env(safe-area-inset-bottom)+40px)]">
+      <div className="max-w-2xl mx-auto px-gutter space-y-stack pb-[calc(var(--dock-total-height)+env(safe-area-inset-bottom)+40px)]">
         {/* Lead with the page's named content — the AI Daily Brief — so Analyze
             opens on its brief, not an unrelated nav shortcut. The full brief
             history is reachable from the Brief History sub-tab in the header, so
             this page no longer repeats a Recent Briefs list of its own. */}
+        <PageHeader className="px-0" eyebrow="Daily brief" title="Analyze" />
         <div className="rise-in">
           <DailyBriefCard today={today} />
         </div>
@@ -37,20 +40,12 @@ export default function Insights() {
             brief content rather than an unrelated nav shortcut. Given its own
             "Explore" header + extra top spacing so it reads as a distinct nav
             destination. */}
-        <section className="rise-in-2 space-y-2 pt-2">
-          <p className="section-label px-1">Explore</p>
-          <Link
-            to="/mind"
-            className="tile tile-interactive flex items-center gap-3 px-4 min-h-[44px] py-2.5"
-          >
-            <Brain className="w-4 h-4 text-teal shrink-0" aria-hidden="true" />
-            <div className="min-w-0 flex-1">
-              <p className="text-[14px] font-bold text-ink leading-tight">Mind &amp; Learning</p>
-              <p className="text-[11px] font-semibold text-muted-2">Reading, study notes &amp; skills</p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-faint shrink-0" aria-hidden="true" />
-          </Link>
-        </section>
+        <ListRow
+          onClick={() => navigate("/mind")}
+          leading={<Brain className="w-4 h-4 text-ink-muted" aria-hidden="true" />}
+          title="Mind and learning"
+          detail="Reading, study notes and skills"
+        />
       </div>
     </div>
   );

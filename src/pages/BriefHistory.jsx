@@ -4,6 +4,7 @@ import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { PageHeader, EmptyState, LoadingState, ErrorState } from "@/components/ui";
 import {
   Dumbbell, Activity, Apple, Scale, BookOpen, Briefcase,
   Lightbulb, Bot, ChevronLeft, ChevronDown, Coins,
@@ -178,41 +179,25 @@ export default function BriefHistory() {
             subtitle on mobile (see Layout pageSubtitle), so showing this block
             on mobile would duplicate the title. Single source per viewport:
             Layout on mobile, this block on desktop (where chrome has no title). */}
-        <div className="hidden lg:flex items-center gap-3 mb-8 rise-in">
-          <Link to="/today" aria-label="Back to home" className="inline-flex p-3 -ml-3 text-muted-2 hover:text-ink transition-colors">
-            <ChevronLeft className="w-5 h-5" aria-hidden="true" />
-          </Link>
-          <div>
-            <h1 className="type-display text-[28px] flex items-center gap-2">
-              <Bot className="w-5 h-5 text-muted-2" aria-hidden="true" /> Brief History
-            </h1>
-            <p className="text-xs font-semibold text-muted-2 mt-0.5">Last <span className="font-technical">{briefs.length}</span> AI-generated daily briefs</p>
-          </div>
-        </div>
+        <PageHeader
+          className="px-0 hidden lg:flex"
+          back={<Link to="/today" aria-label="Back to home" className="inline-flex min-h-tap items-center text-caption text-ink-muted hover:text-ink transition-colors duration-base"><ChevronLeft className="w-4 h-4" aria-hidden="true" />Today</Link>}
+          title="Brief History"
+          meta={`Last ${briefs.length} daily briefs`}
+        />
 
         {isLoading ? (
-          <div className="space-y-4">
-            {[1, 2, 3].map(i => (
-              // Match the merged collapsed BriefEntry card (px-5 py-2.5 over a
-              // date row + single-line insight clamp ≈ 64px) so the skeleton
-              // doesn't jump on load.
-              <div key={i} className="h-[64px] rounded-xl bg-track pulse-loop" />
-            ))}
-          </div>
+          <LoadingState rows={3} />
         ) : isError ? (
-          <div className="py-8 text-center glass-inset">
-            <p className="text-sm font-semibold text-muted-2">Couldn&apos;t load briefs.</p>
-            <Button variant="dark" size="sm" className="mt-3 min-h-[44px]" onClick={() => refetch()}>Retry</Button>
-          </div>
+          <ErrorState title="Could not load briefs" onRetry={() => refetch()}>Network request failed.</ErrorState>
         ) : briefs.length === 0 ? (
-          <div className="py-20 text-center">
-            <Bot className="w-10 h-10 text-faint mx-auto mb-3" />
-            <p className="text-sm font-semibold text-muted-2">No briefs generated yet.</p>
-            <p className="text-xs font-semibold text-faint mt-1">Run your Desktop Agent to generate the first one.</p>
-            <Button asChild variant="dark" size="sm" className="mt-4 min-h-[44px]">
-              <Link to="/today">Back to home</Link>
-            </Button>
-          </div>
+          <EmptyState
+            icon={Bot}
+            title="No briefs yet"
+            action={<Button asChild variant="secondary" size="sm"><Link to="/today">Back to Today</Link></Button>}
+          >
+            The Desktop Agent writes one brief per day. Run it to generate the first.
+          </EmptyState>
         ) : (
           // min-h flex column so a short list anchors its end-of-history
           // terminator toward the bottom of the viewport (mt-auto) instead of

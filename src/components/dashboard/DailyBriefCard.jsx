@@ -28,7 +28,7 @@ const COACHES = [
 function CoachTag({ children, active = false }) {
   return (
     <span
-      className={`text-[11px] font-extrabold tracking-wider uppercase rounded-sm px-2 py-1 whitespace-nowrap shrink-0 transition-colors duration-200 [transition-timing-function:var(--ease)] ${
+      className={`text-micro font-extrabold tracking-wider uppercase rounded-sm px-2 py-1 whitespace-nowrap shrink-0 transition-colors duration-200 [transition-timing-function:var(--ease)] ${
         active ? "text-teal bg-teal/10" : "text-secondary"
       }`}
     >
@@ -63,7 +63,7 @@ function CoachSection({ coach, content, defaultOpen = false }) {
             // text-secondary (0.72) not text-muted-2 (0.50): this preview line
             // carries numbers (kcal, lb/wk) at 12px, which sat under AA 4.5:1 on
             // the #181C22 card. Only this row changes, not the shared token.
-            <p className="text-[12px] font-semibold text-secondary truncate mt-1">{content}</p>
+            <p className="text-caption font-semibold text-secondary truncate mt-1">{content}</p>
           )}
         </div>
         <ChevronDown
@@ -105,7 +105,7 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false, defaultCo
   const toggleCollapse = () => {
     const nextVal = !isCollapsed;
     setIsCollapsed(nextVal);
-    try { localStorage.setItem("ai_brief_collapsed", String(nextVal)); } catch {}
+    try { localStorage.setItem("ai_brief_collapsed", String(nextVal)); } catch { /* storage unavailable */ }
   };
 
   const { data: brief, isLoading } = useQuery({
@@ -163,12 +163,12 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false, defaultCo
               <span className="truncate">AI Daily Brief</span>
             </CardTitle>
             {generatedAt && (
-              <span className="sm:hidden font-technical tabular-nums text-[11px] font-medium text-ink whitespace-nowrap mt-0.5 pl-6">Generated {generatedAt}</span>
+              <span className="sm:hidden font-technical tabular-nums text-caption font-medium text-ink whitespace-nowrap mt-0.5 pl-6">Generated {generatedAt}</span>
             )}
           </div>
           <div className="flex items-center gap-3 shrink-0">
             {generatedAt && (
-              <span className="hidden sm:inline font-technical tabular-nums text-[11px] font-medium text-ink whitespace-nowrap">Generated {generatedAt}</span>
+              <span className="hidden sm:inline font-technical tabular-nums text-caption font-medium text-ink whitespace-nowrap">Generated {generatedAt}</span>
             )}
             {/* In-card 'History' pill removed: the BRIEF HISTORY sub-tab in the
                 Layout header is the single canonical path to past briefs, so this
@@ -191,7 +191,7 @@ export default function DailyBriefCard({ today, hideWhenEmpty = false, defaultCo
           {json.insight && (
             <div className="mx-4 mt-3 mb-1 flex items-start gap-2.5 p-3 glass-inset">
               <Lightbulb className="w-3.5 h-3.5 text-teal shrink-0 mt-0.5" />
-              <p className="text-[14px] font-semibold text-ink leading-[1.55]">{json.insight}</p>
+              <p className="text-body font-semibold text-ink leading-[1.55]">{json.insight}</p>
             </div>
           )}
 

@@ -77,14 +77,14 @@ function ExerciseRow({ ex }) {
   return (
     <div className="data-row">
       <div className="flex-1 min-w-0">
-        <div className="text-[14px] font-bold text-ink truncate">{ex.name}</div>
-        <div className="font-technical text-[11px] font-semibold text-muted-2 mt-px whitespace-nowrap">
+        <div className="text-body font-bold text-ink truncate">{ex.name}</div>
+        <div className="font-technical text-caption font-semibold text-muted-2 mt-px whitespace-nowrap">
           {ex.sets}×{reps}{rir != null && ` · RIR ${rir}`}
         </div>
       </div>
       {load > 0 && (
         <span className="pill-value text-ink">
-          {load}<small className="text-[11px] font-semibold text-muted-2"> lb</small>
+          {load}<small className="text-caption font-semibold text-muted-2"> lb</small>
         </span>
       )}
     </div>
@@ -186,7 +186,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
             <button
               type="button"
               onClick={continueToSession}
-              className="min-h-[44px] w-full text-[12px] font-semibold text-ink-muted hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
+              className="min-h-[44px] w-full text-caption font-semibold text-ink-muted hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
             >
               Skip, straight to the session
             </button>
@@ -234,9 +234,9 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
         return (
           <div className="sess flex items-center justify-between gap-3 min-h-[56px]">
             <div className="min-w-0">
-              <div className="text-[15px] font-bold text-ink truncate">{programWorkout?.name || "Workout"}</div>
+              <div className="text-emph font-bold text-ink truncate">{programWorkout?.name || "Workout"}</div>
               {pwEx.length > 0 && (
-                <div className="font-technical text-[11px] font-semibold text-muted-2 mt-0.5 truncate">
+                <div className="font-technical text-caption font-semibold text-muted-2 mt-0.5 truncate">
                   {pwEx.length} ex · {pwSets} sets
                 </div>
               )}
@@ -379,7 +379,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
         {icon}
         <span className={done ? "text-ink-faint line-through" : "text-ink"}>{label}</span>
         {g && (
-          <span className="ml-auto text-[11px] font-technical text-leaf whitespace-nowrap">
+          <span className="ml-auto text-caption font-technical text-leaf whitespace-nowrap">
             {mi(g.distance_meters) ? `${mi(g.distance_meters)} mi` : "done"}
             {mmss(g.duration_seconds) ? ` · ${mmss(g.duration_seconds)}` : ""}
             <span className="text-ink-faint"> · Garmin</span>
@@ -412,8 +412,8 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
       return (
         <div className="sess flex items-center justify-between gap-3 min-h-[56px]">
           <div className="min-w-0">
-            <div className="text-[15px] font-bold text-ink truncate">Rest Day</div>
-            <div className="font-technical text-[11px] font-semibold text-muted-2 mt-0.5">Recovery</div>
+            <div className="text-emph font-bold text-ink truncate">Rest Day</div>
+            <div className="font-technical text-caption font-semibold text-muted-2 mt-0.5">Recovery</div>
           </div>
           <button type="button" onClick={() => beginSession("/quick-workout")} className="cta-ghost shrink-0 whitespace-nowrap">
             Log a workout
@@ -441,9 +441,9 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
       <div className="sess min-h-[56px]">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-[15px] font-bold text-ink truncate">{titleText}</div>
+            <div className="text-emph font-bold text-ink truncate">{titleText}</div>
             {metaLine && (
-              <div className="font-technical text-[11px] font-semibold text-muted-2 mt-0.5 truncate">{metaLine}</div>
+              <div className="font-technical text-caption font-semibold text-muted-2 mt-0.5 truncate">{metaLine}</div>
             )}
           </div>
           <button
@@ -511,17 +511,17 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
         <div className="flex items-start justify-between gap-3">
           <h3 className="type-display text-lg line-clamp-2">{titleText}</h3>
           {iBadge && (
-            <span className="font-technical text-[12px] font-bold whitespace-nowrap shrink-0 mt-0.5" style={{ color: iBadge.color }}>
+            <span className="font-technical text-caption font-bold whitespace-nowrap shrink-0 mt-0.5" style={{ color: iBadge.color }}>
               {iBadge.label}
             </span>
           )}
         </div>
         {prescription.rationale && (
-          <p className="text-[12px] font-medium text-muted-2 mt-1 leading-relaxed">{humanizeRationale(prescription.rationale)}</p>
+          <p className="text-caption font-medium text-muted-2 mt-1 leading-relaxed">{humanizeRationale(prescription.rationale)}</p>
         )}
 
         {/* Deadline weighting + anabolic window — the "why today looks like this" line */}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-[11px]">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-caption">
           {wPst != null && wStr != null && (
             <span className="text-ink-faint">
               Focus split <span className="font-technical text-ink-secondary">{wPst}% conditioning · {wStr}% strength</span>
@@ -567,8 +567,8 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
             </div>
             <div className="flex flex-wrap gap-x-4 gap-y-1">
               {calItems.map(([name, v]) => (
-                <span key={name} className="text-[14px] font-bold text-ink">
-                  {titleCase(name)} <span className="font-technical text-[11px] font-semibold text-muted-2">{v.sets}×{v.reps_each}</span>
+                <span key={name} className="text-body font-bold text-ink">
+                  {titleCase(name)} <span className="font-technical text-caption font-semibold text-muted-2">{v.sets}×{v.reps_each}</span>
                 </span>
               ))}
             </div>
@@ -601,9 +601,9 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
                         : (run.session_miles ? <span className="font-technical text-ink-secondary">{` · ${run.session_miles} mi`}</span> : null)}
                       {run.pace && <span className="text-ink-faint">{` · ${run.pace}${paceUnit}`}</span>}
                     </span>
-                    {structure && <span className="text-[11px] text-ink-faint leading-snug">{structure}</span>}
+                    {structure && <span className="text-caption text-ink-faint leading-snug">{structure}</span>}
                     {programHref && (
-                      <Link to={programHref} className="text-[11px] text-info hover:underline w-fit">
+                      <Link to={programHref} className="text-caption text-info hover:underline w-fit">
                         View run details →
                       </Link>
                     )}
@@ -630,7 +630,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
         {(overreach.overreaching || prescription.interference_warning) && (
           <div className="mt-3 flex items-start gap-2 rounded-lg bg-warn/[8%] px-3 py-2">
             <AlertTriangle className="w-3.5 h-3.5 text-warn shrink-0 mt-0.5" />
-            <p className="text-[11px] text-warn opacity-90 leading-relaxed">
+            <p className="text-caption text-warn opacity-90 leading-relaxed">
               {overreach.overreaching
                 ? "Overreaching flagged (HRV down / RHR up). The engine forced recovery, honor it."
                 : prescription.interference_warning}
@@ -703,7 +703,7 @@ export default function PrescribedSessionCard({ today, loggedToday = false, demo
                     rows={2}
                     autoFocus
                     placeholder="Anything to flag before you train? sleep, soreness, energy…"
-                    className="w-full glass-inset rise-in px-3 py-2 mt-1 text-[14px] text-ink placeholder:text-faint resize-none focus-visible:ring-1 focus-visible:ring-brand"
+                    className="w-full glass-inset rise-in px-3 py-2 mt-1 text-body text-ink placeholder:text-faint resize-none focus-visible:ring-1 focus-visible:ring-brand"
                   />
                 )}
               </div>
