@@ -15,7 +15,7 @@ export default function StepProgression({ exercises, totalCycles, projectionWeig
         <CardContent className="pb-6 text-center">
           <div className="pt-6 pb-6">
             <TrendingUp className="w-10 h-10 text-ink-muted mx-auto mb-3" />
-            <p className="text-sm text-ink-muted">
+            <p className="text-body text-ink-muted">
               No exercises found. Go back and add exercises to see projections.
             </p>
           </div>
@@ -34,13 +34,13 @@ export default function StepProgression({ exercises, totalCycles, projectionWeig
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Progression Preview</CardTitle>
-        <p className="text-sm text-ink-muted mb-3">
+        <CardTitle>Progression preview</CardTitle>
+        <p className="text-body text-ink-muted mb-3">
           Enter starting weights to see projected progression. These are estimates
           assuming progression every session (best case).
         </p>
         <div className="w-full">
-          <Label className="text-sm font-medium mb-2 block">Select Exercise</Label>
+          <Label className="text-body font-medium mb-2 block">Select exercise</Label>
           <Select value={selectedExercise} onValueChange={setSelectedExercise}>
             <SelectTrigger>
               <SelectValue placeholder="Choose an exercise" />
@@ -59,8 +59,8 @@ export default function StepProgression({ exercises, totalCycles, projectionWeig
         <div className="glass-inset p-4">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="font-medium text-base">{currentExercise.name}</p>
-              <p className="text-sm text-ink-muted mt-1">
+              <p className="font-medium text-body">{currentExercise.name}</p>
+              <p className="text-body text-ink-muted mt-1">
                 {typeof currentExercise.sets === "number" ? currentExercise.sets : Array.isArray(currentExercise.sets) ? currentExercise.sets.length : 3} sets &times; {currentExercise.rep_target} reps &middot; +
                 {currentExercise.progression?.weight_increment || 5} lbs/session
               </p>
@@ -69,7 +69,7 @@ export default function StepProgression({ exercises, totalCycles, projectionWeig
               <Input
                 type="number" inputMode="decimal"
                 placeholder="Start lbs"
-                className="w-28 text-sm"
+                className="w-28 text-body"
                 value={projectionWeights[currentExercise.name] || ""}
                 onChange={(e) =>
                   setProjectionWeights((prev) => ({
@@ -78,7 +78,7 @@ export default function StepProgression({ exercises, totalCycles, projectionWeig
                   }))
                 }
               />
-              <span className="text-sm text-ink-muted">lbs</span>
+              <span className="text-body text-ink-muted">lbs</span>
             </div>
           </div>
 
@@ -93,15 +93,15 @@ export default function StepProgression({ exercises, totalCycles, projectionWeig
               {projections.map((p) => (
                 <div
                   key={p.week}
-                  className="flex-shrink-0 text-center px-4 py-2 rounded-md bg-track"
+                  className="flex-shrink-0 text-center px-4 py-2 rounded-control bg-track"
                 >
-                  <p className="text-xs text-ink-muted">Cycle {p.week}</p>
-                  <p className="font-technical text-sm font-bold text-ink mt-1">{p.weight} lbs</p>
+                  <p className="text-caption text-ink-muted">Cycle {p.week}</p>
+                  <p className="font-numeral tabular-nums text-body font-bold text-ink mt-1">{p.weight} lbs</p>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-ink-muted text-sm">
+            <div className="text-center py-8 text-ink-muted text-body">
               Enter a starting weight to see progression
             </div>
           )}

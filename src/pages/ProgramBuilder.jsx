@@ -131,10 +131,10 @@ export default function ProgramBuilder() {
       <Card className="max-w-sm w-full">
         <CardContent className="pt-6 text-center space-y-4">
           <div>
-            <p className="type-display text-lg text-ink">Program not loaded</p>
-            <p className="text-ink-muted text-sm mt-1">Check your connection and try again.</p>
+            <p className="type-display text-title text-ink">Program not loaded</p>
+            <p className="text-ink-muted text-body mt-1">Check your connection and try again.</p>
           </div>
-          <Button variant="volt" onClick={() => window.location.reload()} className="w-full min-h-[44px]">
+          <Button variant="primary" onClick={() => window.location.reload()} className="w-full min-h-[44px]">
             Try again
           </Button>
         </CardContent>
@@ -439,7 +439,7 @@ export default function ProgramBuilder() {
               <p className="section-label">
                 Step {step + 1}/{STEPS.length}
               </p>
-              <p className="type-display text-lg text-ink mt-0.5 truncate">
+              <p className="type-display text-title text-ink mt-0.5 truncate">
                 {STEPS[step]}
               </p>
             </div>
@@ -447,7 +447,7 @@ export default function ProgramBuilder() {
                 own bar, the Layout header owns the top title, so a compact
                 "Step 1/4 · Details" eyebrow here is enough to orient. */}
             <p className="section-label md:hidden min-w-0 truncate">
-              <span className="font-technical">Step {step + 1}/{STEPS.length}</span>
+              <span className="font-numeral tabular-nums">Step {step + 1}/{STEPS.length}</span>
               {" · "}
               {STEPS[step]}
             </p>
@@ -466,7 +466,7 @@ export default function ProgramBuilder() {
                       tier as Cancel (X) and never competes with naming the
                       program. One muted cluster, not two action groups. */}
                   <Button
-                    variant="dim"
+                    variant="outline"
                     size="default"
                     onClick={() => importFileRef.current?.click()}
                     className="min-h-[44px]"
@@ -476,7 +476,7 @@ export default function ProgramBuilder() {
                 </>
               )}
               <Button
-                variant="dim"
+                variant="outline"
                 size="sm"
                 onClick={() => navigate("/workouts")}
                 aria-label="Cancel"
@@ -492,7 +492,7 @@ export default function ProgramBuilder() {
             {STEPS.map((s, i) => (
               <div
                 key={s}
-                className={`h-1.5 flex-1 rounded-full transition-colors duration-200 ease-[var(--ease)] ${
+                className={`h-1.5 flex-1 rounded-pill transition-colors duration-200 ease-[var(--ease)] ${
                   i <= step
                     ? "bg-brand"
                     : "bg-track"
@@ -599,7 +599,7 @@ export default function ProgramBuilder() {
           )}
           {step < STEPS.length - 1 ? (
             <Button
-              variant="volt"
+              variant="primary"
               onClick={next}
               disabled={!canProceed()}
               // Disabled Next falls to the shared volt disabled rule: neutral
@@ -614,7 +614,7 @@ export default function ProgramBuilder() {
             </Button>
           ) : (
             <Button
-              variant="volt"
+              variant="primary"
               onClick={handleSubmit}
               disabled={createMutation.isPending || updateMutation.isPending}
               className="flex-1 md:flex-none md:ml-auto md:px-8 font-bold min-h-[44px]"

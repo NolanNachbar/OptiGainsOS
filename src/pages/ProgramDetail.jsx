@@ -13,6 +13,7 @@ import { calculateDailyTargets } from "@/utils/programProgression";
 import { exportProgramAsJson } from "@/utils/programIO";
 import CycleDayGrid from "@/components/programs/CycleDayGrid";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LoadingState, ErrorState, ReasonLine } from "@/components/ui";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -86,31 +87,8 @@ export default function ProgramDetail() {
   // shared, so the full-screen LoadingScreen is intentionally not used here.
   if (programLoading || enrollmentLoading) {
     return (
-      <div
-        className="p-4 md:p-6"
-        style={{ paddingBottom: 'var(--dock-clearance)' }}
-      >
-        <div className="max-w-4xl mx-auto">
-          <div className="pulse-loop rounded bg-track h-4 w-28 mb-4" />
-          <Card className="mb-6">
-            <CardContent className="pt-5 pb-5 space-y-3">
-              <div className="pulse-loop rounded-full bg-track h-5 w-20" />
-              <div className="pulse-loop rounded-lg bg-track h-7 w-3/5" />
-              <div className="pulse-loop rounded bg-track h-4 w-4/5" />
-              <div className="pulse-loop rounded bg-track h-4 w-2/5" />
-            </CardContent>
-          </Card>
-          <Card className="mb-6">
-            <CardHeader>
-              <div className="pulse-loop rounded bg-track h-5 w-24" />
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="pulse-loop rounded-lg bg-track h-12 w-full" />
-              <div className="pulse-loop rounded-lg bg-track h-12 w-full" />
-              <div className="pulse-loop rounded-lg bg-track h-12 w-full" />
-            </CardContent>
-          </Card>
-        </div>
+      <div className="max-w-4xl mx-auto" style={{ paddingBottom: 'var(--dock-clearance)' }}>
+        <LoadingState rows={5} label="Loading program" />
       </div>
     );
   }
@@ -118,21 +96,13 @@ export default function ProgramDetail() {
   // paints immediately instead of waiting on retries.
   if (!program || programError) {
     return (
-      <div className="p-4 md:p-6" style={{ paddingBottom: 'var(--dock-clearance)' }}>
-        <div className="min-h-[60vh] flex flex-col items-center justify-end pb-16">
-          <div className="surface p-8 text-center flex flex-col items-center rise-in">
-            <div className="w-12 h-12 rounded-full glass-inset flex items-center justify-center mb-4">
-              <Dumbbell className="w-6 h-6 text-ink-muted" />
-            </div>
-            <h2 className="text-lg font-bold text-ink mb-1">Program not found</h2>
-            <p className="text-sm text-ink-muted mb-5">
-              This program may have been deleted or the link is no longer valid.
-            </p>
-            <Link to="/workouts">
-              <Button variant="volt" size="lg">Back to Workouts</Button>
-            </Link>
-          </div>
-        </div>
+      <div className="max-w-4xl mx-auto" style={{ paddingBottom: 'var(--dock-clearance)' }}>
+        <ErrorState title="Program not found">
+          Deleted, or the link is no longer valid.
+          <Link to="/workouts" className="block mt-3">
+            <Button variant="primary" size="lg">Back to Workouts</Button>
+          </Link>
+        </ErrorState>
       </div>
     );
   }
@@ -268,7 +238,7 @@ export default function ProgramDetail() {
           className="md:hidden fixed inset-x-0 bottom-0 z-30 px-4 pt-3 glass-elevated"
           style={{ paddingBottom: 'calc(var(--dock-total-height) + 16px + env(safe-area-inset-bottom))' }}
         >
-          <Button variant="volt" size="lg" className="w-full" onClick={primaryAction.onClick}>
+          <Button variant="primary" size="lg" className="w-full" onClick={primaryAction.onClick}>
             <Play className="w-4 h-4 mr-2" />
             {primaryAction.label}
           </Button>
@@ -278,7 +248,7 @@ export default function ProgramDetail() {
         {/* Back button */}
         <button
           onClick={() => navigate("/workouts")}
-          className="flex items-center gap-2 text-ink-muted hover:text-ink mb-4 text-sm transition-colors min-h-[44px] -my-2.5 py-2.5"
+          className="flex items-center gap-2 text-ink-muted hover:text-ink mb-4 text-body transition-colors min-h-[44px] -my-2.5 py-2.5"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Workouts
@@ -304,7 +274,7 @@ export default function ProgramDetail() {
                     </Badge>
                   )}
                 </div>
-                <h1 className="type-display text-2xl mb-1">
+                <h1 className="type-display text-display mb-1">
                   {program.title || program.name}
                 </h1>
                 {/* Position + progress — the single most important status for an
@@ -313,10 +283,10 @@ export default function ProgramDetail() {
                 {enrollment && positionLabel && (
                   <>
                     <div className="flex items-baseline gap-2 mb-1">
-                      <span className="font-technical text-base font-extrabold text-ink">
+                      <span className="font-numeral tabular-nums text-body font-bold text-ink">
                         {positionLabel}
                       </span>
-                      <span className="font-technical text-sm text-ink-muted">
+                      <span className="font-numeral tabular-nums text-body text-ink-muted">
                         {completedCount}/{totalWorkouts} workouts &middot; {progressPercent}%
                       </span>
                     </div>
@@ -324,9 +294,9 @@ export default function ProgramDetail() {
                         no border-t divider, keeping the completion datum with its
                         numbers. Fill uses bg-brand (the action hue); leaf is
                         reserved for biometric readiness, not a completion metric. */}
-                    <div className="h-1.5 bg-track rounded-full overflow-hidden mb-2">
+                    <div className="h-1.5 bg-track rounded-pill overflow-hidden mb-2">
                       <div
-                        className="h-full bg-brand rounded-full transition-all duration-500"
+                        className="h-full bg-brand rounded-pill transition-all duration-500"
                         style={{ width: `${progressPercent}%` }}
                       />
                     </div>
@@ -334,13 +304,13 @@ export default function ProgramDetail() {
                 )}
                 {program.description && (
                   <>
-                    <p className={`text-ink-muted text-sm ${showDescription ? "" : "line-clamp-2"}`}>
+                    <p className={`text-ink-muted text-body ${showDescription ? "" : "line-clamp-2"}`}>
                       {program.description}
                     </p>
                     {program.description.length > 90 && (
                       <button
                         onClick={() => setShowDescription((v) => !v)}
-                        className="mt-0.5 min-h-[44px] -my-2.5 inline-flex items-center text-xs font-medium text-ink-muted hover:text-ink transition-colors"
+                        className="mt-0.5 min-h-[44px] -my-2.5 inline-flex items-center text-caption font-medium text-ink-muted hover:text-ink transition-colors"
                         aria-expanded={showDescription}
                       >
                         {showDescription ? "Less" : "More"}
@@ -354,7 +324,7 @@ export default function ProgramDetail() {
                     suppressed to keep Schedule near the first fold; only the unique
                     training-day count remains. Unenrolled visitors still get the full
                     cadence summary. */}
-                <div className="flex flex-wrap gap-4 mt-3 text-sm text-ink-muted">
+                <div className="flex flex-wrap gap-4 mt-3 text-body text-ink-muted">
                   {!enrollment && (
                     <>
                       <div className="flex items-center gap-1">
@@ -376,7 +346,7 @@ export default function ProgramDetail() {
                 {program.tags?.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
                     {program.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-xs">
+                      <Badge key={tag} variant="secondary" className="text-caption">
                         {tag}
                       </Badge>
                     ))}
@@ -390,7 +360,7 @@ export default function ProgramDetail() {
                   <>
                     <Button
                       onClick={() => user ? setShowEnrollDialog(true) : navigate("/login", { state: { returnTo: location.pathname } })}
-                      variant="volt"
+                      variant="primary"
                       size="lg"
                       className="hidden md:flex w-full"
                     >
@@ -398,14 +368,14 @@ export default function ProgramDetail() {
                       {user ? "Start Program" : "Sign in to Start"}
                     </Button>
                     {!user && (
-                      <p className="text-xs text-center text-ink-muted">
+                      <p className="text-caption text-center text-ink-muted">
                         New here?{' '}
                         <Link
                           to="/signup"
                           state={{ returnTo: location.pathname }}
                           className="text-brand hover:text-brand font-medium"
                         >
-                          Sign up free
+                          Sign up
                         </Link>
                       </p>
                     )}
@@ -414,7 +384,7 @@ export default function ProgramDetail() {
                 {isEnrolled && currentWorkout && (
                   <Button
                     onClick={handleStartWorkout}
-                    variant="volt"
+                    variant="primary"
                     size="lg"
                     className="hidden md:flex w-full"
                   >
@@ -423,7 +393,7 @@ export default function ProgramDetail() {
                   </Button>
                 )}
                 {enrollment?.status === "paused" && (
-                  <Button variant="volt" size="lg" className="hidden md:flex w-full" onClick={handleResume}>
+                  <Button variant="primary" size="lg" className="hidden md:flex w-full" onClick={handleResume}>
                     <RotateCcw className="w-4 h-4 mr-2" />
                     Resume
                   </Button>
@@ -437,7 +407,7 @@ export default function ProgramDetail() {
                 {(isEnrolled || enrollment?.status === "paused" || isOwner) && (
                   <div className="flex flex-col gap-2">
                     <Button
-                      variant="dim"
+                      variant="outline"
                       size="lg"
                       className="w-full"
                       onClick={() => setShowManageActions((v) => !v)}
@@ -449,14 +419,14 @@ export default function ProgramDetail() {
                     {showManageActions && (
                       <div className="grid grid-cols-2 gap-2">
                         {isEnrolled && (
-                          <Button variant="dim" size="lg" className="w-full min-w-0" onClick={handlePause}>
+                          <Button variant="outline" size="lg" className="w-full min-w-0" onClick={handlePause}>
                             <Pause className="w-4 h-4 mr-1.5" />
                             Pause
                           </Button>
                         )}
                         {(isEnrolled || enrollment?.status === "paused") && (
                           <Button
-                            variant="dim"
+                            variant="outline"
                             size="lg"
                             className="w-full min-w-0"
                             onClick={handleRestart}
@@ -467,7 +437,7 @@ export default function ProgramDetail() {
                         )}
                         {isOwner && (
                           <Button
-                            variant="dim"
+                            variant="outline"
                             size="lg"
                             className="w-full min-w-0"
                             onClick={() => navigate(`/program-builder?edit=${program.id}`)}
@@ -478,7 +448,7 @@ export default function ProgramDetail() {
                         )}
                         {isOwner && (
                           <Button
-                            variant="dim"
+                            variant="outline"
                             size="lg"
                             className="w-full min-w-0"
                             onClick={() => {
@@ -513,7 +483,7 @@ export default function ProgramDetail() {
         {/* Schedule Grid */}
         <Card className="mb-6 rise-in-2">
           <CardHeader>
-            <CardTitle className="text-lg text-ink">Schedule</CardTitle>
+            <CardTitle className="text-title text-ink">Schedule</CardTitle>
           </CardHeader>
           <CardContent>
             {/* Collapsed default: window to the single current cycle so the fold
@@ -532,7 +502,7 @@ export default function ProgramDetail() {
             {numCycles > 1 && (
               <button
                 onClick={() => setShowAllCycles((v) => !v)}
-                className="mt-4 w-full flex items-center justify-center gap-1.5 min-h-[44px] text-sm font-medium text-ink-muted hover:text-ink transition-colors"
+                className="mt-4 w-full flex items-center justify-center gap-1.5 min-h-[44px] text-body font-medium text-ink-muted hover:text-ink transition-colors"
               >
                 {showAllCycles ? "Show current cycle only" : `Show all ${numCycles} cycles`}
                 <ChevronDown className={`w-4 h-4 transition-transform ${showAllCycles ? "rotate-180" : ""}`} />
@@ -545,7 +515,7 @@ export default function ProgramDetail() {
         {enrollment?.progression_state && Object.keys(enrollment.progression_state).filter(k => !k.startsWith('_')).length > 0 && (
           <Card className="rise-in-3">
             <CardHeader>
-              <CardTitle className="text-lg text-ink">Progression Tracking</CardTitle>
+              <CardTitle className="text-title text-ink">Progression</CardTitle>
             </CardHeader>
             <CardContent>
               {(() => {
@@ -573,7 +543,7 @@ export default function ProgramDetail() {
                 {sharedSuggestions.map((text) => (
                   <div key={text} className="glass-inset p-3 flex items-start gap-1.5">
                     <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-warn" />
-                    <p className="font-technical text-xs text-warn">{text}</p>
+                    <p className="font-numeral tabular-nums text-caption text-warn">{text}</p>
                   </div>
                 ))}
                 {visibleEntries
@@ -583,31 +553,31 @@ export default function ProgramDetail() {
                     <div key={name} className="glass-inset p-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-sm text-ink">{name}</p>
-                        <p className="font-technical text-xs text-ink-muted">
+                        <p className="font-medium text-body text-ink">{name}</p>
+                        <ReasonLine>
                           {state.sessions_at_current_weight || 0} session{(state.sessions_at_current_weight || 0) === 1 ? "" : "s"} at current weight
                           {effortVal != null && (
-                            <> &middot; Avg RIR {effortVal.toFixed(1)}</>
+                            <> &middot; avg {effortVal.toFixed(1)} RIR</>
                           )}
-                        </p>
+                        </ReasonLine>
                       </div>
                       <div className="text-right">
                         <p className="pill-value inline-block text-ink">
-                          {state.working_weight ?? '—'} <small className="text-[11px] font-semibold text-ink-muted">lbs</small>
+                          {state.working_weight ?? '--'} <small className="text-caption font-semibold text-ink-muted">lb</small>
                         </p>
                         {state.stalled ? (
-                          <Badge variant="outline" className="text-xs mt-1 bg-warn/10 text-warn border-warn/25">
+                          <Badge variant="outline" className="text-caption mt-1 bg-warn/10 text-warn border-warn/25">
                             Stalled
                           </Badge>
                         ) : state.ready_to_progress && (
-                          <Badge variant="outline" className="text-xs mt-1 text-ink-muted">
+                          <Badge variant="outline" className="text-caption mt-1 text-ink-muted">
                             Ready to progress
                           </Badge>
                         )}
                       </div>
                     </div>
                     {state.stalled && state.stall_suggestion && !sharedSet.has(state.stall_suggestion) && (
-                      <p className="font-technical text-xs text-warn mt-2 flex items-start gap-1.5">
+                      <p className="font-numeral tabular-nums text-caption text-warn mt-2 flex items-start gap-1.5">
                         <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
                         <span>{state.stall_suggestion}</span>
                       </p>
@@ -618,7 +588,7 @@ export default function ProgramDetail() {
                 {!showAllProgression && hiddenCount > 0 && (
                   <button
                     onClick={() => setShowAllProgression(true)}
-                    className="mt-1 w-full flex items-center justify-center gap-1.5 min-h-[44px] text-sm font-medium text-ink-muted hover:text-ink transition-colors"
+                    className="mt-1 w-full flex items-center justify-center gap-1.5 min-h-[44px] text-body font-medium text-ink-muted hover:text-ink transition-colors"
                   >
                     Show all {allEntries.length} exercises
                     <ChevronDown className="w-4 h-4" />
@@ -627,7 +597,7 @@ export default function ProgramDetail() {
                 {showAllProgression && allEntries.length > DEFAULT_VISIBLE && (
                   <button
                     onClick={() => setShowAllProgression(false)}
-                    className="mt-1 w-full flex items-center justify-center gap-1.5 min-h-[44px] text-sm font-medium text-ink-muted hover:text-ink transition-colors"
+                    className="mt-1 w-full flex items-center justify-center gap-1.5 min-h-[44px] text-body font-medium text-ink-muted hover:text-ink transition-colors"
                   >
                     Show fewer
                     <ChevronDown className="w-4 h-4 rotate-180" />
@@ -651,19 +621,19 @@ export default function ProgramDetail() {
                 className="overflow-y-auto flex-1 px-6 py-4 space-y-3"
                 style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
               >
-                <div className="flex gap-2 text-sm text-ink-muted">
+                <div className="flex gap-2 text-body text-ink-muted">
                   <span>Day {showWorkoutDetail.day_index || showWorkoutDetail.day_number}</span>
                   {showWorkoutDetail.type && (
                     <>
                       <span>&middot;</span>
-                      <Badge variant="outline" className="capitalize text-xs">
+                      <Badge variant="outline" className="capitalize text-caption">
                         {showWorkoutDetail.type}
                       </Badge>
                     </>
                   )}
                 </div>
                 {showWorkoutDetail.notes && (
-                  <p className="text-sm text-ink-muted">{showWorkoutDetail.notes}</p>
+                  <p className="text-body text-ink-muted">{showWorkoutDetail.notes}</p>
                 )}
                 <div className="space-y-2">
                   {(showWorkoutDetail.exercises || []).map((ex, i) => {
@@ -678,17 +648,17 @@ export default function ProgramDetail() {
                         className="flex items-center justify-between glass-inset p-3"
                       >
                         <div>
-                          <p className="font-medium text-sm text-ink">{ex.name}</p>
-                          <p className="font-technical text-xs text-ink-muted">
+                          <p className="font-medium text-body text-ink">{ex.name}</p>
+                          <p className="font-numeral tabular-nums text-caption text-ink-muted">
                             {ex.sets} sets &times; {ex.rep_target || "?"} reps
                             {ex.rir_target != null && ` @ RIR ${ex.rir_target}`}
                           </p>
                         </div>
                         {targets?.workingWeight && (
                           <div className="text-right">
-                            <p className="pill-value inline-block text-ink">{targets.workingWeight} <small className="text-[11px] font-semibold text-ink-muted">lbs</small></p>
-                            <p className="font-technical text-xs text-ink-muted mt-0.5">
-                              Min: {targets.dailyMin} lbs
+                            <p className="pill-value inline-block text-ink">{targets.workingWeight} <small className="text-caption font-semibold text-ink-muted">lb</small></p>
+                            <p className="font-numeral tabular-nums text-caption text-ink-muted mt-0.5">
+                              Min: {targets.dailyMin} lb
                             </p>
                           </div>
                         )}
@@ -703,13 +673,13 @@ export default function ProgramDetail() {
                       <div className="flex items-center gap-2">
                         <Activity className="w-4 h-4 text-carb" />
                         <div>
-                          <p className="font-medium text-sm text-ink">{c.title}</p>
-                          <p className="font-technical text-xs text-ink-muted">
+                          <p className="font-medium text-body text-ink">{c.title}</p>
+                          <p className="font-numeral tabular-nums text-caption text-ink-muted">
                             {c.duration_minutes} min{c.time_of_day && c.time_of_day !== "anytime" ? ` · ${c.time_of_day.toUpperCase()}` : ""}
                           </p>
                         </div>
                       </div>
-                      <span className="rounded-full px-2 py-[3px] text-[11px] font-extrabold uppercase tracking-wide bg-carb/[0.14] text-carb whitespace-nowrap">
+                      <span className="rounded-pill px-2 py-1 text-caption font-bold uppercase tracking-wide bg-carb/[0.14] text-carb whitespace-nowrap">
                         Cardio
                       </span>
                     </div>
@@ -727,7 +697,7 @@ export default function ProgramDetail() {
               <DialogHeader>
                 <DialogTitle>Start Program</DialogTitle>
               </DialogHeader>
-              <p className="text-sm text-ink-muted mt-2">
+              <p className="text-body text-ink-muted mt-2">
                 Enter your current working weight for each exercise (optional, you can also
                 enter these during your first session).
               </p>
@@ -735,7 +705,7 @@ export default function ProgramDetail() {
 
             <div className="flex-1 overflow-y-auto overscroll-contain px-6 space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
               <div>
-                <Label className="text-sm text-ink-muted">Start Date</Label>
+                <Label className="text-body text-ink-muted">Start date</Label>
                 <Input
                   type="date"
                   value={startDate}
@@ -747,7 +717,7 @@ export default function ProgramDetail() {
               <div className="space-y-3">
               {allExercises.map((ex) => (
                 <div key={ex.name} className="flex items-center gap-3">
-                  <Label className="flex-1 text-sm text-ink-muted">{ex.name}</Label>
+                  <Label className="flex-1 text-body text-ink-muted">{ex.name}</Label>
                   <div className="flex items-center gap-1">
                     <Input
                       type="number" inputMode="decimal"
@@ -761,7 +731,7 @@ export default function ProgramDetail() {
                         }))
                       }
                     />
-                    <span className="text-xs text-ink-muted">lbs</span>
+                    <span className="text-caption text-ink-muted">lbs</span>
                   </div>
                 </div>
               ))}
@@ -775,7 +745,7 @@ export default function ProgramDetail() {
                 Cancel
               </Button>
               <Button
-                variant="volt"
+                variant="primary"
                 className="flex-1"
                 onClick={handleEnroll}
                 disabled={enrollMutation.isPending}
@@ -798,7 +768,7 @@ export default function ProgramDetail() {
             <DialogHeader>
               <DialogTitle>Cancel Enrollment?</DialogTitle>
             </DialogHeader>
-            <p className="text-sm text-ink-muted">
+            <p className="text-body text-ink-muted">
               Are you sure you want to cancel your enrollment in this program? Future scheduled workouts will be removed, but your completed workout history will be preserved. You can re-enroll later to start fresh.
             </p>
             <div className="flex gap-3 mt-4">

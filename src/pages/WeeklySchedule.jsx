@@ -59,7 +59,7 @@ const TYPE_PILLS = {
 function Chip({ children, bg = "var(--color-border-soft)", fg, className = "" }) {
   return (
     <span
-      className={`section-label inline-block rounded-full px-2 py-[3px] whitespace-nowrap ${className}`}
+      className={`section-label inline-block rounded-pill px-2 py-[3px] whitespace-nowrap ${className}`}
       style={{ background: bg, ...(fg ? { color: fg } : null) }}
     >
       {children}
@@ -323,17 +323,17 @@ export default function WeeklySchedule() {
           // visible week (they were independent state, so paging desynced them).
           onClick={() => { setWeekStart(w => subWeeks(w, 1)); setSelectedDay(d => subWeeks(d, 1)); setShowCompleted(false); }}
           aria-label="Previous week"
-          className="w-11 h-11 rounded-full flex items-center justify-center glass-inset text-muted-2 hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
+          className="w-11 h-11 rounded-pill flex items-center justify-center glass-inset text-ink-muted hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
-        <span className="font-technical text-sm font-extrabold text-ink">
+        <span className="font-numeral tabular-nums text-body font-bold text-ink">
           {format(weekStart, "MMM d")}, {format(addDays(weekStart, 6), "MMM d")}
         </span>
         <button
           onClick={() => { setWeekStart(w => addWeeks(w, 1)); setSelectedDay(d => addWeeks(d, 1)); setShowCompleted(false); }}
           aria-label="Next week"
-          className="w-11 h-11 rounded-full flex items-center justify-center glass-inset text-muted-2 hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
+          className="w-11 h-11 rounded-pill flex items-center justify-center glass-inset text-ink-muted hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
@@ -351,13 +351,13 @@ export default function WeeklySchedule() {
           weekDays.map((_, i) => (
             <div key={i} className="data-row">
               <div className="w-[38px] h-9 rounded bg-track pulse-loop shrink-0" />
-              <div className="flex-1 h-4 rounded-full bg-track pulse-loop" />
+              <div className="flex-1 h-4 rounded-pill bg-track pulse-loop" />
             </div>
           ))
         ) : logsError || enrollmentsError ? (
           <div className="py-4 flex flex-col items-center gap-2">
-            <p className="text-xs font-semibold text-muted-2">Could not load your schedule.</p>
-            <button onClick={() => refetchLogs()} className="cta-ghost text-xs px-4 py-1.5 min-h-[44px]">
+            <p className="text-caption font-semibold text-ink-muted">Could not load your schedule.</p>
+            <button onClick={() => refetchLogs()} className="cta-ghost text-caption px-4 py-1.5 min-h-[44px]">
               Retry
             </button>
           </div>
@@ -405,12 +405,12 @@ export default function WeeklySchedule() {
                   // Inset today bar: a short ink rule centered vertically inside
                   // the row so it respects the 13px glass-inset radius instead of
                   // squaring off a full-height border-l sliver at the corner.
-                  <span aria-hidden="true" className="absolute left-1 top-1/2 -translate-y-1/2 h-4 w-[3px] rounded-full" style={{ background: "var(--text-primary)" }} />
+                  <span aria-hidden="true" className="absolute left-1 top-1/2 -translate-y-1/2 h-4 w-[3px] rounded-pill" style={{ background: "var(--text-primary)" }} />
                 )}
-                <span className={`w-[38px] shrink-0 text-center font-technical text-xs font-bold tracking-[0.08em] ${isCurrentDay ? "text-ink" : "text-muted-2"}`}>
+                <span className={`w-[38px] shrink-0 text-center font-numeral tabular-nums text-caption font-bold tracking-[0.08em] ${isCurrentDay ? "text-ink" : "text-ink-muted"}`}>
                   {format(day, "EEE").slice(0, 2).toUpperCase()} {format(day, "d")}
                 </span>
-                <span className={`flex-1 min-w-0 text-xs font-semibold ${isCurrentDay ? "text-ink" : "text-muted-2"}`}>Rest</span>
+                <span className={`flex-1 min-w-0 text-caption font-semibold ${isCurrentDay ? "text-ink" : "text-ink-muted"}`}>Rest</span>
                 {/* Empty trailing slot mirrors the session rows' w-[68px] status
                     column so the Rest row's content area, and thus its selected
                     highlight's right edge, aligns flush with the other rows
@@ -429,19 +429,19 @@ export default function WeeklySchedule() {
               {isCurrentDay && (
                 // Inset today bar (see rest-row note): centered ink rule that
                 // respects the row's 13px radius rather than a squared border-l.
-                <span aria-hidden="true" className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-full" style={{ background: "var(--text-primary)" }} />
+                <span aria-hidden="true" className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-pill" style={{ background: "var(--text-primary)" }} />
               )}
-              <div className="w-[38px] shrink-0 text-center font-technical">
-                <span className={`block text-xs font-bold tracking-[0.08em] ${isCurrentDay ? "text-ink" : "text-muted-2"}`}>
+              <div className="w-[38px] shrink-0 text-center font-numeral tabular-nums">
+                <span className={`block text-caption font-bold tracking-[0.08em] ${isCurrentDay ? "text-ink" : "text-ink-muted"}`}>
                   {format(day, "EEE").slice(0, 2).toUpperCase()}
                 </span>
-                <span className={`block text-base font-extrabold text-ink`}>
+                <span className={`block text-body font-bold text-ink`}>
                   {format(day, "d")}
                 </span>
               </div>
               <div className={`flex-1 min-w-0 ${log ? "opacity-70" : ""}`}>
                 {detail ? (
-                  <div className="text-xs font-semibold text-ink truncate">
+                  <div className="text-caption font-semibold text-ink truncate">
                     {detail}
                   </div>
                 ) : (
@@ -473,7 +473,7 @@ export default function WeeklySchedule() {
                   // physiological spectrum is reserved for biometrics, so a logged
                   // session reads as quiet neutral confirmation, not a "good"
                   // biometric. Still distinct from the empty/no-check not-done rows.
-                  isSelected ? null : <CheckCircle2 className="w-4 h-4 text-muted-2 fill-white/10" />
+                  isSelected ? null : <CheckCircle2 className="w-4 h-4 text-ink-muted fill-white/10" />
                 ) : type !== "REST" ? (
                   <ChevronRight className="w-4 h-4 text-faint" />
                 ) : null}
@@ -506,17 +506,17 @@ export default function WeeklySchedule() {
                 // reads as a muted caption rather than a second teal accent.
                 // The eyebrow names the current day, so the headline drops the
                 // weekday (it would otherwise name today twice).
-                <span className="section-label !text-muted-2">Today</span>
+                <span className="section-label !text-ink-muted">Today</span>
               ) : (
-                <span className="section-label !text-muted-2">{dayEcho}</span>
+                <span className="section-label !text-ink-muted">{dayEcho}</span>
               )}
-              <span className="grid place-items-center w-11 h-11 rounded-full glass-inset">
+              <span className="grid place-items-center w-11 h-11 rounded-pill glass-inset">
                 <Moon className="w-5 h-5 text-faint" />
               </span>
-              <h2 className="type-display text-[17px]">Rest Day</h2>
-              <p className="text-[14px] font-semibold text-muted-2 max-w-[15rem]">
+              <h2 className="type-display text-title">Rest day</h2>
+              <p className="text-body font-semibold text-ink-muted max-w-[15rem]">
                 {isToday
-                  ? "No session on the plan today. Log how recovery is going so tomorrow's targets stay dialed in."
+                  ? "No session on the plan today. Log how recovery is going. Tomorrow's targets use it."
                   : "No session scheduled. A planned rest day is part of the program."}
               </p>
               {/* Fill the fold with context instead of an empty band: surface
@@ -526,15 +526,15 @@ export default function WeeklySchedule() {
               {(totalWeeklySets > 0 || completedCount > 0) && (
                 <div className="mt-2 w-full max-w-[18rem] flex items-stretch gap-2">
                   {totalWeeklySets > 0 && (
-                    <div className="flex-1 glass-inset rounded-[13px] px-3 py-2.5 flex flex-col items-center gap-0.5">
-                      <span className="hero-metric text-ink text-xl tabular-nums">{totalWeeklySets}</span>
-                      <span className="section-label !text-muted-2">Sets this week</span>
+                    <div className="flex-1 glass-inset rounded-control px-3 py-2.5 flex flex-col items-center gap-0.5">
+                      <span className="hero-metric text-ink text-title tabular-nums">{totalWeeklySets}</span>
+                      <span className="section-label !text-ink-muted">Sets this week</span>
                     </div>
                   )}
                   {activeEnrollment?.program && (
-                    <div className="flex-1 glass-inset rounded-[13px] px-3 py-2.5 flex flex-col items-center gap-0.5">
-                      <span className="hero-metric text-ink text-xl tabular-nums">{progressPct}%</span>
-                      <span className="section-label !text-muted-2">Program done</span>
+                    <div className="flex-1 glass-inset rounded-control px-3 py-2.5 flex flex-col items-center gap-0.5">
+                      <span className="hero-metric text-ink text-title tabular-nums">{progressPct}%</span>
+                      <span className="section-label !text-ink-muted">Program done</span>
                     </div>
                   )}
                 </div>
@@ -562,15 +562,15 @@ export default function WeeklySchedule() {
                 stat tiles read as subordinate context. The eyebrow owns the day
                 echo so the cards below don't restate it (date in one band). */}
             <div className="glass px-4 pt-4 pb-4 rise-in-2">
-              <p className="section-label !text-muted-2 mb-1">{heroEyebrow}</p>
-              <h2 className="type-display text-[17px] leading-tight mb-3">{heroTitle}</h2>
+              <p className="section-label !text-ink-muted mb-1">{heroEyebrow}</p>
+              <h2 className="type-display text-title leading-tight mb-3">{heroTitle}</h2>
               <div className="flex items-baseline gap-2">
-                <span className="hero-metric text-ink text-[44px] tabular-nums">{heroCount}</span>
-                <span className="font-technical text-sm font-bold text-muted-2 mb-1">
+                <span className="hero-metric text-ink text-hero tabular-nums">{heroCount}</span>
+                <span className="font-numeral tabular-nums text-body font-bold text-ink-muted mb-1">
                   {heroCount === 1 ? "exercise" : "exercises"}
                 </span>
                 {heroDur && (
-                  <span className="font-technical text-xs font-semibold text-muted-2 ml-auto mb-1 tabular-nums">
+                  <span className="font-numeral tabular-nums text-caption font-semibold text-ink-muted ml-auto mb-1 tabular-nums">
                     {heroDur}
                   </span>
                 )}
@@ -597,21 +597,21 @@ export default function WeeklySchedule() {
                     <span className="section-label">
                       {showCompleted ? "Hide exercises" : "View exercises"}
                     </span>
-                    <ChevronDown className={`w-4 h-4 text-muted-2 shrink-0 transition-transform duration-200 [transition-timing-function:var(--ease)] ${showCompleted ? "rotate-180" : ""}`} />
+                    <ChevronDown className={`w-4 h-4 text-ink-muted shrink-0 transition-transform duration-200 [transition-timing-function:var(--ease)] ${showCompleted ? "rotate-180" : ""}`} />
                   </button>
                   {showCompleted && (
                     <div className="rise-in">
                       {logLifts.length > 0 && (
                         <div className="px-4 pb-3.5">
                           <div className="flex items-center gap-1.5 mb-1">
-                            <Dumbbell className="w-3 h-3 text-muted-2" />
+                            <Dumbbell className="w-3 h-3 text-ink-muted" />
                             <span className="section-label">Exercises</span>
                           </div>
                           <div>
                             {logLifts.map((ex, j) => (
                               <div key={j} className="data-row justify-between gap-2">
-                                <span className="text-sm font-semibold text-ink truncate">{ex.name}</span>
-                                <span className="pill-value pill-value--sm text-muted-2 shrink-0">{formatSets(ex)}</span>
+                                <span className="text-body font-semibold text-ink truncate">{ex.name}</span>
+                                <span className="pill-value pill-value--sm text-ink-muted shrink-0">{formatSets(ex)}</span>
                               </div>
                             ))}
                           </div>
@@ -626,8 +626,8 @@ export default function WeeklySchedule() {
                           <div>
                             {logRuns.map((ex, j) => (
                               <div key={j} className="data-row justify-between gap-2">
-                                <span className="text-sm font-semibold text-ink truncate">{ex.name}</span>
-                                <span className="pill-value pill-value--sm text-muted-2 shrink-0">{formatSets(ex)}</span>
+                                <span className="text-body font-semibold text-ink truncate">{ex.name}</span>
+                                <span className="pill-value pill-value--sm text-ink-muted shrink-0">{formatSets(ex)}</span>
                               </div>
                             ))}
                           </div>
@@ -650,14 +650,14 @@ export default function WeeklySchedule() {
                   {lifts.length > 0 && (
                     <div className="px-4 pt-3.5 pb-2">
                       <div className="flex items-center gap-1.5 mb-1">
-                        <Dumbbell className="w-3 h-3 text-muted-2" />
+                        <Dumbbell className="w-3 h-3 text-ink-muted" />
                         <span className="section-label">{isTwoADay ? "AM, Lifting" : "Lifting"}</span>
                       </div>
                       <div>
                         {lifts.map((ex, j) => (
                           <div key={j} className="data-row justify-between">
-                            <span className="text-sm font-semibold text-ink truncate">{ex.name}</span>
-                            <span className="pill-value pill-value--sm text-muted-2 shrink-0">{formatPrescribed(ex)}</span>
+                            <span className="text-body font-semibold text-ink truncate">{ex.name}</span>
+                            <span className="pill-value pill-value--sm text-ink-muted shrink-0">{formatPrescribed(ex)}</span>
                           </div>
                         ))}
                       </div>
@@ -696,7 +696,7 @@ export default function WeeklySchedule() {
                       <span className="section-label !text-carb">{isTwoADay ? "PM, Run" : "Cardio"}</span>
                     </div>
                     {isTwoADay && (
-                      <p className="text-xs font-semibold text-muted-2 mb-3">
+                      <p className="text-caption font-semibold text-ink-muted mb-3">
                         ~6h separation from AM session
                       </p>
                     )}
@@ -707,18 +707,18 @@ export default function WeeklySchedule() {
                         return (
                           <div key={j} className="flex items-center justify-between gap-3">
                             <div className={`min-w-0 ${done ? "opacity-50" : ""}`}>
-                              <span className={`text-sm font-semibold text-ink ${done ? "line-through text-muted-2" : ""}`}>{name}</span>
-                              {ex.notes && <p className="text-xs text-muted-2 mt-0.5">{ex.notes}</p>}
+                              <span className={`text-body font-semibold text-ink ${done ? "line-through text-ink-muted" : ""}`}>{name}</span>
+                              {ex.notes && <p className="text-caption text-ink-muted mt-0.5">{ex.notes}</p>}
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
-                              <span className="pill-value pill-value--sm text-muted-2 tabular-nums">{ex.duration_minutes} min</span>
+                              <span className="pill-value pill-value--sm text-ink-muted tabular-nums">{ex.duration_minutes} min</span>
                               <button
                                 onClick={() => toggleCardio(name)}
                                 aria-label={done ? `Mark ${name} not done` : `Mark ${name} done`}
                                 aria-pressed={done}
-                                className="shrink-0 p-2.5 -m-2.5 rounded-full transition-transform duration-200 [transition-timing-function:var(--ease)] active:scale-95"
+                                className="shrink-0 p-2.5 -m-2.5 rounded-pill transition-transform duration-200 [transition-timing-function:var(--ease)] active:scale-95"
                               >
-                                <span className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200 [transition-timing-function:var(--ease)] ${
+                                <span className={`w-6 h-6 rounded-pill flex items-center justify-center transition-all duration-200 [transition-timing-function:var(--ease)] ${
                                   done
                                     ? "glass-inset text-carb"
                                     : "bg-track"
@@ -769,14 +769,14 @@ export default function WeeklySchedule() {
             training week at". Each datum keeps its own muted ink. */}
         {selectedLog && !hasProgramSection && loggedSessionsThisWeek > 0 && (
           <div className="mt-3 flex items-stretch gap-2 rise-in-3">
-            <div className="flex-1 glass-inset rounded-[13px] px-3 py-2.5 flex flex-col items-center gap-0.5">
-              <span className="hero-metric text-ink text-xl tabular-nums">{loggedSessionsThisWeek}</span>
-              <span className="section-label !text-muted-2">{loggedSessionsThisWeek === 1 ? "Session this week" : "Sessions this week"}</span>
+            <div className="flex-1 glass-inset rounded-control px-3 py-2.5 flex flex-col items-center gap-0.5">
+              <span className="hero-metric text-ink text-title tabular-nums">{loggedSessionsThisWeek}</span>
+              <span className="section-label !text-ink-muted">{loggedSessionsThisWeek === 1 ? "Session this week" : "Sessions this week"}</span>
             </div>
             {loggedExercisesThisWeek > 0 && (
-              <div className="flex-1 glass-inset rounded-[13px] px-3 py-2.5 flex flex-col items-center gap-0.5">
-                <span className="hero-metric text-ink text-xl tabular-nums">{loggedExercisesThisWeek}</span>
-                <span className="section-label !text-muted-2">{loggedExercisesThisWeek === 1 ? "Exercise logged" : "Exercises logged"}</span>
+              <div className="flex-1 glass-inset rounded-control px-3 py-2.5 flex flex-col items-center gap-0.5">
+                <span className="hero-metric text-ink text-title tabular-nums">{loggedExercisesThisWeek}</span>
+                <span className="section-label !text-ink-muted">{loggedExercisesThisWeek === 1 ? "Exercise logged" : "Exercises logged"}</span>
               </div>
             )}
           </div>
@@ -788,7 +788,7 @@ export default function WeeklySchedule() {
           analytics) rather than two instances of the same metric. */}
       {(muscleVolume.length > 0 || activeEnrollment?.program) && (
       <section aria-label="This program" className="rise-in-3">
-        <p className="section-label mb-2 px-1">This Program</p>
+        <p className="section-label mb-2 px-1">This program</p>
         <div className="space-y-3">
       {/* Weekly volume — secondary analytics, collapsed by default so the
           selected-day session + action lead the page. Tap to expand the
@@ -798,14 +798,14 @@ export default function WeeklySchedule() {
           <button
             onClick={() => setShowVolume(v => !v)}
             aria-expanded={showVolume}
-            className="w-full min-h-[44px] flex items-center justify-between rounded-xl transition-colors duration-200 [transition-timing-function:var(--ease)] active:bg-track"
+            className="w-full min-h-[44px] flex items-center justify-between rounded-control transition-colors duration-200 [transition-timing-function:var(--ease)] active:bg-track"
           >
-            <span className="section-label">Weekly Volume</span>
+            <span className="section-label">Weekly volume</span>
             <span className="flex items-center gap-2">
-              <span className="font-technical text-xs font-extrabold text-muted-2 tabular-nums">
+              <span className="font-numeral tabular-nums text-caption font-bold text-ink-muted tabular-nums">
                 {totalWeeklySets} sets · {muscleVolume.length} muscles
               </span>
-              <ChevronDown className={`w-4 h-4 text-muted-2 transition-transform duration-200 [transition-timing-function:var(--ease)] ${showVolume ? "rotate-180" : ""}`} />
+              <ChevronDown className={`w-4 h-4 text-ink-muted transition-transform duration-200 [transition-timing-function:var(--ease)] ${showVolume ? "rotate-180" : ""}`} />
             </span>
           </button>
           {showVolume && (
@@ -814,16 +814,16 @@ export default function WeeklySchedule() {
                 {visibleMuscleVolume.map(([muscle, sets]) => (
                   <div key={muscle} className="data-row gap-2 flex-col !items-stretch">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-semibold text-ink capitalize truncate">
+                      <span className="text-body font-semibold text-ink capitalize truncate">
                         {muscle.replace(/_/g, " ")}
                       </span>
-                      <span className="pill-value pill-value--sm text-muted-2 shrink-0">
-                        {sets} <span className="text-xs font-semibold">sets</span>
+                      <span className="pill-value pill-value--sm text-ink-muted shrink-0">
+                        {sets} <span className="text-caption font-semibold">sets</span>
                       </span>
                     </div>
-                    <div className="h-1 bg-track rounded-full overflow-hidden">
+                    <div className="h-1 bg-track rounded-pill overflow-hidden">
                       <div
-                        className="h-full bg-viz-1 rounded-full transition-[width] duration-200 [transition-timing-function:var(--ease)]"
+                        className="h-full bg-viz-1 rounded-pill transition-[width] duration-200 [transition-timing-function:var(--ease)]"
                         style={{ width: `${maxMuscleSets > 0 ? Math.round((sets / maxMuscleSets) * 100) : 0}%` }}
                       />
                     </div>
@@ -851,12 +851,12 @@ export default function WeeklySchedule() {
             <p className="section-label truncate flex-1 mr-2">
               {activeEnrollment.program.title}
             </p>
-            <span className="font-technical text-xs font-extrabold text-muted-2 shrink-0 tabular-nums">{progressPct}%</span>
+            <span className="font-numeral tabular-nums text-caption font-bold text-ink-muted shrink-0 tabular-nums">{progressPct}%</span>
           </div>
-          <div className="h-1 bg-track rounded-full overflow-hidden mb-1.5">
-            <div className="h-full bg-viz-1 rounded-full transition-[width] duration-200 [transition-timing-function:var(--ease)]" style={{ width: `${progressPct}%` }} />
+          <div className="h-1 bg-track rounded-pill overflow-hidden mb-1.5">
+            <div className="h-full bg-viz-1 rounded-pill transition-[width] duration-200 [transition-timing-function:var(--ease)]" style={{ width: `${progressPct}%` }} />
           </div>
-          <p className="font-technical text-xs font-semibold text-muted-2">
+          <p className="font-numeral tabular-nums text-caption font-semibold text-ink-muted">
             Week {activeEnrollment.current_week || 1} of {activeEnrollment.program.num_cycles || activeEnrollment.program.duration_weeks || "?"}
             {" · "}{completedCount} sessions logged
           </p>

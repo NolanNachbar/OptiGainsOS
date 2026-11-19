@@ -23,14 +23,14 @@ export default function ExerciseEditor({
     <div className="glass-inset p-3 space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-ink-muted">#{index + 1}</span>
+            <span className="text-caption font-semibold text-ink-muted">#{index + 1}</span>
             {detected && (
-              <Badge variant="outline" className="text-xs capitalize">
+              <Badge variant="outline" className="text-caption capitalize">
                 {detected.type}
               </Badge>
             )}
             {exercise.muscle_groups?.length > 0 && (
-              <span className="text-xs text-ink-muted">
+              <span className="text-caption text-ink-muted">
                 {exercise.muscle_groups.join(", ")}
               </span>
             )}
@@ -38,7 +38,7 @@ export default function ExerciseEditor({
           {canRemove && (
             <Button
               type="button"
-              variant="ghost"
+              variant="secondary"
               size="sm"
               aria-label="Remove exercise"
               className="min-h-[44px] min-w-[44px] p-0 -my-2"
@@ -55,17 +55,17 @@ export default function ExerciseEditor({
               value={exercise.name}
               onChange={(e) => update("name", e.target.value)}
               placeholder="Exercise name"
-              className="text-sm"
+              className="text-body"
             />
           </div>
           {!isCardio && (
             <div>
-              <Label className="text-xs text-ink-muted">Focus</Label>
+              <Label className="text-caption text-ink-muted">Focus</Label>
               <Select
                 value={exercise.focus || "hypertrophy"}
                 onValueChange={(v) => update("focus", v)}
               >
-                <SelectTrigger className="text-xs">
+                <SelectTrigger className="text-caption">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -76,7 +76,7 @@ export default function ExerciseEditor({
             </div>
           )}
           <div>
-            <Label className="text-xs text-ink-muted">{isCardio ? "Intensity (RIR)" : "RIR Target"}</Label>
+            <Label className="text-caption text-ink-muted">{isCardio ? "Intensity (RIR)" : "RIR Target"}</Label>
             <Input
               type="number" inputMode="decimal"
               value={exercise.rir_target}
@@ -87,41 +87,41 @@ export default function ExerciseEditor({
               min="0"
               max="5"
               step="0.5"
-              className="text-sm"
+              className="text-body"
             />
           </div>
           <div>
-            <Label className="text-xs text-ink-muted">{isCardio ? "Rounds/Intervals" : "Sets"}</Label>
+            <Label className="text-caption text-ink-muted">{isCardio ? "Rounds/Intervals" : "Sets"}</Label>
             <Input
               type="number" inputMode="numeric"
               value={typeof exercise.sets === "number" ? exercise.sets : Array.isArray(exercise.sets) ? exercise.sets.length : 3}
               onChange={(e) => update("sets", parseInt(e.target.value) || 3)}
               min="1"
-              className="text-sm"
+              className="text-body"
             />
           </div>
           <div>
-            <Label className="text-xs text-ink-muted">{isCardio ? "Duration/Distance" : "Rep Target"}</Label>
+            <Label className="text-caption text-ink-muted">{isCardio ? "Duration/Distance" : "Rep Target"}</Label>
             <Input
               value={exercise.rep_target}
               onChange={(e) => update("rep_target", e.target.value)}
               placeholder={isCardio ? "e.g., 30 min, 5 km" : "e.g., 5 or 8-12"}
-              className="text-sm"
+              className="text-body"
             />
           </div>
           <div>
-            <Label className="text-xs text-ink-muted">Rest (sec)</Label>
+            <Label className="text-caption text-ink-muted">Rest (sec)</Label>
             <Input
               type="number" inputMode="numeric"
               value={exercise.rest_seconds}
               onChange={(e) => update("rest_seconds", parseInt(e.target.value) || 90)}
               min="0"
-              className="text-sm"
+              className="text-body"
             />
           </div>
           {!isCardio && (
             <div>
-              <Label className="text-xs text-ink-muted">Weight +/session</Label>
+              <Label className="text-caption text-ink-muted">Weight +/session</Label>
               <Input
                 type="number" inputMode="decimal"
                 value={exercise.progression?.weight_increment || 5}
@@ -133,7 +133,7 @@ export default function ExerciseEditor({
                 }
                 min="0"
                 step="2.5"
-                className="text-sm"
+                className="text-body"
               />
             </div>
           )}

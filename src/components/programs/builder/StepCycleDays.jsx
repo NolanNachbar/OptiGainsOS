@@ -30,10 +30,10 @@ export default function StepCycleDays({
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-base">
+              <CardTitle className="text-body">
                 {program.cycle_length}-Day Cycle Template
               </CardTitle>
-              <p className="text-xs text-ink-muted mt-1">
+              <p className="text-caption text-ink-muted mt-1">
                 Drag workouts from the library or click a day to build exercises inline.
                 This template repeats for {program.num_cycles} cycle{program.num_cycles !== 1 ? "s" : ""}.
               </p>

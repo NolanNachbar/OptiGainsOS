@@ -26,36 +26,36 @@ export default function StepConfirm({ program, workouts }) {
           {/* Name spans both columns so the remaining four stats pair off evenly
               and the 5th ('Training Days') never orphans on its own row. */}
           <div className="col-span-2">
-            <p className="text-xs text-ink-muted">Name</p>
+            <p className="text-caption text-ink-muted">Name</p>
             <p className="font-semibold">{program.name}</p>
           </div>
           <div>
-            <p className="text-xs text-ink-muted">Cycle</p>
-            <p className="font-technical font-semibold">{program.cycle_length}-day cycle &times; {program.num_cycles}</p>
+            <p className="text-caption text-ink-muted">Cycle</p>
+            <p className="font-numeral tabular-nums font-semibold">{program.cycle_length}-day cycle &times; {program.num_cycles}</p>
           </div>
           <div>
-            <p className="text-xs text-ink-muted">Total Days</p>
-            <p className="font-technical font-semibold">{program.cycle_length * program.num_cycles} days</p>
+            <p className="text-caption text-ink-muted">Total days</p>
+            <p className="font-numeral tabular-nums font-semibold">{program.cycle_length * program.num_cycles} days</p>
           </div>
           <div>
-            <p className="text-xs text-ink-muted">Goal</p>
+            <p className="text-caption text-ink-muted">Goal</p>
             <p className="font-semibold">{GOALS.find(g => g.value === program.goal)?.label || program.goal?.replace("_", " ")}</p>
           </div>
           <div>
-            <p className="text-xs text-ink-muted">Training Days</p>
-            <p className="font-technical font-semibold">{filledDays} of {program.cycle_length} days</p>
+            <p className="text-caption text-ink-muted">Training days</p>
+            <p className="font-numeral tabular-nums font-semibold">{filledDays} of {program.cycle_length} days</p>
           </div>
         </div>
 
         {program.description && (
           <div>
-            <p className="text-xs text-ink-muted">Description</p>
-            <p className="text-sm text-ink-muted">{program.description}</p>
+            <p className="text-caption text-ink-muted">Description</p>
+            <p className="text-body text-ink-muted">{program.description}</p>
           </div>
         )}
 
         <div className="border-t hairline pt-4">
-          <h3 className="section-label mb-3">Cycle Template</h3>
+          <h3 className="section-label mb-3">Cycle template</h3>
           <div className="space-y-2">
             {workouts.map((w) => {
               const hasExercises = w.exercises?.length > 0;
@@ -64,19 +64,19 @@ export default function StepConfirm({ program, workouts }) {
               return (
                 <div
                   key={w.day_index}
-                  className={`flex items-center justify-between glass-inset p-2 text-sm ${
+                  className={`flex items-center justify-between glass-inset p-2 text-body ${
                     isEmpty ? "opacity-60" : ""
                   }`}
                 >
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="outline" className="text-caption">
                       Day {w.day_index}
                     </Badge>
                     <span className="font-medium">
                       {isEmpty ? "Rest" : w.title}
                     </span>
                   </div>
-                  <span className="text-xs text-ink-muted">
+                  <span className="text-caption text-ink-muted">
                     {[
                       hasExercises && `${w.exercises.length} exercises`,
                       hasCardio && `${w.cardio_sessions.length} cardio`,
@@ -88,7 +88,7 @@ export default function StepConfirm({ program, workouts }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 glass-inset p-3 text-sm text-ink-secondary">
+        <div className="flex items-center gap-2 glass-inset p-3 text-body text-ink-secondary">
           <Check className="w-4 h-4 shrink-0 text-ink" />
           <span>
             Ready to save: {filledDays} training days

@@ -41,7 +41,7 @@ export default function StepDetails({ program, setProgram, tagInput, setTagInput
           {/* Gating helper sits with the field it gates, not orphaned at the
               bottom by the Next button, names WHY forward is locked. */}
           {!program.name.trim() && (
-            <p className="text-xs text-ink-muted mt-1">
+            <p className="text-caption text-ink-muted mt-1">
               Name your program to continue
             </p>
           )}
@@ -62,7 +62,7 @@ export default function StepDetails({ program, setProgram, tagInput, setTagInput
               max={30}
               ariaLabel="cycle length"
             />
-            <p className="text-xs text-ink-muted mt-0.5">Days per cycle · rest days included</p>
+            <p className="text-caption text-ink-muted mt-0.5">Days per cycle · rest days included</p>
           </div>
           <div>
             <Label className="form-label">Cycles *</Label>
@@ -73,7 +73,7 @@ export default function StepDetails({ program, setProgram, tagInput, setTagInput
               max={20}
               ariaLabel="number of cycles"
             />
-            <p className="text-xs text-ink-muted mt-0.5">Times repeated</p>
+            <p className="text-caption text-ink-muted mt-0.5">Times repeated</p>
           </div>
           {/* Goal spans both columns (own row) then rejoins the desktop
               three-up row. */}
@@ -103,17 +103,17 @@ export default function StepDetails({ program, setProgram, tagInput, setTagInput
             dominant display figure on Step 1 (program-builder-2,3). The total
             renders as a hero-metric far larger than any label (.form-label,
             12px) or stepper value (~14px) so Step 1 lands a single focal number.
-            The whole derived line is wrapped in font-technical (tabular
+            The whole derived line is wrapped in font-numeral tabular-nums (tabular
             numerals) so every figure aligns; the supporting prose stays muted
             below the hero figure (program-builder-3 / program-duration-modal-6). */}
-        <div className="flex items-center gap-3 glass-inset p-4 font-technical">
+        <div className="flex items-center gap-3 glass-inset p-4 font-numeral tabular-nums">
           <Calendar className="w-5 h-5 flex-shrink-0 text-ink-muted" />
           <div className="min-w-0">
             <div className="flex items-baseline gap-2">
-              <span className="hero-metric text-4xl text-ink">{program.cycle_length * program.num_cycles}</span>
+              <span className="hero-metric text-display text-ink">{program.cycle_length * program.num_cycles}</span>
               <span className="section-label">total training days</span>
             </div>
-            <p className="text-sm text-ink-secondary mt-0.5">
+            <p className="text-body text-ink-secondary mt-0.5">
               {program.cycle_length}-day cycle repeated {program.num_cycles} time{program.num_cycles !== 1 ? "s" : ""}
             </p>
           </div>

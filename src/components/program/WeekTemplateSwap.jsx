@@ -8,6 +8,7 @@ import { LayoutTemplate, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { db, supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
+import { Button, cn } from "@/components/ui";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
   templateFolders, planTemplateWeek, useApplyWeekTemplate, useClearWeekTemplate, TEMPLATE_SOURCE_PREFIX,
@@ -72,35 +73,29 @@ export default function WeekTemplateSwap({ programId, weekDates, today }) {
   if (!programId || weekOver) return null;
 
   const onApply = () => apply.mutate({ plan, folder: chosen.folder }, {
-    onSuccess: (n) => { toast.success(`${chosen.folder} set for ${n} day${n === 1 ? "" : "s"} this week`); setOpen(false); setFolder(null); },
-    onError: (e) => toast.error(e.message || "Couldn't apply the template"),
+    onSuccess: (n) => { toast.success(`${chosen.folder} set for ${n} day${n === 1 ? "" : "s"} this week.`); setOpen(false); setFolder(null); },
+    onError: (e) => toast.error(e.message || "Could not apply the template. Retry."),
   });
   const onClear = () => clear.mutate({ rows, touched }, {
-    onSuccess: () => toast.success("Back to the engine's plan. The week re-plans in a minute or two."),
-    onError: (e) => toast.error(e.message || "Couldn't clear the template"),
+    onSuccess: () => toast.success("Back on the engine plan. The week re-plans in a minute or two."),
+    onError: (e) => toast.error(e.message || "Could not clear the template. Retry."),
   });
 
   return (
     <>
       <div className="flex items-center justify-between gap-2 mb-3 px-1">
-        <span className="text-xs text-muted-2 truncate">
-          {activeTemplate ? <>Running <span className="text-ink font-semibold">{activeTemplate}</span> this week</> : "Engine's plan"}
+        <span className="text-caption text-ink-muted truncate">
+          {activeTemplate ? <>Running <span className="text-ink font-semibold">{activeTemplate}</span> this week</> : "Engine plan"}
         </span>
         <div className="flex gap-2 shrink-0">
           {activeTemplate && (
-            <button
-              type="button" onClick={onClear} disabled={clear.isPending}
-              className="glass-interactive min-h-[44px] px-3 rounded-xl border border-charcoal-border text-xs font-bold text-ink-secondary disabled:opacity-60"
-            >
-              {clear.isPending ? "Resetting…" : "Use engine plan"}
-            </button>
+            <Button variant="outline" size="sm" onClick={onClear} disabled={clear.isPending} className="min-h-tap">
+              {clear.isPending ? "Resetting..." : "Use engine plan"}
+            </Button>
           )}
-          <button
-            type="button" onClick={() => setOpen(true)}
-            className="glass-interactive min-h-[44px] px-3 rounded-xl border border-charcoal-border flex items-center gap-1.5 text-xs font-bold text-ink-secondary"
-          >
-            <LayoutTemplate className="w-3.5 h-3.5" /> Use a template
-          </button>
+          <Button variant="secondary" size="sm" onClick={() => setOpen(true)} className="min-h-tap">
+            <LayoutTemplate className="w-3.5 h-3.5 mr-1.5" /> Use a template
+          </Button>
         </div>
       </div>
 
@@ -109,33 +104,34 @@ export default function WeekTemplateSwap({ programId, weekDates, today }) {
           <DialogHeader>
             <DialogTitle>Run a template this week</DialogTitle>
             <DialogDescription>
-              Your saved split replaces the engine&apos;s lifting on every day left in
-              {" "}{format(parseISO(first), "MMM d")} to {format(parseISO(last), "MMM d")}. cycling the split
-              (a 4-day split runs Day 1 to 4, then starts over). Next week the engine plans again.
+              Your saved split replaces the engine&apos;s lifting on every day left, {format(parseISO(first), "MMM d")} to {format(parseISO(last), "MMM d")}.
+              A 4-day split runs Day 1 to 4, then starts over. Next week the engine plans again.
             </DialogDescription>
           </DialogHeader>
 
           {libLoading && (
-            <div className="flex items-center gap-2 text-sm text-ink-muted py-4">
-              <Loader2 className="w-4 h-4 animate-spin" /> Loading your workouts…
+            <div className="flex items-center gap-2 text-body text-ink-muted py-4">
+              <Loader2 className="w-4 h-4 animate-spin" /> Loading workouts
             </div>
           )}
           {!libLoading && folders.length === 0 && (
-            <p className="text-sm text-ink-muted py-2">
-              No templates yet. Save two or more workouts into the same folder (for a PPL: a
-              folder with 1 Push, 2 Pull, 3 Legs) and it shows up here.
+            <p className="text-body text-ink-muted py-2">
+              No templates yet. Save two or more workouts into one folder (for a PPL: 1 Push, 2 Pull, 3 Legs) and it shows here.
             </p>
           )}
 
-          <div className="space-y-1.5 max-h-[30vh] overflow-y-auto">
+          <div className="space-y-2 max-h-[30vh] overflow-y-auto">
             {folders.map((f) => (
               <button
                 key={f.folder} type="button" onClick={() => setFolder(f.folder)}
                 aria-pressed={folder === f.folder}
-                className={`w-full text-left rounded-lg border px-3 py-2 ${folder === f.folder ? "border-brand/50 bg-brand/[8%]" : "border-charcoal-border"}`}
+                className={cn(
+                  "w-full min-h-tap text-left rounded-control border px-3 py-2 transition-colors duration-base",
+                  folder === f.folder ? "border-brand bg-charcoal-surface2" : "border-charcoal-border"
+                )}
               >
-                <span className="block font-semibold text-sm">{f.folder}</span>
-                <span className="block text-[11px] text-ink-muted truncate">{f.workouts.map((w) => w.title).join(" · ")}</span>
+                <span className="block font-semibold text-body">{f.folder}</span>
+                <span className="block text-caption text-ink-muted truncate">{f.workouts.map((w) => w.title).join(" · ")}</span>
               </button>
             ))}
           </div>
@@ -143,23 +139,36 @@ export default function WeekTemplateSwap({ programId, weekDates, today }) {
           {chosen && (
             <div className="mt-2">
               {plan.length === 0 ? (
-                <p className="text-sm text-ink-muted">No days left in this week to plan.</p>
+                <p className="text-body text-ink-muted">No days left in this week to plan.</p>
               ) : (
-                <ul className="space-y-1 text-xs">
-                  {plan.map(({ row, workout }) => (
-                    <li key={row.id} className="flex justify-between gap-3">
-                      <span className="text-ink-muted shrink-0">{format(parseISO(row.scheduled_date), "EEE MMM d")}</span>
-                      <span className="text-ink font-semibold truncate">{workout.title}</span>
-                    </li>
-                  ))}
-                </ul>
+                <>
+                  <p className="text-micro text-ink-muted mb-2">Engine plan to template</p>
+                  <ul className="space-y-2 text-caption">
+                    {plan.map(({ row, workout }) => (
+                      <li key={row.id} className="flex justify-between gap-3">
+                        <span className="text-ink-muted shrink-0">{format(parseISO(row.scheduled_date), "EEE MMM d")}</span>
+                        <span className="truncate text-right">
+                          <span className="text-ink-muted">{row.title || "Rest"}</span>
+                          <span className="text-ink-muted">{" > "}</span>
+                          <span className="text-ink font-semibold">{workout.title}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-caption text-ink-muted mt-3">
+                    Limited to {plan.length} day{plan.length === 1 ? "" : "s"}: days already trained or started stay as logged.
+                  </p>
+                </>
               )}
-              <button
-                type="button" onClick={onApply} disabled={apply.isPending || plan.length === 0}
-                className="cta-action w-full mt-3 disabled:opacity-60"
+              <Button
+                variant="primary" size="lg" className="w-full mt-3"
+                onClick={onApply} disabled={apply.isPending || plan.length === 0}
               >
-                {apply.isPending ? "Applying…" : `Run ${chosen.folder} this week`}
-              </button>
+                {apply.isPending ? "Applying..." : `Run ${chosen.folder} this week`}
+              </Button>
+              <Button variant="link" size="sm" className="w-full mt-1" onClick={() => { setOpen(false); setFolder(null); }}>
+                Keep current
+              </Button>
             </div>
           )}
         </DialogContent>

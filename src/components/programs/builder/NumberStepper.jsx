@@ -11,7 +11,7 @@ export default function NumberStepper({ value, onChange, min, max, ariaLabel }) 
     <div className="flex items-stretch gap-2 mt-1">
       <Button
         type="button"
-        variant="dim"
+        variant="outline"
         aria-label={`Decrease ${ariaLabel}`}
         onClick={() => onChange(clamp(value - 1))}
         disabled={value <= min}
@@ -26,11 +26,11 @@ export default function NumberStepper({ value, onChange, min, max, ariaLabel }) 
         onChange={(e) => onChange(clamp(parseInt(e.target.value) || min))}
         min={min}
         max={max}
-        className="flex-1 min-h-[44px] text-center text-xl font-technical font-bold appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
+        className="flex-1 min-h-[44px] text-center text-title font-numeral tabular-nums font-bold appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
       />
       <Button
         type="button"
-        variant="dim"
+        variant="outline"
         aria-label={`Increase ${ariaLabel}`}
         onClick={() => onChange(clamp(value + 1))}
         disabled={value >= max}

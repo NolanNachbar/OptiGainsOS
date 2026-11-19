@@ -86,7 +86,7 @@ export default function CycleDayGrid({
             {!compact && (
               <div className="flex items-center gap-2 mb-2">
                 <span
-                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold border border-charcoal-border ${
+                  className={`inline-flex items-center rounded-pill px-2.5 py-0.5 text-caption font-bold border border-charcoal-border ${
                     cycle === currentCycle
                       ? "bg-charcoal-surface2 text-ink"
                       : "bg-track text-ink-muted"
@@ -116,7 +116,7 @@ export default function CycleDayGrid({
                     ? addDays(startDate, (cycleIdx * cycleLength) + dayIndex - 1)
                     : null;
 
-                  let cellClasses = "rounded-lg border-[0.5px] p-2 text-left transition-all duration-200 ease-[cubic-bezier(.2,.7,.3,1)] min-h-[60px] min-w-0 overflow-hidden ";
+                  let cellClasses = "rounded-control border-[0.5px] p-2 text-left transition-all duration-200 ease-[cubic-bezier(.2,.7,.3,1)] min-h-[60px] min-w-0 overflow-hidden ";
                   if (isCompleted) {
                     cellClasses += " border-leaf/20 bg-leaf/[0.08]";
                   } else if (isCurrent) {
@@ -132,10 +132,10 @@ export default function CycleDayGrid({
                   if (onCellClick) cellClasses += " cursor-pointer ";
 
                   const labelClass = isCompleted
-                    ? "text-xs font-medium line-clamp-2 leading-tight text-leaf"
+                    ? "text-caption font-medium line-clamp-2 leading-tight text-leaf"
                     : isCurrent
-                    ? "text-xs font-semibold line-clamp-2 leading-tight text-ink"
-                    : "text-xs font-medium line-clamp-2 leading-tight text-ink-muted";
+                    ? "text-caption font-semibold line-clamp-2 leading-tight text-ink"
+                    : "text-caption font-medium line-clamp-2 leading-tight text-ink-muted";
 
                   const hasCardio = workout?.cardio_sessions?.length > 0;
 
@@ -156,13 +156,13 @@ export default function CycleDayGrid({
                       className={cellClasses}
                     >
                       {calendarDate && !compact && (
-                        <p className="hidden sm:block text-xs text-ink-muted mb-0.5">
+                        <p className="hidden sm:block text-caption text-ink-muted mb-0.5">
                           {format(calendarDate, "MMM d")}
                         </p>
                       )}
                       <div className="flex items-start justify-between">
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs text-ink-muted">Day {dayIndex}</p>
+                          <p className="text-caption text-ink-muted">Day {dayIndex}</p>
                           <span className={labelClass}>
                             {cleanWorkoutTitle(workout?.title) || "Rest"}
                           </span>
@@ -176,19 +176,19 @@ export default function CycleDayGrid({
                         ) : null}
                       </div>
                       {!compact && (workout?.focus || workout?.type) && (
-                        <p className="sm:hidden text-xs text-ink-muted mt-1 capitalize line-clamp-1">
+                        <p className="sm:hidden text-caption text-ink-muted mt-1 capitalize line-clamp-1">
                           {workout.focus || workout.type}
                         </p>
                       )}
                       {!compact && workout?.exercises?.length > 0 && (
-                        <p className="hidden sm:block text-xs text-ink-muted mt-1">
+                        <p className="hidden sm:block text-caption text-ink-muted mt-1">
                           {workout.exercises.length} exercises
                         </p>
                       )}
                       {!compact && hasCardio && (
                         <div className="flex flex-wrap gap-0.5 mt-1">
                           {workout.cardio_sessions.map((c, i) => (
-                            <span key={i} className="inline-flex items-center gap-0.5 text-xs bg-carb/[0.14] text-carb px-1.5 py-0.5 rounded-full font-medium">
+                            <span key={i} className="inline-flex items-center gap-0.5 text-caption bg-carb/[0.14] text-carb px-1.5 py-0.5 rounded-pill font-medium">
                               <Activity className="w-2.5 h-2.5" />
                               {c.title}
                             </span>
@@ -250,21 +250,21 @@ function DroppableDaySlot({ dayIndex, workout, onCellClick, onClearDay }) {
     <div
       ref={setNodeRef}
       onClick={() => onCellClick?.(workout, 1, dayIndex)}
-      className={`glass-inset rounded-xl border-[0.5px] p-3 min-h-[100px] min-w-0 overflow-hidden transition-[border-color,background] duration-200 ease-[cubic-bezier(.2,.7,.3,1)] cursor-pointer ${
+      className={`glass-inset rounded-control border-[0.5px] p-3 min-h-[100px] min-w-0 overflow-hidden transition-[border-color,background] duration-200 ease-[cubic-bezier(.2,.7,.3,1)] cursor-pointer ${
         isOver
           ? "border-brand bg-brand/5"
           : "border-charcoal-border hover:border-brand/40"
       }`}
     >
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-semibold text-ink-muted flex items-center gap-1">
+        <span className="text-caption font-semibold text-ink-muted flex items-center gap-1">
           Day {dayIndex}
-          {isHighLoad && <span className="w-1.5 h-1.5 rounded-full bg-brand inline-block" title="High-load day" />}
+          {isHighLoad && <span className="w-1.5 h-1.5 rounded-pill bg-brand inline-block" title="High-load day" />}
         </span>
         {hasWorkout && onClearDay && (
           <button
             onClick={(e) => { e.stopPropagation(); onClearDay(dayIndex); }}
-            className="text-xs text-ink-muted hover:text-bad transition-colors"
+            className="text-caption text-ink-muted hover:text-bad transition-colors"
           >
             Clear
           </button>
@@ -273,17 +273,17 @@ function DroppableDaySlot({ dayIndex, workout, onCellClick, onClearDay }) {
 
       {hasWorkout ? (
         <div>
-          <p className="text-sm font-medium text-ink leading-snug line-clamp-2 mb-1">{workout.title}</p>
+          <p className="text-body font-medium text-ink leading-snug line-clamp-2 mb-1">{workout.title}</p>
           {hasExercises && (
-            <p className="text-xs text-ink-muted">{workout.exercises.length} exercises</p>
+            <p className="text-caption text-ink-muted">{workout.exercises.length} exercises</p>
           )}
           {workout.focus && (
-            <Badge variant="outline" className="text-xs mt-1 capitalize">{workout.focus}</Badge>
+            <Badge variant="outline" className="text-caption mt-1 capitalize">{workout.focus}</Badge>
           )}
           {hasCardio && (
             <div className="flex flex-wrap gap-1 mt-1.5">
               {workout.cardio_sessions.map((c, i) => (
-                <span key={i} className="inline-flex items-center gap-0.5 text-xs bg-carb/[0.14] text-carb px-1.5 py-0.5 rounded-full font-medium leading-tight">
+                <span key={i} className="inline-flex items-center gap-0.5 text-caption bg-carb/[0.14] text-carb px-1.5 py-0.5 rounded-pill font-medium leading-tight">
                   <Activity className="w-2.5 h-2.5 shrink-0" />
                   <span className="line-clamp-1">{c.title}</span>
                 </span>
@@ -294,11 +294,11 @@ function DroppableDaySlot({ dayIndex, workout, onCellClick, onClearDay }) {
       ) : (
         <div className="flex flex-col items-center justify-center h-12 text-ink-muted">
           {isOver ? (
-            <p className="text-xs font-medium text-brand">Drop here</p>
+            <p className="text-caption font-medium text-brand">Drop here</p>
           ) : (
             <>
-              <p className="text-sm font-medium text-ink-muted">Rest</p>
-              <p className="text-xs mt-0.5">Click or drop to add</p>
+              <p className="text-body font-medium text-ink-muted">Rest</p>
+              <p className="text-caption mt-0.5">Click or drop to add</p>
             </>
           )}
         </div>
