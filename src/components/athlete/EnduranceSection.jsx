@@ -1,15 +1,18 @@
 
 
-export default function EnduranceSection({ data }) {
+import { pstCountdown } from "./athleteUtils";
+
+export default function EnduranceSection({ data, asOfDate, today }) {
   if (!data) return null;
+  const pst = pstCountdown(data, asOfDate, today);
 
   return (
     <div className="space-y-4">
-      {data.days_to_aug31 != null && (
+      {pst && (
         <div className="flex items-center gap-3">
-          <div className="hero-metric text-3xl text-gold">{data.days_to_aug31}</div>
+          <div className={`hero-metric text-3xl ${pst.passed ? "text-muted-2" : "text-gold"}`}>{pst.passed ? "Passed" : pst.days}</div>
           <div>
-            <div className="text-sm font-bold text-ink">Days to Aug 31</div>
+            <div className="text-sm font-bold text-ink">{pst.passed ? `${pst.label} deadline passed` : `Days to ${pst.label}`}</div>
             <div className="text-xs font-semibold text-muted-2">BUD/S PST target</div>
           </div>
         </div>
@@ -17,7 +20,7 @@ export default function EnduranceSection({ data }) {
       {data.aerobic_fitness_proxy != null && (
         <div>
           <div className="flex items-center justify-between text-xs mb-1">
-            <span className="font-bold text-secondary">Aerobic Fitness</span>
+            <span className="font-bold text-secondary">Aerobic fitness</span>
             <span className="font-technical text-teal font-extrabold">{(data.aerobic_fitness_proxy * 100).toFixed(0)}%</span>
           </div>
           <div className="h-1.5 bg-track rounded-full overflow-hidden">

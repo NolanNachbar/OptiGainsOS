@@ -1,5 +1,6 @@
 import { AlertTriangle } from "lucide-react";
 import { StallBadge } from "./athleteShared";
+import { isStalled } from "./athleteUtils";
 
 // ── Strength section ──────────────────────────────────────────────────────────
 
@@ -61,18 +62,33 @@ export default function StrengthSection({ data }) {
               )}
               {d.eta_days === 0 && <span className="text-teal">Target reached.</span>}
               <span>{d.sessions} sessions</span>
-              {d.progression_command && d.progression_command !== "HOLD" && (
-                // Non-imperative status chip (bg-charcoal-surface2 rounded-control pill, muted ink) so the
-                // engine's progression verdict reads as state, not a tappable CTA.
-                <span className="bg-charcoal-surface2 rounded-control px-2 py-0.5 text-micro font-bold text-muted-2 uppercase tracking-[0.06em]">
-                  {{
-                    INCREASE_LOAD: "Add load next session",
-                    DELOAD: "Deload next session",
-                    SWAP_EXERCISE: "Swap exercise",
-                  }[d.progression_command] ?? d.progression_command}
-                </span>
-              )}
+              {(() => {
+                const cmd = d.progression_command;
+                if (!cmd || cmd === "HOLD") return null;
+                // A stalled lift can't honestly be told to add load: the badge and
+                // the chip would contradict. Show the stall verdict instead.
+                const stalled = isStalled(d.stall_risk, d.progression_rate_lbs_per_week);
+                const text = stalled && cmd === "INCREASE_LOAD"
+                  ? "Hold load until e1RM recovers"
+                  : ({
+                      INCREASE_LOAD: "Add load next session",
+                      DELOAD: "Deload next session",
+                      SWAP_EXERCISE: "Swap exercise",
+                    }[cmd] ?? cmd);
+                return (
+                  // Non-imperative status chip so the verdict reads as state, not a CTA.
+                  <span className="bg-charcoal-surface2 rounded-control px-2 py-0.5 text-caption font-semibold text-muted-2">
+                    {text}
+                  </span>
+                );
+              })()}
             </div>
+            {d.progression_command && d.progression_command !== "HOLD" && (
+              <p className="text-caption font-semibold text-faint mt-1 leading-snug">
+                Basis: e1RM trend {d.progression_rate_lbs_per_week > 0 ? "+" : ""}{d.progression_rate_lbs_per_week ?? 0} lbs/wk over {d.sessions} sessions
+                {d.stall_risk != null && `, stall risk ${Math.round(d.stall_risk * 100)}%`}.
+              </p>
+            )}
             {d.swap_suggestion && (
               <div className="mt-1.5 flex items-start gap-1.5 rounded-lg bg-warn/10 border border-warn/20 px-2.5 py-2">
                 <AlertTriangle className="w-3 h-3 text-warn shrink-0 mt-0.5" />

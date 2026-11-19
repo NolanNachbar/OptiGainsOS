@@ -1,3 +1,4 @@
+import { isStalled } from "./athleteUtils";
 import { Badge } from "@/components/ui/badge";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -8,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 export function StallBadge({ risk, rate }) {
   if (risk == null) return null;
   const gaining = Number(rate) > 0;
-  if (risk >= 0.75 && !gaining) return <Badge className="bg-warn/15 text-warn border-none text-caption">Stalled</Badge>;
+  if (isStalled(risk, rate)) return <Badge className="bg-warn/15 text-warn border-none text-caption">Stalled</Badge>;
   if (risk >= 0.4) return <Badge className="bg-charcoal-surface2 text-muted-2 border-none text-caption">{gaining ? "Slowing" : "Watch"}</Badge>;
   return <Badge className="bg-teal/15 text-teal border-none text-caption">Progressing</Badge>;
 }
