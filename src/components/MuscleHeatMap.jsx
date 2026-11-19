@@ -1,8 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import Model from "react-body-highlighter";
+import { SegmentedControl, cn } from "@/components/ui";
 
 // Muscle load is teal in this identity (readiness hue) — low→high opacity,
 // matching the Body screen's muscle-load scale. Coral stays reserved for action.
+function getBodyColor() {
+  return getComputedStyle(document.documentElement).getPropertyValue("--color-surface-2").trim() || "currentColor";
+}
+
 function getHeatColors() {
   const raw = getComputedStyle(document.documentElement)
     .getPropertyValue('--hue-teal-rgb').trim();
@@ -17,47 +22,38 @@ function getHeatColors() {
 
 export default function MuscleHeatMap({ data = [], className = "", view: controlledView, maxWidth = 130 }) {
   const [ownView, setOwnView] = useState("anterior");
-  const [colors, setColors] = useState(getHeatColors);
+  // Read once from the CSS tokens; the identity is dark-only, so no theme re-read.
+  const colors = useMemo(() => getHeatColors(), []);
+  const bodyColor = useMemo(() => getBodyColor(), []);
   const isControlled = controlledView !== undefined;
   const view = isControlled ? controlledView : ownView;
-
-  // Re-derive colors if the CSS var changes (theme switch)
-  useEffect(() => {
-    setColors(getHeatColors());
-  }, []);
 
   if (!data.length) return null;
 
   return (
-    <div className={`flex flex-col items-center gap-1.5 ${className}`}>
-      {/* Toggle only shown when not controlled externally */}
+    <div className={cn("flex flex-col items-center gap-2", className)}>
       {!isControlled && (
-        <div className="flex rounded-full overflow-hidden border border-white/10 text-xs font-bold bg-white/[0.05] shadow-[inset_0_1px_0_rgba(255,255,255,0.07)]">
-          <button
-            onClick={() => setOwnView("anterior")}
-            className={`px-4 min-h-[40px] flex items-center justify-center transition-colors ${view === "anterior" ? "bg-[rgba(var(--hue-teal-rgb)/0.18)] text-[var(--hue-teal)]" : "text-ink-muted hover:text-ink"}`}
-          >Front</button>
-          <button
-            onClick={() => setOwnView("posterior")}
-            className={`px-4 min-h-[40px] flex items-center justify-center transition-colors ${view === "posterior" ? "bg-[rgba(var(--hue-teal-rgb)/0.18)] text-[var(--hue-teal)]" : "text-ink-muted hover:text-ink"}`}
-          >Back</button>
-        </div>
+        <SegmentedControl
+          options={[{ value: "anterior", label: "Front" }, { value: "posterior", label: "Back" }]}
+          value={view}
+          onChange={setOwnView}
+        />
       )}
 
-      <div className="bg-transparent w-full flex-1 flex justify-center items-center min-h-0 overflow-hidden">
+      <div className="w-full flex-1 flex justify-center items-center min-h-0 overflow-hidden">
         <Model
           data={data}
           type={view}
           highlightedColors={colors}
-          bodyColor="#252C37"
+          bodyColor={bodyColor}
           style={{ width: "100%", height: "100%", maxHeight: "100%", maxWidth }}
         />
       </div>
 
-      {/* Color legend */}
-      <div className="flex items-center gap-2 text-[11px] font-bold text-ink-muted shrink-0">
+      {/* Load legend */}
+      <div className="flex items-center gap-2 text-caption text-ink-muted shrink-0">
         <span>Low</span>
-        <div className="flex h-2 w-16 rounded-full overflow-hidden bg-white/[0.08]">
+        <div className="flex h-2 w-16 rounded-pill overflow-hidden bg-track">
           <div className="flex-1" style={{ background: colors[0] }} />
           <div className="flex-1" style={{ background: colors[1] }} />
           <div className="flex-1" style={{ background: colors[2] }} />

@@ -1,94 +1,120 @@
 import { useMemo } from "react";
-import {
-  ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-} from "recharts";
-import { format, parseISO } from "date-fns";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { format } from "date-fns";
+import { calculateEWMA } from "@/utils/coachingUtils";
+import { cn } from "@/components/ui";
+import { ChartLegend } from "./WeightProgressChart";
+import { dayStamp, buildBfTrend } from "./trendMath";
 
-// Recharts injects active/payload/label into the content element's props;
-// weightUnit rides in from the chart. Defined at module scope so the tooltip
-// component identity is stable across renders.
-function CustomTooltip({ active, payload, label, weightUnit }) {
+const AXIS_TICK = { fontSize: 11, fill: "var(--text-faint)", fontFamily: "var(--font-ui)" };
+function ChartTooltip({ active, payload, label, unit }) {
   if (!active || !payload?.length) return null;
-  const bf = payload.find((p) => p.dataKey === "bf");
-  const wt = payload.find((p) => p.dataKey === "weight");
+  const raw = payload.find((p) => p.dataKey === "value" || p.dataKey === "weight");
+  const trend = payload.find((p) => p.dataKey === "trend" || p.dataKey === "trendWeight");
   return (
-    <div className="glass-elevated p-3 rounded-xl">
-      <p className="font-bold text-[14px] text-ink">{format(parseISO(label), "MMM d, yyyy")}</p>
-      {bf && <p className="text-[12px] font-technical font-bold text-ink">{bf.value}% est. BF</p>}
-      {wt && <p className="text-[12px] font-technical font-semibold text-muted-2">{wt.value} {weightUnit}</p>}
+    <div className="border border-charcoal-border bg-charcoal-elevated p-3 rounded-control shadow-elev-3">
+      <p className="text-emph text-ink">{format(new Date(label), "MMM d, yyyy")}</p>
+      {trend && <p className="text-caption text-ink tabular-nums">Trend {trend.value}{unit}</p>}
+      {raw && <p className="text-caption text-ink-muted tabular-nums">Logged {raw.value}{unit}</p>}
     </div>
   );
 }
 
-// Estimated body fat (session-averaged photo estimates) over time, with the
-// logged bodyweight trend on a second axis so composition and scale weight read
-// together. Photo BF is low-accuracy in absolute terms — the TREND is the datum
-// this chart exists for, same caveat the analyzer itself carries.
-export default function PhysiqueTrendChart({ sessions, weightEntries, weightUnit = "lbs", className }) {
-  const data = useMemo(() => {
-    const byDate = new Map();
-    for (const s of sessions || []) {
-      if (s.bf == null) continue;
-      byDate.set(s.date, { date: s.date, bf: Math.round(s.bf * 10) / 10 });
-    }
-    for (const w of weightEntries || []) {
-      if (w.weight == null || !w.recorded_date) continue;
-      const row = byDate.get(w.recorded_date) || { date: w.recorded_date };
-      row.weight = w.weight;
-      byDate.set(w.recorded_date, row);
-    }
-    return [...byDate.values()].sort((a, b) => (a.date < b.date ? -1 : 1));
-  }, [sessions, weightEntries]);
+function SeriesChart({ data, rawKey, trendKey, domain, unit, tickFormat, height, label }) {
+  return (
+    <div className="w-full" style={{ height }} role="img" aria-label={label}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 6, right: 4, left: 0, bottom: 0 }}>
+          <CartesianGrid vertical={false} stroke="var(--color-border-soft)" />
+          <XAxis
+            dataKey="t"
+            type="number"
+            scale="time"
+            domain={domain}
+            tickFormatter={(t) => format(new Date(t), "MMM d")}
+            tick={AXIS_TICK}
+            axisLine={false}
+            tickLine={false}
+            minTickGap={32}
+          />
+          <YAxis
+            orientation="right"
+            tick={AXIS_TICK}
+            axisLine={false}
+            tickLine={false}
+            width={40}
+            domain={["dataMin - 1", "dataMax + 1"]}
+            tickFormatter={tickFormat}
+          />
+          <Tooltip content={<ChartTooltip unit={unit} />} cursor={{ stroke: "var(--color-border)", strokeWidth: 1 }} />
+          <Line
+            dataKey={rawKey}
+            stroke="none"
+            dot={{ r: 1.5, fill: "var(--text-faint)", fillOpacity: 0.7, strokeWidth: 0 }}
+            activeDot={{ r: 3, fill: "var(--text-muted)", strokeWidth: 0 }}
+            isAnimationActive={false}
+          />
+          <Line
+            type="monotone"
+            dataKey={trendKey}
+            stroke="var(--viz-1)"
+            strokeWidth={2}
+            dot={false}
+            activeDot={{ r: 4, fill: "var(--viz-1)", stroke: "var(--color-surface)", strokeWidth: 2 }}
+            isAnimationActive={false}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
 
-  const bfPoints = data.filter((d) => d.bf != null);
-  if (bfPoints.length < 2) return null;
+// Estimated body fat (session-averaged photo estimates) as raw dots with a
+// smoothed trend, and logged bodyweight under it as its own chart on the same
+// date range. Two measures, two charts: never one chart with two scales.
+// Photo BF is low-accuracy in absolute terms, so the trend is the datum.
+export default function PhysiqueTrendChart({ sessions, weightEntries, weightUnit = "lbs", className }) {
+  const bf = useMemo(() => buildBfTrend(sessions), [sessions]);
+
+  const weight = useMemo(() => {
+    const rows = (weightEntries || []).filter((w) => w.weight != null && w.recorded_date);
+    return calculateEWMA(rows, 0.1).map((r) => ({ ...r, t: dayStamp(r.recorded_date) }));
+  }, [weightEntries]);
+
+  if (bf.length < 2) return null;
+
+  const domain = [bf[0].t, bf[bf.length - 1].t];
+  const inRange = weight.filter((w) => w.t >= domain[0] && w.t <= domain[1]);
 
   return (
-    <div className={`w-full ${className || "h-56"}`}>
-      <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={data} margin={{ top: 6, right: 4, left: -14, bottom: 0 }}>
-          <CartesianGrid horizontal vertical={false} strokeDasharray="0" stroke="var(--color-track)" strokeOpacity={0.5} />
-          <XAxis
-            dataKey="date"
-            tickFormatter={(d) => format(parseISO(d), "MMM d")}
-            stroke="var(--color-track)"
-            tick={{ fontSize: 10, fill: "var(--text-muted)" }}
-            tickLine={false}
+    <div className={cn("w-full", className)}>
+      <p className="mb-1 text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Body fat, est.</p>
+      <SeriesChart
+        data={bf}
+        rawKey="value"
+        trendKey="trend"
+        domain={domain}
+        unit="%"
+        tickFormat={(v) => `${Math.round(v * 10) / 10}%`}
+        height={160}
+        label="Estimated body fat over time"
+      />
+      {inRange.length >= 2 && (
+        <>
+          <p className="mb-1 mt-4 text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Bodyweight, {weightUnit}</p>
+          <SeriesChart
+            data={inRange}
+            rawKey="weight"
+            trendKey="trendWeight"
+            domain={domain}
+            unit={` ${weightUnit}`}
+            tickFormat={(v) => Math.round(v)}
+            height={120}
+            label="Bodyweight over the same dates"
           />
-          {/* BF owns the left axis; weight rides a hidden right axis so the two
-              scales never fight over one domain. */}
-          <YAxis
-            yAxisId="bf"
-            domain={["dataMin - 1", "dataMax + 1"]}
-            tickFormatter={(v) => `${v}%`}
-            stroke="var(--color-track)"
-            tick={{ fontSize: 10, fill: "var(--text-muted)" }}
-            tickLine={false}
-            width={44}
-          />
-          <YAxis yAxisId="wt" orientation="right" domain={["dataMin - 2", "dataMax + 2"]} hide />
-          <Tooltip content={<CustomTooltip weightUnit={weightUnit} />} cursor={{ stroke: "var(--color-track)", strokeWidth: 1 }} />
-          {/* Weight = quiet context line; BF = the hero datum in the teal data hue. */}
-          <Line
-            yAxisId="wt"
-            type="monotone"
-            dataKey="weight"
-            stroke="var(--text-muted)"
-            strokeWidth={1.5}
-            dot={false}
-            connectNulls
-          />
-          <Line
-            yAxisId="bf"
-            type="monotone"
-            dataKey="bf"
-            stroke="var(--hue-teal)"
-            strokeWidth={2}
-            dot={{ r: 2.5, fill: "var(--hue-teal)", strokeWidth: 0 }}
-            connectNulls
-          />
-        </ComposedChart>
-      </ResponsiveContainer>
+        </>
+      )}
+      <ChartLegend items={[{ label: "Logged", dot: true }, { label: "Trend" }]} />
     </div>
   );
 }
