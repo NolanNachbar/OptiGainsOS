@@ -355,7 +355,7 @@ function PipelineTab() {
       <Dialog open={showAdd} onOpenChange={(v) => { if (!v) { setShowAdd(false); setEditing(null); } }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-ink">{editing ? "Edit Application" : "Add Application"}</DialogTitle>
+            <DialogTitle className="text-ink">{editing ? "Edit application" : "Add application"}</DialogTitle>
             <DialogDescription>{editing ? "Update this role's status, notes, and next action." : "Log a role you applied to and track it through the pipeline."}</DialogDescription>
           </DialogHeader>
           <AppForm
@@ -548,7 +548,7 @@ function NetworkingTab() {
       <Dialog open={showAdd} onOpenChange={(v) => { if (!v) { setShowAdd(false); setEditing(null); } }}>
         <DialogContent className="max-w-sm" sheetMinHeight="">
           <DialogHeader>
-            <DialogTitle className="text-ink">{editing ? "Edit Contact" : "Add Contact"}</DialogTitle>
+            <DialogTitle className="text-ink">{editing ? "Edit contact" : "Add contact"}</DialogTitle>
             <DialogDescription>{editing ? "Update this contact and when to follow up." : "Log a conversation and set a follow-up reminder."}</DialogDescription>
           </DialogHeader>
           <NetworkForm
@@ -613,7 +613,7 @@ function CaptureTab() {
 export default function Career({ hideHeader }) {
   const [activeTab, setActiveTab] = useState("pipeline");
   return (
-    <div className={`px-4 py-6 md:px-8 bg-charcoal min-h-screen ${hideHeader ? 'pt-0 px-0 md:px-0 min-h-0' : ''}`}>
+    <div className={`px-4 pt-0 pb-6 lg:pt-6 md:px-8 bg-charcoal min-h-screen ${hideHeader ? 'pt-0 px-0 md:px-0 min-h-0' : ''}`}>
       <div className="max-w-3xl mx-auto">
         {!hideHeader && (
           <PageHeader className="px-0 rise-in" title="Career" />

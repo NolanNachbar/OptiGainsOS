@@ -21,15 +21,15 @@ import { format, parseISO, differenceInDays, subDays } from "date-fns";
 import { toast } from "sonner";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
-const STATUS_LABELS = { reading: "Reading", finished: "Finished", paused: "Paused", "want-to-read": "Want to Read" };
+const STATUS_LABELS = { reading: "Reading", finished: "Finished", paused: "Paused", "want-to-read": "Want to read" };
 // One neutral chip for every enum value — color is data, not garnish, and these
 // taxonomic labels (status / category / medium) are not biometrics, so they get
 // no hue. The single exception is the emphasized "reading" state, which earns
-// Mind's owned violet accent so the active book stands out from the rest.
+// a brighter ink so the active book stands out from the rest.
 const CHIP_NEUTRAL = "bg-charcoal-surface2 text-muted-2 border-charcoal-border";
-const CHIP_VIOLET = "bg-violet/10 text-violet border-violet/20";
+const CHIP_READING = "bg-charcoal-surface2 text-ink border-charcoal-border";
 const STATUS_COLORS = {
-  reading: CHIP_VIOLET,
+  reading: CHIP_READING,
   finished: CHIP_NEUTRAL,
   paused: CHIP_NEUTRAL,
   "want-to-read": CHIP_NEUTRAL,
@@ -192,7 +192,7 @@ function ReadingTab() {
 
       {currentlyReading.length > 0 && (
         <div>
-          <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3">Currently Reading</h3>
+          <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3">Currently reading</h3>
           <div className="space-y-3">
             {currentlyReading.map(book => <BookCard key={book.id} book={book} onEdit={openEdit} onDelete={setConfirmDelete} onStatusChange={updateStatus.mutate} />)}
           </div>
@@ -204,7 +204,7 @@ function ReadingTab() {
         const visibleRest = showAllRest ? sortedRest : sortedRest.slice(0, 6);
         return (
           <div>
-            <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3">All Books</h3>
+            <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3">All books</h3>
             <div className="space-y-3">
               {visibleRest.map(book => (
                 <BookCard key={book.id} book={book} onEdit={openEdit} onDelete={setConfirmDelete} onStatusChange={updateStatus.mutate} />
@@ -240,7 +240,7 @@ function ReadingTab() {
       <Dialog open={showAdd} onOpenChange={(v) => { if (!v) { setShowAdd(false); setEditing(null); resetForm(); } }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-ink">{editing ? "Edit Book" : "Add Book"}</DialogTitle>
+            <DialogTitle className="text-ink">{editing ? "Edit book" : "Add book"}</DialogTitle>
             <DialogDescription>{editing ? "Update this book's status, rating, or takeaways." : "Track a book with its status, rating, and key takeaways."}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -401,7 +401,7 @@ function StudyTab() {
     <div className="space-y-6">
       <div className="bg-charcoal-surface border border-charcoal-border transition-colors duration-base hover:bg-charcoal-surface2 p-5">
         <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-4 flex items-center gap-2">
-          <Zap className="w-3 h-3 text-violet" /> Log Study Session
+          <Zap className="w-3 h-3 text-ink-muted" /> Log study session
         </h3>
         <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
@@ -558,8 +558,8 @@ function SkillsTab() {
       <div className="flex items-center justify-between">
         {stale.length > 0 && (
           // Staleness is not a biometric, so it is NOT the warn spectrum. It rides
-          // Mind's owned violet identity, the same hue the level dots and glyph use.
-          <div className="flex items-center gap-1.5 text-xs text-violet">
+          // neutral ink, same as the level dots and glyph.
+          <div className="flex items-center gap-1.5 text-xs text-ink-muted">
             <AlertTriangle className="w-3.5 h-3.5" />
             {stale.length} skill{stale.length > 1 ? "s" : ""} not practiced in 14+ days
           </div>
@@ -597,14 +597,14 @@ function SkillsTab() {
                     onClick={() => updateLevel.mutate({ id: skill.id, level: n })}
                     className="min-w-11 min-h-11 -m-2.5 inline-flex items-center justify-center rounded-full"
                   >
-                    <span className={`block w-2.5 h-2.5 rounded-full transition-colors ${n <= (skill.level || 0) ? "bg-violet" : "bg-charcoal-surface2"}`} />
+                    <span className={`block w-2.5 h-2.5 rounded-full transition-colors ${n <= (skill.level || 0) ? "bg-ink-secondary" : "bg-charcoal-surface2"}`} />
                   </button>
                 ))}
                 <span className="font-technical text-caption font-semibold text-muted-2 ml-1">Level {skill.level || 0}/5</span>
               </div>
               <div className="flex items-center justify-between">
                 {isStale ? (
-                  <span className="text-caption font-bold text-violet flex items-center gap-1">
+                  <span className="text-caption font-bold text-ink-muted flex items-center gap-1">
                     <AlertTriangle className="w-3 h-3" />
                     {daysSince === null ? "Never practiced" : `${daysSince}d ago`}
                   </span>
@@ -658,7 +658,7 @@ function SkillsTab() {
 
       <Dialog open={showAdd} onOpenChange={setShowAdd}>
         <DialogContent>
-          <DialogHeader><DialogTitle className="text-ink">Add Skill</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="text-ink">Add skill</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>
               <Label className="text-xs text-ink-muted mb-1.5 block">Skill name</Label>
@@ -723,20 +723,20 @@ function CaptureTab() {
     <div className="space-y-6">
       <div>
         <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3 flex items-center gap-2">
-          <BookOpen className="w-3 h-3 text-violet" /> New Learning Log
+          <BookOpen className="w-3 h-3 text-ink-muted" /> New learning log
         </h3>
-        <QuickCapture domain="mind" focusHue="violet" placeholder="What did you learn today? Notes on books, courses or technical concepts" />
+        <QuickCapture domain="mind" placeholder="What did you learn today? Notes on books, courses or technical concepts" />
       </div>
       {isEmpty && (
         <div>
           <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3 flex items-center gap-2">
-            <Zap className="w-3 h-3 text-violet" /> Ideas to Capture
+            <Zap className="w-3 h-3 text-ink-muted" /> Ideas to capture
           </h3>
           <div className="space-y-2">
             {PROMPTS.map(({ icon: Icon, label }) => (
               <div key={label} className="flex items-center gap-3 px-4 py-3 bg-charcoal-surface2 rounded-control">
-                <div className="w-7 h-7 rounded-[9px] flex items-center justify-center shrink-0 bg-violet/[0.13]">
-                  <Icon className="w-3.5 h-3.5 text-violet" />
+                <div className="w-7 h-7 rounded-[9px] flex items-center justify-center shrink-0 bg-track">
+                  <Icon className="w-3.5 h-3.5 text-ink-muted" />
                 </div>
                 <span className="text-sm font-semibold text-muted-2">{label}</span>
               </div>
@@ -748,7 +748,7 @@ function CaptureTab() {
       {!isEmpty && (
         <div>
           <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3 flex items-center gap-2">
-            <History className="w-3 h-3 text-violet" /> Recent Streams
+            <History className="w-3 h-3 text-ink-muted" /> Recent streams
           </h3>
           <div className="space-y-3">
             <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
@@ -783,7 +783,7 @@ const MIND_TABS = [
 export default function Mind({ hideHeader }) {
   const [activeTab, setActiveTab] = useState("capture");
   return (
-    <div className={hideHeader ? '' : 'px-4 py-6 md:px-8 bg-charcoal min-h-screen'}>
+    <div className={hideHeader ? '' : 'px-4 pt-0 pb-6 lg:pt-6 md:px-8 bg-charcoal min-h-screen'}>
       {/* System gap: a ~140ms opacity-only crossfade for tab switches. The shared
           --ease keyframes (riseIn) carry an 8px rise over 280ms, which is too
           heavy to re-fire on every tab tap; this scoped fade stays on the system

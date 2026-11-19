@@ -20,7 +20,7 @@ const COACHES = [
   { key: "performance",  label: "Performance",  icon: Dumbbell,  hue: "!text-ink-muted bg-track" },
   { key: "endurance",    label: "Endurance",    icon: Activity,  hue: "!text-ink-muted bg-track" },
   { key: "nutrition",    label: "Nutrition",    icon: Apple,     hue: "!text-ink-muted bg-track" },
-  { key: "body_comp",    label: "Body Comp",    icon: Scale,     hue: "!text-ink-muted bg-track" },
+  { key: "body_comp",    label: "Body comp",    icon: Scale,     hue: "!text-ink-muted bg-track" },
   { key: "learning",     label: "Learning",     icon: BookOpen,  hue: "!text-ink-muted bg-track" },
   { key: "career",       label: "Career",       icon: Briefcase, hue: "!text-ink-muted bg-track" },
 ];
@@ -172,7 +172,7 @@ export default function BriefHistory() {
   });
 
   return (
-    <div className="px-4 py-6 md:px-8 bg-charcoal min-h-screen pb-[var(--dock-clearance)]">
+    <div className="px-4 pt-0 lg:pt-6 md:px-8 bg-charcoal min-h-screen pb-[var(--dock-clearance)]">
       <div className="max-w-2xl mx-auto">
         {/* Desktop-only header: the shared Layout chrome already prints
             "Brief History" + the same "Last 30 AI-generated daily briefs"
@@ -182,7 +182,7 @@ export default function BriefHistory() {
         <PageHeader
           className="px-0 hidden lg:flex"
           back={<Link to="/today" aria-label="Back to home" className="inline-flex min-h-tap items-center text-caption text-ink-muted hover:text-ink transition-colors duration-base"><ChevronLeft className="w-4 h-4" aria-hidden="true" />Today</Link>}
-          title="Brief History"
+          title="Brief history"
           meta={`Last ${briefs.length} daily briefs`}
         />
 
