@@ -12,7 +12,7 @@ import {
 } from "@/components/ui";
 import { calculateEWMA } from "@/utils/coachingUtils";
 import { weeklyRate, signed } from "@/components/progress/trendMath";
-import { Camera, Trash2, Plus, X, ArrowUpRight, ArrowDownRight, ChevronDown } from "lucide-react";
+import { Camera, Trash2, Plus, X, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { format, parseISO, differenceInCalendarDays } from "date-fns";
 import { db } from "@/api/supabaseClient";
 import { invalidateBodyWeight } from "@/lib/queryKeys";
@@ -183,6 +183,8 @@ function WeightModule() {
     [allTrended]
   );
 
+  const rangeLabel = range === "All" ? "this range"
+    : `the last ${RANGES.find((r) => r.value === range)?.days} days of weigh-ins`;
   const latest = allTrended[allTrended.length - 1];
   const isStale = latest
     && differenceInCalendarDays(new Date(), parseISO(latest.recorded_date)) > 7;
@@ -227,7 +229,7 @@ function WeightModule() {
 
   const trendReason = latest && (
     `${isStale ? `As of ${format(parseISO(latest.recorded_date), "MMM d")}. ` : ""}Smoothed trend of ${allTrended.length} weigh-ins, ${
-      rate ? `rate over the last ${rate.spanDays} days` : "rate needs 7 days of data"
+      rate ? `rate over the last ${rate.spanDays} days` : "no rate yet: the last 7 days need 2 or more weigh-ins"
     }`
   );
 
@@ -281,7 +283,10 @@ function WeightModule() {
                   </div>
                 </div>
               ) : (
-                <p className="mt-3 text-caption text-ink-muted">Not enough weigh-ins in this range.</p>
+                <p className="mt-3 text-caption text-ink-muted">
+                  {windowed.length === 1 ? "Only 1 weigh-in" : "No weigh-ins"} in {rangeLabel}, so there is no line to draw.
+                  {range !== "All" && " Pick a longer range to see all " + allTrended.length + "."}
+                </p>
               )}
               <DeltaTriples trended={allTrended} weightUnit={weightUnit} />
             </>
@@ -291,13 +296,12 @@ function WeightModule() {
         {/* Quick log: collapsed into a disclosure so the trend stays above the
             fold. Open by default for a brand-new account so the first thing
             offered is a way to add data. */}
-        <details open={weightEntries.length === 0} className="border-t border-charcoal-borderSoft group/log [&[open]>summary_.log-chevron]:rotate-180">
-          <summary className="flex items-center justify-between cursor-pointer list-none px-4 py-3 min-h-tap">
+        <details open={weightEntries.length === 0} className="border-t border-charcoal-borderSoft group/log [&[open]>summary_.log-chevron]:rotate-45">
+          <summary className="flex items-center cursor-pointer list-none px-4 py-3 min-h-tap">
             <span className="flex items-center gap-2">
-              <Plus className="w-4 h-4 text-ink-muted" aria-hidden="true" />
-              <span className="text-emph font-semibold text-ink">Log Weight</span>
+              <Plus className="log-chevron w-4 h-4 text-ink-muted transition-transform duration-base ease-out" aria-hidden="true" />
+              <span className="text-emph font-semibold text-ink">Log weight</span>
             </span>
-            <ChevronDown aria-hidden="true" className="log-chevron w-4 h-4 text-ink-faint transition-transform duration-base ease-out" />
           </summary>
           <div className="px-4 pb-4 pt-1">
             <div className="flex flex-col gap-3">
@@ -602,6 +606,7 @@ function MetabolismTab() {
   const { profile } = useProfile();
   const weightUnit = profile?.weight_unit || "lbs";
   const today = getTodayString();
+  const { weightEntries } = useAllBodyWeightEntries();
   const { data: state } = useQuery({
     queryKey: ["athlete-state", today, user?.id],
     queryFn: async () => {
@@ -615,7 +620,16 @@ function MetabolismTab() {
   // weight_trend_lbs_per_week is always computed in lbs by the engine
   // (Today.jsx's same convention): convert the NUMBER for a kg profile,
   // don't just relabel an unconverted lbs value.
-  const weightTrendLbs = state?.nutrition?.weight_trend_lbs_per_week;
+  // When the engine has no rate for today, fall back to the same smoothed
+  // weigh-in rate the Weight card shows, so the two never disagree.
+  const clientRate = useMemo(() => {
+    const t = calculateEWMA(weightEntries, 0.1);
+    return weeklyRate(t.map((r) => ({ date: r.recorded_date, value: r.trendWeight })));
+  }, [weightEntries]);
+  const engineTrendLbs = state?.nutrition?.weight_trend_lbs_per_week;
+  const weightTrendLbs = engineTrendLbs != null ? engineTrendLbs
+    : clientRate ? (weightUnit === "kg" ? clientRate.perWeek / LBS_PER_KG : clientRate.perWeek)
+    : null;
   const weightTrend = weightTrendLbs == null ? null
     : weightUnit === "kg" ? Math.round(weightTrendLbs * LBS_PER_KG * 100) / 100
     : weightTrendLbs;
@@ -648,8 +662,11 @@ function MetabolismTab() {
           <Stat
             label="Weight trend"
             size="sm"
-            value={weightTrend != null ? `${weightTrend > 0 ? "+" : ""}${weightTrend}` : undefined}
+            value={weightTrend != null ? `${weightTrend > 0 ? "+" : ""}${Math.round(weightTrend * 100) / 100}` : undefined}
             unit={weightTrend != null ? `${weightUnit}/wk` : undefined}
+            reason={weightTrend != null
+              ? (engineTrendLbs != null ? "From the engine's smoothed trend" : "From your smoothed weigh-ins")
+              : "Needs 2 or more weigh-ins in the last 7 days"}
           />
         </Card>
         <Card className="p-4">
