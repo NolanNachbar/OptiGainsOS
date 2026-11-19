@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { cn } from "@/components/ui";
 
 // MF-scale RIR effort tint (0 red, 1-2 amber, 3-4 green, 5+ blue) -- same
 // scale as ExerciseCard's rirCell. Every class string below appears here
@@ -170,7 +171,7 @@ export default function KeypadSheet({
   // commit round-trip through the parent's state.
   const currentRir = buffer !== "" ? Number(buffer) : null;
 
-  const key = "min-h-[52px] rounded-control bg-[var(--key-surface)] text-[var(--key-text)] text-title font-numeral tabular-nums flex items-center justify-center transition-[transform,background-color] duration-fast ease-out active:scale-[0.94] active:bg-[var(--key-surface-active)] touch-manipulation select-none";
+  const key = "min-h-[52px] rounded-control bg-[var(--key-surface)] text-[var(--key-text)] text-title font-numeral tabular-nums flex items-center justify-center transition-[transform,background-color] duration-fast ease-out active:scale-[0.94] active:bg-[var(--key-surface-active)] motion-reduce:transition-none motion-reduce:active:scale-100 touch-manipulation select-none";
   const stop = (e) => e.preventDefault();
 
   return (
@@ -178,7 +179,7 @@ export default function KeypadSheet({
       ref={sheetRef}
       role="group"
       aria-label="Set entry keypad"
-      className="fixed inset-x-0 bottom-0 z-[70] bg-charcoal-surface2 border-t border-charcoal-border rounded-t-2xl shadow-2xl pb-[env(safe-area-inset-bottom,0px)]"
+      className="fixed inset-x-0 bottom-0 z-[70] bg-charcoal-surface2 border-t border-charcoal-border rounded-t-control shadow-elev-3 pb-[env(safe-area-inset-bottom,0px)]"
       onTouchStart={(e) => { touchStartY.current = e.touches[0].clientY; }}
       onTouchEnd={(e) => {
         if (touchStartY.current == null) return;
@@ -187,16 +188,21 @@ export default function KeypadSheet({
         if (dy > 60) onClose();
       }}
     >
-      <div className="mx-auto mt-2 mb-1 h-1 w-10 rounded-full bg-white/20" />
+      <div className="mx-auto mt-2 mb-1 h-1 w-10 rounded-pill bg-track" aria-hidden="true" />
 
       <div className="flex items-end justify-between px-4 pt-1 pb-3">
         <div>
-          <div className="text-caption font-bold uppercase tracking-wider text-ink-faint">{label}</div>
-          <div className="text-3xl font-extrabold tabular-nums text-[var(--key-text)] mt-0.5">
+          <div className="text-micro text-ink-muted">{label}</div>
+          <div className="mt-1 flex gap-1" aria-hidden="true">
+            {fieldOrder.map((f) => (
+              <span key={f} className={cn("h-0.5 w-6 rounded-pill transition-colors duration-base ease-out motion-reduce:transition-none", f === field ? "bg-brand" : "bg-track")} />
+            ))}
+          </div>
+          <div className="text-hero font-numeral tabular-nums text-[var(--key-text)] mt-2">
             {buffer === "" ? "—" : buffer}
           </div>
         </div>
-        {prevText && <div className="text-xs font-semibold text-ink-faint pb-1">{prevText}</div>}
+        {prevText && <div className="text-caption font-numeral tabular-nums text-ink-muted pb-1">{prevText}</div>}
       </div>
 
       {field === "rir" ? (
@@ -216,7 +222,7 @@ export default function KeypadSheet({
                 onPointerDown={stop}
                 onClick={() => pickRir(v)}
                 aria-label={`RIR ${v === 5 ? "5+" : v}`}
-                className={`flex-1 min-h-[52px] rounded-control text-sm font-extrabold touch-manipulation ${rirPillTint(v, v === 5 ? currentRir >= 5 : currentRir === v)}`}
+                className={cn("flex-1 min-h-[52px] rounded-control text-title font-numeral tabular-nums touch-manipulation select-none transition-[transform,background-color] duration-fast ease-out active:scale-[0.94] motion-reduce:transition-none motion-reduce:active:scale-100", rirPillTint(v, v === 5 ? currentRir >= 5 : currentRir === v))}
               >
                 {v === 5 ? "5+" : v}
               </button>
@@ -230,7 +236,7 @@ export default function KeypadSheet({
               onPointerDown={stop}
               onClick={goNext}
               aria-label="Done, mark set complete"
-              className="flex-1 min-h-[52px] rounded-control bg-brand text-[var(--key-ink-on-brand)] text-base font-extrabold flex items-center justify-center active:bg-brand/80 touch-manipulation"
+              className="flex-1 min-h-[52px] rounded-control bg-brand text-[var(--key-ink-on-brand)] text-emph flex items-center justify-center shadow-elev-2 transition-transform duration-fast ease-out active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100 touch-manipulation select-none"
             >
               Done
             </button>
@@ -250,7 +256,7 @@ export default function KeypadSheet({
               onClick={pressDot}
               disabled={field !== "weight"}
               aria-label="Decimal point"
-              className={`${key} ${field !== "weight" ? "opacity-30" : ""}`}
+              className={cn(key, field !== "weight" && "opacity-30")}
             >
               .
             </button>
@@ -260,8 +266,8 @@ export default function KeypadSheet({
           <div className="col-span-1 flex flex-col gap-1.5">
             {field === "weight" && (
               <div className="flex gap-1.5">
-                <button type="button" onPointerDown={stop} onClick={() => pressStep(-1)} aria-label={`Decrease by ${increment}`} className={`${key} flex-1`}>−</button>
-                <button type="button" onPointerDown={stop} onClick={() => pressStep(1)} aria-label={`Increase by ${increment}`} className={`${key} flex-1`}>+</button>
+                <button type="button" onPointerDown={stop} onClick={() => pressStep(-1)} aria-label={`Decrease by ${increment}`} className={cn(key, "flex-1")}>−</button>
+                <button type="button" onPointerDown={stop} onClick={() => pressStep(1)} aria-label={`Increase by ${increment}`} className={cn(key, "flex-1")}>+</button>
               </div>
             )}
             <button
@@ -269,7 +275,7 @@ export default function KeypadSheet({
               onPointerDown={stop}
               onClick={goNext}
               aria-label={isLastField ? "Done, mark set complete" : "Next field"}
-              className="flex-1 min-h-[52px] rounded-control bg-brand text-[var(--key-ink-on-brand)] text-base font-extrabold flex items-center justify-center active:bg-brand/80 touch-manipulation"
+              className="flex-1 min-h-[52px] rounded-control bg-brand text-[var(--key-ink-on-brand)] text-emph flex items-center justify-center shadow-elev-2 transition-transform duration-fast ease-out active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100 touch-manipulation select-none"
             >
               {isLastField ? "Done" : "Next"}
             </button>
