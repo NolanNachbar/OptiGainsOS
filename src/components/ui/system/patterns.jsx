@@ -22,14 +22,22 @@ export function Separator({ orientation = "horizontal", inset = false, className
 }
 
 /* PageHeader: eyebrow (micro caps), title (display), optional meta line and
-   one trailing action slot. Exactly one per page, first child of the page. */
-export function PageHeader({ eyebrow, title, meta, action, back, className = "", as: Tag = "h1" }) {
+   trailing action. On mobile the Layout header already prints the page title
+   (with the Gauge and date), so by default the in-page title is hidden below
+   lg: and only shows on desktop, where Layout has no top header. Pass
+   `mobileTitle` to keep it visible on mobile (e.g. a page whose in-page title
+   differs from the Layout title). A header with nothing else to show on mobile
+   collapses entirely there, so no empty band is left behind. */
+export function PageHeader({ eyebrow, title, meta, action, back, mobileTitle = false, className = "", as: Tag = "h1" }) {
+  const mobileEmpty = !mobileTitle && !eyebrow && !meta && !action && !back;
   return (
-    <header className={cn("flex items-end justify-between gap-3 px-gutter pt-4 pb-3", className)}>
+    <header className={cn("flex items-end justify-between gap-3 px-gutter pt-4 pb-3", mobileEmpty && "hidden lg:flex", className)}>
       <div className="min-w-0 flex-1">
         {back}
         {eyebrow && <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">{eyebrow}</p>}
-        <Tag className="text-display font-semibold tracking-[-0.02em] text-ink truncate">{title}</Tag>
+        {title && (
+          <Tag className={cn("text-display font-semibold tracking-[-0.02em] text-ink truncate", !mobileTitle && "hidden lg:block")}>{title}</Tag>
+        )}
         {meta && <p className="mt-0.5 text-caption text-ink-muted tabular-nums truncate">{meta}</p>}
       </div>
       {action && <div className="shrink-0">{action}</div>}
