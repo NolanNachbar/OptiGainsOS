@@ -196,7 +196,7 @@ export default function BriefHistory() {
             title="No briefs yet"
             action={<Button asChild variant="secondary" size="sm"><Link to="/today">Back to Today</Link></Button>}
           >
-            The Desktop Agent writes one brief per day. Run it to generate the first.
+            One brief is written per day. The first appears after the next daily run.
           </EmptyState>
         ) : (
           // min-h flex column so a short list anchors its end-of-history

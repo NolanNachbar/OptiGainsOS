@@ -3,12 +3,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/api/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import QuickCapture from "@/components/QuickCapture";
-import { Button, PageHeader } from "@/components/ui";
+import { Button, PageHeader, EmptyState, ErrorState } from "@/components/ui";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { SubTabs } from "@/components/ui/system";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -38,7 +38,11 @@ const dateFieldClass = (value) => `${DATE_FIELD}${value ? "" : " is-empty"}`;
 
 // The page subtitle, surfaced both in the desktop header and the mobile-only
 // one-liner above the tabs — hoisted so the two never drift apart.
-const PAGE_SUBTITLE = "Track applications, networking, and job search momentum.";
+const CAREER_TABS = [
+  { id: "pipeline", label: "Pipeline" },
+  { id: "networking", label: "Networking" },
+  { id: "capture", label: "Capture" },
+];
 
 // Shared sticky action-row for the dialog forms (Pipeline + Networking). Pins to
 // the sheet bottom on the sheet material with a top hairline so it reads as the
@@ -77,11 +81,7 @@ function TabQueryState({ isLoading, isError, onRetry }) {
   }
   if (isError) {
     return (
-      <div className="py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
-        <AlertTriangle className="w-7 h-7 text-warn mx-auto mb-2" />
-        <p className="text-sm font-semibold text-muted-2 mb-3">Couldn't load data.</p>
-        <Button variant="ghost" size="sm" onClick={onRetry}>Retry</Button>
-      </div>
+      <ErrorState onRetry={onRetry} />
     );
   }
   return null;
@@ -329,14 +329,17 @@ function PipelineTab() {
       )}
 
       {!isLoading && !isError && apps.length === 0 && (
-        <div className="py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl rise-in-2">
-          <Building2 className="w-8 h-8 text-faint mx-auto mb-2" />
-          <p className="text-sm font-semibold text-muted-2">No applications yet.</p>
-          <p className="text-xs font-semibold text-muted-2 mt-1 mb-4">Log your first role to start tracking the pipeline.</p>
-          <Button variant="primary" className="gap-1.5 min-h-[44px] mx-auto" onClick={() => { setEditing(null); setShowAdd(true); }}>
-            <Plus className="w-3.5 h-3.5" /> Add your first application
-          </Button>
-        </div>
+        <EmptyState
+          icon={Building2}
+          title="No applications yet"
+          action={
+            <Button variant="primary" className="gap-1.5 min-h-[44px]" onClick={() => { setEditing(null); setShowAdd(true); }}>
+              <Plus className="w-3.5 h-3.5" /> Add your first application
+            </Button>
+          }
+        >
+          Log your first role to start tracking the pipeline.
+        </EmptyState>
       )}
 
       <ConfirmDialog
@@ -476,14 +479,17 @@ function NetworkingTab() {
       <div className="space-y-3">
         <TabQueryState isLoading={isLoading} isError={isError} onRetry={refetch} />
         {!isLoading && !isError && contacts.length === 0 && (
-          <div className="py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
-            <UserPlus className="w-8 h-8 text-faint mx-auto mb-2" />
-            <p className="text-sm font-semibold text-muted-2">No networking contacts yet.</p>
-            <p className="text-xs font-semibold text-muted-2 mt-1 mb-4">Log a conversation to track follow-ups.</p>
-            <Button variant="primary" className="gap-1.5 min-h-[44px] mx-auto" onClick={() => { setEditing(null); setShowAdd(true); }}>
-              <Plus className="w-3.5 h-3.5" /> Add your first contact
-            </Button>
-          </div>
+          <EmptyState
+            icon={UserPlus}
+            title="No networking contacts yet"
+            action={
+              <Button variant="primary" className="gap-1.5 min-h-[44px]" onClick={() => { setEditing(null); setShowAdd(true); }}>
+                <Plus className="w-3.5 h-3.5" /> Add your first contact
+              </Button>
+            }
+          >
+            Log a conversation to track follow-ups.
+          </EmptyState>
         )}
         {contacts.map(contact => {
           const isOverdue = contact.follow_up_date && contact.follow_up_date < today;
@@ -595,10 +601,7 @@ function CaptureTab() {
               <p className="text-sm font-semibold text-secondary whitespace-pre-wrap leading-relaxed">{log.content}</p>
             </div>
           )) : (!isLoading && !isError && (
-            <div className="py-12 text-center border-2 border-dashed border-charcoal-border rounded-2xl">
-              <Building2 className="w-8 h-8 text-faint mx-auto mb-2" />
-              <p className="text-sm font-semibold text-muted-2">No recent career events.</p>
-            </div>
+            <EmptyState icon={Building2} title="No recent career events" />
           ))}
         </div>
       </div>
@@ -608,26 +611,30 @@ function CaptureTab() {
 
 // ─── Main ──────────────────────────────────────────────────────────────────────
 export default function Career({ hideHeader }) {
+  const [activeTab, setActiveTab] = useState("pipeline");
   return (
     <div className={`px-4 py-6 md:px-8 bg-charcoal min-h-screen ${hideHeader ? 'pt-0 px-0 md:px-0 min-h-0' : ''}`}>
       <div className="max-w-3xl mx-auto">
         {!hideHeader && (
-          <PageHeader className="px-0 rise-in" eyebrow="Pipeline" title="Career" meta={PAGE_SUBTITLE} />
+          <PageHeader className="px-0 rise-in" title="Career" />
         )}
 
         {/* Mobile subtitle lives in the Layout chrome (SYS-05 pageSubtitle
             override), printing it again here stacked a redundant restated
             one-liner under the dock-supplied title, so it's dropped. */}
-        <Tabs defaultValue="pipeline" className="rise-in">
-          <TabsList className="mb-6">
-            <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
-            <TabsTrigger value="networking">Networking</TabsTrigger>
-            <TabsTrigger value="capture">Capture</TabsTrigger>
-          </TabsList>
-          <TabsContent value="pipeline"><PipelineTab /></TabsContent>
-          <TabsContent value="networking"><NetworkingTab /></TabsContent>
-          <TabsContent value="capture"><CaptureTab /></TabsContent>
-        </Tabs>
+        <SubTabs
+          tabs={CAREER_TABS}
+          active={activeTab}
+          onChange={setActiveTab}
+          sticky={false}
+          showOnDesktop
+          className={`mb-4 ${hideHeader ? '' : '-mx-4 md:-mx-8'}`}
+        />
+        <div key={activeTab} className="rise-in">
+          {activeTab === "pipeline" && <PipelineTab />}
+          {activeTab === "networking" && <NetworkingTab />}
+          {activeTab === "capture" && <CaptureTab />}
+        </div>
       </div>
     </div>
   );

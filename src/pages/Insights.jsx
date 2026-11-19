@@ -30,7 +30,7 @@ export default function Insights() {
             opens on its brief, not an unrelated nav shortcut. The full brief
             history is reachable from the Brief History sub-tab in the header, so
             this page no longer repeats a Recent Briefs list of its own. */}
-        <PageHeader className="px-0" eyebrow="Daily brief" title="Analyze" />
+        <PageHeader className="px-0" title="Analyze" />
         <div className="rise-in">
           <DailyBriefCard today={today} />
         </div>

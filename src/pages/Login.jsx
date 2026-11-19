@@ -22,9 +22,10 @@ export function AuthHeader({ title, meta }) {
   return (
     <div className="flex flex-col items-center rise-in">
       <Logo className="h-14 w-14" aria-hidden="true" alt="" />
+      <p className="mt-3 text-emph font-semibold text-ink">OptiGains</p>
       <PageHeader
-        className="px-0 pt-6 pb-0 justify-center [&>div]:text-center"
-        eyebrow="OptiGains"
+        className="px-0 pt-2 pb-0 justify-center [&>div]:text-center"
+        mobileTitle
         title={title}
         meta={meta}
       />
