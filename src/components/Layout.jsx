@@ -32,7 +32,7 @@ const navigationItems = [
     matches: ["/today"] },
   { title: "Train", url: "/train", icon: Dumbbell,
     matches: ["/train", "/workouts", "/program-builder", "/create-workout",
-              "/quick-workout", "/weekly-schedule", "/schedule", "/workout-detail", "/program/"],
+              "/quick-workout", "/schedule", "/workout-detail", "/program/"],
     children: [
       { label: "Schedule", url: "/train?tab=schedule",
         active: (l) => l.pathname.startsWith("/train") && qp(l, "tab", "schedule") === "schedule" },
@@ -44,7 +44,7 @@ const navigationItems = [
         active: (l) => l.pathname.startsWith("/train") && qp(l, "tab") === "activity-log" },
     ] },
   { title: "Fuel", url: "/fuel", icon: UtensilsCrossed,
-    matches: ["/fuel", "/food-tracker", "/supplements", "/log"],
+    matches: ["/fuel", "/supplements", "/log"],
     // Mirror Fuel's in-page SubTabs exactly: Nutrition / Body / Hydration.
     // (The page reads ?tab=body and ?tab=hydration; the old "wellness" alias
     // silently resolved to Body and there was no Hydration entry at all.)
@@ -250,6 +250,13 @@ export default function Layout({ children, currentPageName }) {
   }, []);
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [showWeighIn, setShowWeighIn] = useState(false);
+  // Weigh-in bridge: any page can open the Layout-owned weigh-in sheet with
+  //   window.dispatchEvent(new CustomEvent("optigains:open-weighin"))
+  useEffect(() => {
+    const openWeighIn = () => setShowWeighIn(true);
+    window.addEventListener("optigains:open-weighin", openWeighIn);
+    return () => window.removeEventListener("optigains:open-weighin", openWeighIn);
+  }, []);
   // Quick-add: the raised '+' in the mobile dock's center slot (and a small
   // sidebar trigger on desktop) opens the existing tiered quick-add menu
   // (QuickAddMenu.jsx) as a controlled bottom sheet / fan-out. This replaces
