@@ -81,7 +81,10 @@ const navigationItems = [
   // it has no permanent dock slot, but the "append active demoted section" rule
   // below paints a transient Mind dock slot (and lights it) while /mind is the
   // current surface, so the dock reads "Mind", not a muted Analyze.
-  { title: "Mind", url: "/mind", icon: Brain, dock: false,
+  // Dock is a fixed five: Today, Train, +, Fuel, State. Demoted sections
+  // (Mind, Analyze) never add a 6th slot; they live in the avatar menu and
+  // light State, their dock home, as the "you are here" signal.
+  { title: "Mind", url: "/mind", icon: Brain, dock: false, dockHome: "State",
     matches: ["/mind"] },
   // Analyze reads as Brief + History. /career is matched here so Career rides the
   // Analyze section: its dock highlight lights the demoted Analyze parent and its
@@ -95,7 +98,7 @@ const navigationItems = [
   // route matching, and the mobile sub-tab strip — only the permanent dock icon
   // is dropped. Reach it via the sidebar (desktop) or its strip pills (mobile);
   // the transient-demoted-slot rule lights the dock when it is the live surface.
-  { title: "Analyze", url: "/insights", icon: BarChart3, dock: false,
+  { title: "Analyze", url: "/insights", icon: BarChart3, dock: false, dockHome: "State",
     matches: ["/insights", "/brief-history", "/career"],
     mobileStrip: true,
     children: [
@@ -109,6 +112,76 @@ const navigationItems = [
 function isNavActive(item, pathname) {
   return (item.matches || [item.url]).some(
     (p) => pathname === p || pathname.startsWith(p)
+  );
+}
+
+// Avatar menu: the mobile route to the demoted sections plus Profile.
+const ACCOUNT_MENU = [
+  { label: "Profile", url: "/profile" },
+  { label: "Mind", url: "/mind" },
+  { label: "Analyze", url: "/insights" },
+  { label: "Career", url: "/career" },
+];
+
+function AccountMenu({ profile }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const location = useLocation();
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+  return (
+    <div ref={ref} className="relative shrink-0 -mr-1.5">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Account menu"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="flex items-center justify-center min-h-tap min-w-tap rounded-pill active:scale-[0.94] transition-transform duration-fast"
+      >
+        <UserAvatar
+          url={profile?.avatar_url}
+          name={profile?.display_name || profile?.username}
+          size="sm"
+          className="w-8 h-8 border border-charcoal-border"
+        />
+      </button>
+      {open && (
+        <div
+          role="menu"
+          aria-label="Account"
+          className="absolute right-0 top-full mt-1 w-48 py-1 rounded-control bg-charcoal-surface border border-charcoal-border shadow-elev-2 z-[10000]"
+        >
+          {ACCOUNT_MENU.map((m) => {
+            const on = location.pathname.startsWith(m.url);
+            return (
+              <Link
+                key={m.url}
+                to={m.url}
+                role="menuitem"
+                onClick={() => setOpen(false)}
+                aria-current={on ? "page" : undefined}
+                className={cn(
+                  "flex items-center min-h-tap px-4 text-body transition-colors duration-fast hover:bg-charcoal-surface2 focus-visible:outline-none focus-visible:bg-charcoal-surface2",
+                  on ? "text-ink font-semibold" : "text-ink-secondary"
+                )}
+              >
+                {m.label}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -293,23 +366,9 @@ export default function Layout({ children, currentPageName }) {
   // Per-page contextual subtitle for the mobile header. Defaults to today's
   // date; a page can override (or `null` to suppress) when the date is
   // misleading — e.g. a history list isn't "today".
-  const pageSubtitle = {
-    // Count-neutral: the page renders the real (often small) brief count, so a
-    // hardcoded "Last 30" would contradict a list that frequently shows 1.
-    BriefHistory: "AI-generated daily briefs",
-    // Career is an IA orphan with its own in-page header; suppress the default
-    // date subtitle so a misleading "today's date" doesn't print under its title.
-    Career: null,
-    // Fuel renders FoodTracker's own interactive date-nav pill (prev/next day +
-    // 'Today' jump). The passive header date subtitle just duplicates it, so
-    // suppress it here and let the functional pill own the date affordance.
-    Fuel: null,
-    // Today's PageHeader eyebrow already prints the date; keep one.
-    Today: null,
-  };
-  const mobileSubtitle = Object.prototype.hasOwnProperty.call(pageSubtitle, currentPageName)
-    ? pageSubtitle[currentPageName]
-    : format(nowInTz(), "EEEE, MMMM d");
+  // One header pattern on every tab root: Gauge + title + today's date.
+  // Drill-downs use the compact centered back-title instead (no subtitle).
+  const mobileSubtitle = format(nowInTz(), "EEEE, MMMM d");
 
   const isDrillDown = DRILL_DOWN_PAGES.has(currentPageName);
 
@@ -335,11 +394,12 @@ export default function Layout({ children, currentPageName }) {
   // the whole dock muted under an "Analyze" title. To restore the signal without
   // re-promoting the section everywhere, append the active demoted section as a
   // transient extra dock slot only while it's the current surface.
-  const primaryDockItems = navigationItems.filter((item) => item.dock !== false);
-  const activeIsDemoted = activeSection && activeSection.dock === false;
-  const dockItems = activeIsDemoted
-    ? [...primaryDockItems, activeSection]
-    : primaryDockItems;
+  // Fixed five-slot dock on every route: four primary sections + the '+'.
+  // A demoted section never adds a slot; it lights its dockHome instead.
+  const dockItems = navigationItems.filter((item) => item.dock !== false);
+  const dockActiveTitle = activeSection
+    ? (activeSection.dock === false ? activeSection.dockHome : activeSection.title)
+    : null;
   // The raised '+' always sits in the dock's center slot (like MacroFactor),
   // between Train and Fuel — i.e. after the first two primary items. Any
   // transient demoted section appended above lands after Body, to the right
@@ -354,7 +414,7 @@ export default function Layout({ children, currentPageName }) {
   const showDock = !["/program-builder", "/create-workout"].some((p) => location.pathname.startsWith(p));
 
   const renderDockLink = (item) => {
-    const isActive = isNavActive(item, location.pathname);
+    const isActive = item.title === dockActiveTitle;
     return (
       <Link
         key={item.title}
@@ -522,6 +582,9 @@ export default function Layout({ children, currentPageName }) {
               </>
             ) : (
               <>
+                <Link to="/today" aria-label="OptiGains, Today" className="shrink-0 flex items-center justify-center min-h-tap min-w-tap -ml-2.5">
+                  <Logo className="w-7 h-7" aria-hidden="true" />
+                </Link>
                 <div className="flex-1 min-w-0">
                   <h1 className="text-display truncate">
                     {pageDisplayName}
@@ -535,14 +598,7 @@ export default function Layout({ children, currentPageName }) {
                     </div>
                   )}
                 </div>
-                <Link to="/profile" className="shrink-0 flex items-center justify-center min-h-tap min-w-tap -mr-1.5" aria-label="Profile">
-                  <UserAvatar
-                    url={profile?.avatar_url}
-                    name={profile?.display_name || profile?.username}
-                    size="sm"
-                    className="w-8 h-8 border border-charcoal-border"
-                  />
-                </Link>
+                <AccountMenu profile={profile} />
               </>
             )}
           </header>
