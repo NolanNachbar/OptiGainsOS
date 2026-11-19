@@ -79,6 +79,8 @@ export default function QuickWorkout() {
   }, [prescribed]);
 
   const [startTime, setStartTime] = useState(Date.now());
+  // With exercises present the add row starts as one pill, not a second inline form.
+  const [addRowOpen, setAddRowOpen] = useState(false);
   // The Layout chrome and the logging band both surface today's date already,
   // so the default session title carries no date — a date-stamped default just
   // reprinted the chrome's "Quick Workout" + date in a second, inconsistently
@@ -886,12 +888,23 @@ export default function QuickWorkout() {
           </DndContext>
 
           {/* Add Exercise Form */}
+          {exercises.length > 0 && !addRowOpen ? (
+            <Button
+              variant="outline"
+              onClick={() => setAddRowOpen(true)}
+              className="w-full py-6 rounded-control border border-dashed border-charcoal-border bg-transparent font-bold"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Add Exercise
+            </Button>
+          ) : (
           <AddExerciseForm
             onAdd={addExercise}
             showCloseButton={exercises.length > 0}
             exerciseNames={allHistoryExerciseNames}
             hasExercises={exercises.length > 0}
           />
+          )}
 
           {/* Session notes — feed back to notes_parser for programming adjustments */}
           {exercises.length > 0 && (

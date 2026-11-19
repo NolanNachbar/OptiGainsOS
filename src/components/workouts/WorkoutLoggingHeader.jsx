@@ -291,7 +291,9 @@ export default function WorkoutLoggingHeader({
             <Button
               onClick={onFinish}
               disabled={isSaving || !canFinish}
-              variant={canFinish ? "volt" : "dim"}
+              // One primary at a time: until a set is logged the set check owns the
+              // coral; Finish turns primary only once every set is done.
+              variant={canFinish && totalSets > 0 && doneSets >= totalSets ? "volt" : canFinish ? "outline" : "dim"}
               // Button's shared baseStyles apply disabled:opacity-50 to every
               // variant uniformly, which stacks on top of "dim"'s already-
               // muted ink/border and reads as a washed-out smear rather than
