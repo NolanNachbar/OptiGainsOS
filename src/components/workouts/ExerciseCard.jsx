@@ -358,14 +358,16 @@ export default function ExerciseCard({
   const [markMenuIndex, setMarkMenuIndex] = useState(null);
   const handleSetCompleted = (setIndex, completed) => {
     const target = exercise.sets[setIndex];
-    // Completing a set without touching RIR means "it went as prescribed": record
-    // the prescribed RIR instead of making the athlete type it. Flagged
+    // Completing a set without touching RIR records an assumed RIR instead of making
+    // the athlete type it. The model trains to failure, so the default is 0. A
+    // prescribed non-zero RIR is kept only on a top set, where the buffer is an
+    // intentional strength choice (a range like "1-2" takes its first value). Flagged
     // rir_assumed so the log can tell a confirmed number from a defaulted one; any
-    // edit through handleRirChange clears the flag. A range ("1-2") takes its first
-    // value. With no prescription there is nothing to assume, so the top-set gate
-    // below still applies.
-    const assumedRir = completed && showRIR && target.rir == null && target.rpe == null
-      ? parseFloat(target.rir_target ?? exercise.prescribed?.rir ?? programExercise?.rir_target)
+    // edit through handleRirChange clears the flag. A top set with no prescription
+    // assumes nothing, so the top-set gate below still applies.
+    const prescribedRir = parseFloat(target.rir_target ?? exercise.prescribed?.rir ?? programExercise?.rir_target);
+    const assumedRir = completed && showRIR && target.rir == null && target.rpe == null && !isWarmupSet(target)
+      ? (baseType(target) === 'top_set' ? prescribedRir : 0)
       : NaN;
     if (Number.isFinite(assumedRir)) {
       onUpdateSet(exerciseIndex, setIndex, 'rir', assumedRir);
@@ -871,7 +873,7 @@ export default function ExerciseCard({
                     handleInputFocus(e);
                     if (useKeypad) setActiveField({ setIndex, field: 'rir' });
                   }}
-                  placeholder={String(set.rir_target ?? exercise.prescribed?.rir ?? "--")}
+                  placeholder={String(baseType(set) === 'top_set' ? (set.rir_target ?? exercise.prescribed?.rir ?? "--") : 0)}
                   min="0"
                   max="10"
                   step="0.5"
