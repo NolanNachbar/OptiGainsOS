@@ -78,7 +78,7 @@ export default function Login() {
       <AuthPanel>
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <Label htmlFor="email" className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Email</Label>
+            <Label htmlFor="email" className="text-micro font-semibold tracking-[0.08em] text-ink-muted">Email</Label>
             <Input
               id="email"
               type="email"
@@ -91,7 +91,7 @@ export default function Login() {
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="password" className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Password</Label>
+            <Label htmlFor="password" className="text-micro font-semibold tracking-[0.08em] text-ink-muted">Password</Label>
             <Input
               id="password"
               type="password"

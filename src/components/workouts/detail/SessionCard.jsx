@@ -31,7 +31,7 @@ export default function SessionCard({ chipsRow, cloneWorkoutMutation, handleStar
                   <div className="flex items-center gap-2.5">
                     <Target className="w-6 h-6 text-ink-muted" />
                     <div>
-                      <div className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Exercises</div>
+                      <div className="text-micro font-semibold tracking-[0.08em] text-ink-muted">Exercises</div>
                       <div className="font-numeral tabular-nums font-bold leading-none tracking-tight text-display text-ink">{workout.exercises?.length || 0} <span className="text-caption font-semibold text-ink-muted">{(workout.exercises?.length || 0) === 1 ? 'exercise' : 'exercises'}</span></div>
                     </div>
                   </div>
@@ -39,7 +39,7 @@ export default function SessionCard({ chipsRow, cloneWorkoutMutation, handleStar
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-ink-faint" />
                       <div>
-                        <div className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Duration</div>
+                        <div className="text-micro font-semibold tracking-[0.08em] text-ink-muted">Duration</div>
                         <div className="font-technical font-bold text-body text-ink-secondary">{workout.duration_minutes} <span className="text-caption font-semibold text-ink-muted">min</span></div>
                       </div>
                     </div>

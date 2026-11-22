@@ -67,8 +67,8 @@ export default function WorkoutLogger({ CardioSessions, addExercise, addSet, all
                     <Fragment key={exerciseIndex}>
                     {showNextHeader && (
                       <div className="flex items-baseline justify-between px-1 pt-3 pb-1 mt-1 border-t border-charcoal-border">
-                        <span className="text-caption font-bold uppercase tracking-[0.04em] text-ink-muted">Next</span>
-                        <span className="text-caption font-bold uppercase tracking-[0.04em] text-ink-muted">last time</span>
+                        <span className="text-caption font-bold tracking-[0.04em] text-ink-muted">Next</span>
+                        <span className="text-caption font-bold tracking-[0.04em] text-ink-muted">last time</span>
                       </div>
                     )}
                     <SortableExerciseRow
@@ -152,7 +152,7 @@ export default function WorkoutLogger({ CardioSessions, addExercise, addSet, all
                 preWorkoutNotes state either way. */}
             <details className="bg-charcoal-surface2 rounded-control group mt-2">
               <summary className="flex items-center justify-between px-4 py-3 cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden min-h-[44px]">
-                <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Session details</span>
+                <span className="text-micro font-semibold tracking-[0.08em] text-ink-muted">Session details</span>
                 <ChevronDown className="w-4 h-4 text-ink-muted transition-transform duration-200 group-open:rotate-180" />
               </summary>
               <div className="px-4 pb-4 space-y-4">
@@ -164,7 +164,7 @@ export default function WorkoutLogger({ CardioSessions, addExercise, addSet, all
                   <div className="flex items-center gap-2.5">
                     <Target className="w-5 h-5 text-ink-muted" />
                     <div>
-                      <div className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Exercises</div>
+                      <div className="text-micro font-semibold tracking-[0.08em] text-ink-muted">Exercises</div>
                       <div className="font-numeral tabular-nums font-bold leading-none tracking-tight text-title text-ink">{workout.exercises?.length || 0}</div>
                     </div>
                   </div>
@@ -172,14 +172,14 @@ export default function WorkoutLogger({ CardioSessions, addExercise, addSet, all
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-ink-faint" />
                       <div>
-                        <div className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Duration</div>
+                        <div className="text-micro font-semibold tracking-[0.08em] text-ink-muted">Duration</div>
                         <div className="font-technical font-bold text-body text-ink-secondary">{workout.duration_minutes} <span className="text-caption font-semibold text-ink-muted">min</span></div>
                       </div>
                     </div>
                   )}
                 </div>
                 <div>
-                  <label className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted block mb-1.5">Pre-workout Notes</label>
+                  <label className="text-micro font-semibold tracking-[0.08em] text-ink-muted block mb-1.5">Pre-workout Notes</label>
                   <Textarea
                     value={preWorkoutNotes}
                     onChange={(e) => setPreWorkoutNotes(e.target.value)}

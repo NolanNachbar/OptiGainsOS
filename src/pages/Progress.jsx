@@ -126,7 +126,7 @@ function DeltaTriples({ trended, trendState, weightUnit }) {
   );
 }
 
-const FIELD_LABEL = "mb-1 block text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted";
+const FIELD_LABEL = "mb-1 block text-micro font-semibold tracking-[0.08em] text-ink-muted";
 
 // ─── Weight module ─────────────────────────────────────────────────────────────
 // The leading surface on Body: trend value with its weekly rate and basis, a
@@ -515,9 +515,9 @@ function MeasurementsTab() {
             <table className="w-full text-caption tabular-nums">
               <thead>
                 <tr className="border-y border-charcoal-borderSoft">
-                  <th className="px-4 py-2 text-left text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted whitespace-nowrap">Date</th>
+                  <th className="px-4 py-2 text-left text-micro font-semibold tracking-[0.08em] text-ink-muted whitespace-nowrap">Date</th>
                   {MEASUREMENT_FIELDS.map(f => (
-                    <th key={f.key} className="px-3 py-2 text-right text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted whitespace-nowrap">{f.label}</th>
+                    <th key={f.key} className="px-3 py-2 text-right text-micro font-semibold tracking-[0.08em] text-ink-muted whitespace-nowrap">{f.label}</th>
                   ))}
                   <th className="w-8" />
                 </tr>

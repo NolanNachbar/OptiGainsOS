@@ -81,7 +81,7 @@ export default function HypertrophySection({ data, landmarks }) {
                 <div className="flex items-center gap-1.5">
                   <span className="font-bold text-secondary capitalize">{muscle.replace(/_/g, " ")}</span>
                   {learned && (
-                    <span className="text-micro uppercase tracking-[0.08em] text-muted-2 font-extrabold" title="Volume landmark learned by the engine from your response (MRV adapts when a muscle stalls while sore)">
+                    <span className="text-micro tracking-[0.08em] text-muted-2 font-extrabold" title="Volume landmark learned by the engine from your response (MRV adapts when a muscle stalls while sore)">
                       learned
                     </span>
                   )}
@@ -108,7 +108,7 @@ export default function HypertrophySection({ data, landmarks }) {
             type="button"
             onClick={() => setShowAll((v) => !v)}
             aria-expanded={showAll}
-            className="cta-ghost !h-11 !text-micro !font-bold uppercase tracking-[0.08em] !text-muted-2 hover:!text-ink active:scale-[0.98] transition-transform duration-200 ease-[var(--ease)] w-full"
+            className="cta-ghost !h-11 !text-micro !font-bold tracking-[0.08em] !text-muted-2 hover:!text-ink active:scale-[0.98] transition-transform duration-200 ease-[var(--ease)] w-full"
           >
             {showAll ? "Show less" : `Show all ${sorted.length} muscles`}
             <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ease-[var(--ease)] ${showAll ? "rotate-180" : ""}`} />

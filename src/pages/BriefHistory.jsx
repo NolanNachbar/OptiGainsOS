@@ -25,7 +25,7 @@ const COACHES = [
   { key: "career",       label: "Career",       icon: Briefcase, hue: "!text-ink-muted bg-track" },
 ];
 
-/** Coach-persona tag — tiny uppercase neutral chip. */
+/** Coach-persona tag — tiny neutral chip. */
 function CoachTag({ children, hue = "!text-ink-muted bg-track" }) {
   return (
     <span className={`text-micro text-ink-muted ${hue} rounded-md px-2 py-0.5 whitespace-nowrap shrink-0`}>

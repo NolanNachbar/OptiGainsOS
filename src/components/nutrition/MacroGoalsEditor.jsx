@@ -117,7 +117,7 @@ export function MacroGoalsEditor({ values, onChange }) {
       <div>
         <div className="flex items-baseline justify-between gap-2">
           <Label htmlFor="macro-calorie-target">Calorie target</Label>
-          <span className="text-micro font-semibold uppercase tracking-wider text-ink/80">kcal/day</span>
+          <span className="text-micro font-semibold text-ink/80">kcal/day</span>
         </div>
         <Input
           id="macro-calorie-target"
@@ -148,7 +148,7 @@ export function MacroGoalsEditor({ values, onChange }) {
               <div className="flex items-center gap-2 text-body">
                 <span className="text-ink-muted text-caption font-technical">{pct}%</span>
                 <span className={`font-bold font-technical ${text}`}>{g}g</span>
-                {!onSlide && <span className="text-micro text-ink-muted uppercase tracking-wider">auto</span>}
+                {!onSlide && <span className="text-micro text-ink-muted">auto</span>}
               </div>
             </div>
             {onSlide ? (

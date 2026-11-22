@@ -192,7 +192,7 @@ function ReadingTab() {
 
       {currentlyReading.length > 0 && (
         <div>
-          <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3">Currently reading</h3>
+          <h3 className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-3">Currently reading</h3>
           <div className="space-y-3">
             {currentlyReading.map(book => <BookCard key={book.id} book={book} onEdit={openEdit} onDelete={setConfirmDelete} onStatusChange={updateStatus.mutate} />)}
           </div>
@@ -204,7 +204,7 @@ function ReadingTab() {
         const visibleRest = showAllRest ? sortedRest : sortedRest.slice(0, 6);
         return (
           <div>
-            <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3">All books</h3>
+            <h3 className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-3">All books</h3>
             <div className="space-y-3">
               {visibleRest.map(book => (
                 <BookCard key={book.id} book={book} onEdit={openEdit} onDelete={setConfirmDelete} onStatusChange={updateStatus.mutate} />
@@ -400,7 +400,7 @@ function StudyTab() {
   return (
     <div className="space-y-6">
       <div className="bg-charcoal-surface border border-charcoal-border transition-colors duration-base hover:bg-charcoal-surface2 p-5">
-        <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-4 flex items-center gap-2">
+        <h3 className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-4 flex items-center gap-2">
           <Zap className="w-3 h-3 text-ink-muted" /> Log study session
         </h3>
         <div className="space-y-3">
@@ -435,16 +435,16 @@ function StudyTab() {
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-charcoal-surface2 rounded-control p-4 text-center">
           <p className="text-display font-numeral tabular-nums text-ink">{weekMinutesError ? "—" : weeklyHours.toFixed(1)}</p>
-          <p className="text-caption font-bold text-muted-2 uppercase tracking-[0.08em] mt-0.5">hrs this week</p>
+          <p className="text-caption font-bold text-muted-2 tracking-[0.08em] mt-0.5">hrs this week</p>
         </div>
         <div className="bg-charcoal-surface2 rounded-control p-4 text-center">
           <p className="font-technical text-base font-bold text-muted-2">{totalSessionsError ? "—" : (totalSessions ?? logs.length)}</p>
-          <p className="text-caption font-bold text-muted-2 uppercase tracking-[0.08em] mt-0.5">total sessions</p>
+          <p className="text-caption font-bold text-muted-2 tracking-[0.08em] mt-0.5">total sessions</p>
         </div>
       </div>
 
       <div>
-        <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3 flex items-center gap-2">
+        <h3 className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-3 flex items-center gap-2">
           <History className="w-3 h-3" /> Recent Sessions
         </h3>
         <div className="space-y-2">
@@ -722,14 +722,14 @@ function CaptureTab() {
     // only instruction, so we don't repeat "drop a note" in a separate empty box.
     <div className="space-y-6">
       <div>
-        <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3 flex items-center gap-2">
+        <h3 className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-3 flex items-center gap-2">
           <BookOpen className="w-3 h-3 text-ink-muted" /> New learning log
         </h3>
         <QuickCapture domain="mind" placeholder="What did you learn today? Notes on books, courses or technical concepts" />
       </div>
       {isEmpty && (
         <div>
-          <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3 flex items-center gap-2">
+          <h3 className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-3 flex items-center gap-2">
             <Zap className="w-3 h-3 text-ink-muted" /> Ideas to capture
           </h3>
           <div className="space-y-2">
@@ -747,7 +747,7 @@ function CaptureTab() {
       )}
       {!isEmpty && (
         <div>
-          <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3 flex items-center gap-2">
+          <h3 className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-3 flex items-center gap-2">
             <History className="w-3 h-3 text-ink-muted" /> Recent streams
           </h3>
           <div className="space-y-3">

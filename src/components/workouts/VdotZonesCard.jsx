@@ -40,8 +40,8 @@ export default function VdotZonesCard({ className = "" }) {
     <div className={`bg-charcoal-surface border border-charcoal-border rounded-module transition-colors px-4 pt-4 pb-4 ${className}`}>
       <div className="flex items-center gap-2 mb-3">
         <Footprints className="w-3.5 h-3.5 text-carb" />
-        <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted !text-ink">Run Pace Zones</span>
-        <span className="ml-auto text-caption text-muted-2 uppercase tracking-wider font-bold">
+        <span className="text-micro font-semibold tracking-[0.08em] text-ink-muted !text-ink">Run Pace Zones</span>
+        <span className="ml-auto text-caption text-muted-2 font-bold">
           {zones.weekly_split || "VDOT zones"}
         </span>
       </div>
@@ -49,7 +49,7 @@ export default function VdotZonesCard({ className = "" }) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {ZONES.map((z) => (
           <div key={z.key} title={z.hint} className="bg-charcoal-surface2 rounded-control px-2 py-2 text-center">
-            <div className="text-caption uppercase tracking-[0.08em] text-muted-2 font-bold mb-1">{z.label}</div>
+            <div className="text-caption tracking-[0.08em] text-muted-2 font-bold mb-1">{z.label}</div>
             <div className={`text-lg font-technical font-extrabold ${z.color}`}>{zones[z.key] || "--"}</div>
             <div className="text-caption font-semibold text-faint">/mi</div>
           </div>

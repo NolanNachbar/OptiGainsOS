@@ -39,7 +39,7 @@ export default function NutritionSection({ data, targets }) {
     <div className="space-y-4">
       {/* Phase + on-track badge */}
       <div className="flex items-center gap-3">
-        <span className={`text-sm font-extrabold uppercase tracking-wide ${phaseColor}`}>
+        <span className={`text-sm font-extrabold ${phaseColor}`}>
           {phase ?? "--"}
         </span>
         {on_track != null && (

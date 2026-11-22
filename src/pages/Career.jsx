@@ -109,7 +109,7 @@ function AppForm({ initial, onSave, onClose }) {
         <Input value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} placeholder="Job title" />
       </div>
       <div className="pt-1 border-t hairline">
-        <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted pt-3 pb-1">Details</h3>
+        <h3 className="text-micro font-semibold tracking-[0.08em] text-ink-muted pt-3 pb-1">Details</h3>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -313,7 +313,7 @@ function PipelineTab() {
 
       {rejected.length > 0 && (
         <div>
-          <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-2">Rejected ({rejected.length})</h3>
+          <h3 className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-2">Rejected ({rejected.length})</h3>
           <div className="space-y-1.5">
             {rejected.map(app => (
               <div key={app.id} className="flex items-center gap-3 px-3 py-2 bg-charcoal-surface2 rounded-control group opacity-60">
@@ -578,14 +578,14 @@ function CaptureTab() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-4 flex items-center gap-2">
+        <h2 className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-4 flex items-center gap-2">
           <UserPlus className="w-3 h-3" /> New Pipeline Event
         </h2>
         <QuickCapture domain="career" placeholder="Applied to X, interviewed with Y, or reached out to Z on LinkedIn…" />
         <p className="text-xs font-semibold text-muted-2 mt-2 italic">Captured events sync to your pipeline.</p>
       </div>
       <div>
-        <h2 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-4 flex items-center gap-2">
+        <h2 className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-4 flex items-center gap-2">
           <History className="w-3 h-3" /> Recent Events
         </h2>
         <div className="space-y-3">
@@ -593,10 +593,10 @@ function CaptureTab() {
           {recentLogs.length > 0 ? recentLogs.map(log => (
             <div key={log.id} className="bg-charcoal-surface border border-charcoal-border p-4">
               <div className="flex justify-between items-start mb-2">
-                <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted px-2 py-0.5 rounded-sm bg-charcoal-surface2 rounded-control">
+                <span className="text-micro font-semibold tracking-[0.08em] text-ink-muted px-2 py-0.5 rounded-sm bg-charcoal-surface2 rounded-control">
                   {format(parseISO(log.created_at), "MMM d, h:mm a")}
                 </span>
-                {log.processed && <span className="text-micro font-semibold uppercase tracking-[0.08em] text-leaf">Processed</span>}
+                {log.processed && <span className="text-micro font-semibold tracking-[0.08em] text-leaf">Processed</span>}
               </div>
               <p className="text-sm font-semibold text-secondary whitespace-pre-wrap leading-relaxed">{log.content}</p>
             </div>

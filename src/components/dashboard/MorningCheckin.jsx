@@ -34,7 +34,7 @@ const SORENESS_COLORS = [
 function NumberPicker({ label, value, onChange, min = 1, max = 10 }) {
   return (
     <div className="flex flex-col items-center gap-1">
-      <span className="text-micro font-bold text-muted-2 uppercase tracking-[0.08em]">{label}</span>
+      <span className="text-micro font-bold text-muted-2 tracking-[0.08em]">{label}</span>
       <div className="flex flex-col items-center">
         <button
           onClick={() => onChange(Math.min(max, value + 1))}
@@ -211,7 +211,7 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
                 Today ring's 'READINESS' micro-label, this is the SUBJECTIVE
                 self-report, distinct from the objective readiness score. */}
             <span className="text-micro text-ink">Subjective check-in</span>
-            <span className="text-micro font-semibold text-faint uppercase tracking-wider">Logged</span>
+            <span className="text-micro font-semibold text-faint">Logged</span>
           </div>
           <div className="flex items-center gap-3">
             {/* Quiet, out-of-the-way equipment toggle — not a checkin field, just
@@ -223,7 +223,7 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
                 type="button"
                 onClick={toggleEquipmentProfile}
                 disabled={setEquipmentProfile.isPending}
-                className="min-h-[44px] -my-2.5 px-1 text-micro font-semibold uppercase tracking-wider text-warn hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
+                className="min-h-[44px] -my-2.5 px-1 text-micro font-semibold text-warn hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
               >
                 {setEquipmentProfile.isPending ? "Rebuilding…" : "Casper mode · tap for full gym"}
               </button>
@@ -234,7 +234,7 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
             <button
               type="button"
               onClick={() => setEditing(true)}
-              className="min-h-[44px] -my-2.5 px-1 text-micro font-semibold uppercase tracking-wider text-secondary hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
+              className="min-h-[44px] -my-2.5 px-1 text-micro font-semibold text-secondary hover:text-ink transition-colors duration-200 [transition-timing-function:var(--ease)]"
             >
               Update
             </button>
@@ -243,16 +243,16 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
         <div className="p-4 flex flex-col md:flex-row gap-6">
           <div className="flex gap-8">
             <div className="text-center">
-              <div className="text-micro font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Energy</div>
+              <div className="text-micro font-bold text-muted-2 tracking-[0.08em] mb-1">Energy</div>
               <div className="hero-metric text-2xl text-ink">{existingCheckin.energy}<span className="text-xs font-semibold text-muted-2">/10</span></div>
             </div>
             <div className="text-center">
-              <div className="text-micro font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Mood</div>
+              <div className="text-micro font-bold text-muted-2 tracking-[0.08em] mb-1">Mood</div>
               <div className="hero-metric text-2xl text-ink">{existingCheckin.mood}<span className="text-xs font-semibold text-muted-2">/10</span></div>
             </div>
             {todayWeight?.weight != null && (
               <div className="text-center">
-                <div className="text-micro font-bold text-muted-2 uppercase tracking-[0.08em] mb-1">Weight</div>
+                <div className="text-micro font-bold text-muted-2 tracking-[0.08em] mb-1">Weight</div>
                 <div className="hero-metric text-2xl text-ink tabular-nums">
                   {todayWeight.weight}<span className="text-xs font-semibold text-muted-2"> {weightUnit}</span>
                 </div>
@@ -261,7 +261,7 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
           </div>
 
           <div className="flex-1">
-            <div className="text-micro font-bold text-muted-2 uppercase tracking-[0.08em] mb-2">Today's Soreness</div>
+            <div className="text-micro font-bold text-muted-2 tracking-[0.08em] mb-2">Today's Soreness</div>
             {soreGroups.length > 0 ? (
               <div className="flex flex-wrap gap-1.5">
                 {soreGroups.map(([group, level]) => (
@@ -377,7 +377,7 @@ export default function MorningCheckin({ today, existingCheckin, onComplete, cor
         type="button"
         onClick={toggleEquipmentProfile}
         disabled={setEquipmentProfile.isPending}
-        className="mb-3 text-micro font-semibold uppercase tracking-wider text-faint hover:text-secondary transition-colors duration-200 [transition-timing-function:var(--ease)]"
+        className="mb-3 text-micro font-semibold text-faint hover:text-secondary transition-colors duration-200 [transition-timing-function:var(--ease)]"
       >
         {/* The tap now waits on a real engine run (~60-90s), not a column write,
             so say so — a control that sits dead for a minute otherwise reads as

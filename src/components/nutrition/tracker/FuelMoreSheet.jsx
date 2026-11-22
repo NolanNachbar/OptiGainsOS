@@ -33,7 +33,7 @@ export default function FuelMoreSheet({ activePortionLabels, activePortionMap, a
               <button
                 key={tab.id}
                 onClick={() => setSidebarTab(tab.id)}
-                className={`flex-1 min-h-[44px] text-caption font-semibold uppercase tracking-wider border-b-2 transition-colors duration-200 [transition-timing-function:var(--ease)] ${
+                className={`flex-1 min-h-[44px] text-caption font-semibold border-b-2 transition-colors duration-200 [transition-timing-function:var(--ease)] ${
                   sidebarTab === tab.id ? 'border-brand/60 text-brand' : 'border-transparent text-ink-muted'
                 }`}
               >
@@ -58,7 +58,7 @@ export default function FuelMoreSheet({ activePortionLabels, activePortionMap, a
             {sidebarTab === 'recipes' && (
               <div className="space-y-2">
                 <div className="flex justify-end">
-                  <button onClick={() => setShowNewRecipe(true)} className="flex items-center gap-1 text-caption font-semibold text-brand uppercase tracking-widest min-h-[44px] px-1">
+                  <button onClick={() => setShowNewRecipe(true)} className="flex items-center gap-1 text-caption font-semibold text-brand min-h-[44px] px-1">
                     <Plus className="w-3 h-3" />New recipe
                   </button>
                 </div>

@@ -68,7 +68,7 @@ export default function ForgotPassword() {
           <form key="form" onSubmit={handleSubmit} className="space-y-4 rise-in" noValidate>
             <p className="text-body text-ink-muted text-center">Enter the email on your account. The link arrives by email.</p>
             <div>
-              <Label htmlFor="email" className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-1 block">Email</Label>
+              <Label htmlFor="email" className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-1 block">Email</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                 <Input

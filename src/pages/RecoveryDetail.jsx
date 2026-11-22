@@ -375,7 +375,7 @@ export default function RecoveryDetail() {
                       role="tab"
                       aria-selected={isActive}
                       onClick={() => setActiveChart(id)}
-                      className={`flex flex-1 items-center justify-center gap-1.5 h-9 rounded-full text-micro font-bold uppercase tracking-[0.06em] transition-colors duration-200 [transition-timing-function:var(--ease)] ${
+                      className={`flex flex-1 items-center justify-center gap-1.5 h-9 rounded-full text-micro font-bold tracking-[0.06em] transition-colors duration-200 [transition-timing-function:var(--ease)] ${
                         isActive
                           ? "bg-elevated text-ink "
                           : "text-ink-muted hover:text-ink"

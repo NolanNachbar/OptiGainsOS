@@ -44,7 +44,7 @@ export default function EngineStatusCard({ today }) {
             const ago = computedAgo(prescription.computed_at);
             if (!ago) return null;
             return (
-              <span className={`ml-auto font-technical text-micro font-bold uppercase tracking-wider ${ago.stale ? "text-warn/80" : "text-faint"}`}>
+              <span className={`ml-auto font-technical text-micro font-bold ${ago.stale ? "text-warn/80" : "text-faint"}`}>
                 {ago.stale ? "Stale: " : ""}Computed {ago.label}
               </span>
             );
@@ -55,7 +55,7 @@ export default function EngineStatusCard({ today }) {
           {/* ACWR */}
           <div className="bg-charcoal-surface2 rounded-control px-2 py-2.5" title="Acute:Chronic Workload Ratio, last 7 days of load vs your 28-day average. 0.8–1.3 is the sweet spot; above 1.5 spikes injury risk.">
 
-            <div className="flex items-center justify-center gap-1 text-micro uppercase tracking-[0.08em] text-muted-2 font-bold mb-1">
+            <div className="flex items-center justify-center gap-1 text-micro tracking-[0.08em] text-muted-2 font-bold mb-1">
               <Shield className="w-3 h-3" /> Load (ACWR)
             </div>
             <div className="text-lg font-technical font-extrabold text-ink leading-none">
@@ -67,7 +67,7 @@ export default function EngineStatusCard({ today }) {
           {/* Interference */}
           <div className="bg-charcoal-surface2 rounded-control px-2 py-2.5" title="Concurrent-training interference (mTORC1 vs AMPK). LOW means today's running won't blunt strength/hypertrophy adaptation; an open anabolic window favors lifting.">
 
-            <div className="flex items-center justify-center gap-1 text-micro uppercase tracking-[0.08em] text-muted-2 font-bold mb-1">
+            <div className="flex items-center justify-center gap-1 text-micro tracking-[0.08em] text-muted-2 font-bold mb-1">
               <GitBranch className="w-3 h-3" /> Interference
             </div>
             <div className="text-lg font-technical font-extrabold text-ink leading-none">
@@ -81,7 +81,7 @@ export default function EngineStatusCard({ today }) {
           {/* Overreach */}
           <div className="bg-charcoal-surface2 rounded-control px-2 py-2.5" title="Overreaching early-warning: fires when 3-day HRV drops and resting HR rises together. Needs wearable recovery data to compute.">
 
-            <div className="flex items-center justify-center gap-1 text-micro uppercase tracking-[0.08em] text-muted-2 font-bold mb-1">
+            <div className="flex items-center justify-center gap-1 text-micro tracking-[0.08em] text-muted-2 font-bold mb-1">
               <HeartPulse className="w-3 h-3" /> Overreach
             </div>
             {overreachUnavailable ? (

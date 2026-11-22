@@ -97,7 +97,7 @@ function PlateCalculator({ weightUnit = 'lbs' }) {
       {result && (
         <Card className="surface border-none rise-in">
           <CardContent className="pt-6 space-y-4">
-            <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Plates Per Side</p>
+            <p className="text-micro font-semibold tracking-[0.08em] text-ink-muted">Plates Per Side</p>
             {result.platesNeeded.length > 0 ? (
               <div className="space-y-3">
                 {result.platesNeeded.map((plate, index) => (
@@ -193,7 +193,7 @@ function WorkingWeightCalculator({ weightUnit = 'lbs' }) {
     <div className="space-y-5">
       {/* Known performance */}
       <div>
-        <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3">What you know</p>
+        <p className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-3">What you know</p>
         <div className="grid grid-cols-3 gap-3">
           <div>
             <Label className="mb-1.5 block">
@@ -217,7 +217,7 @@ function WorkingWeightCalculator({ weightUnit = 'lbs' }) {
 
       {/* Target */}
       <div>
-        <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3">What you want to do</p>
+        <p className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-3">What you want to do</p>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label className="mb-1.5 block">Target reps</Label>

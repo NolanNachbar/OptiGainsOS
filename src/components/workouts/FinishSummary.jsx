@@ -35,7 +35,7 @@ export default function FinishSummary({ exercises, allWorkoutLogs, weightUnit = 
       <dl className="grid grid-cols-3 divide-x divide-charcoal-border border-b border-charcoal-border">
         {stats.map(([label, value, unit]) => (
           <div key={label} className="px-3 py-2.5">
-            <dt className="text-micro font-technical font-bold uppercase tracking-wider text-ink-faint">{label}</dt>
+            <dt className="text-micro font-technical font-bold text-ink-faint">{label}</dt>
             <dd className="pt-0.5 font-technical text-body font-extrabold text-ink tabular-nums truncate">
               {value}
               {unit && <span className="ml-1 text-caption font-semibold text-ink-muted">{unit}</span>}

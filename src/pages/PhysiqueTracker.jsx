@@ -420,7 +420,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
               </p>
               {Array.isArray(latest.analysis.focus_areas) && latest.analysis.focus_areas.length > 0 && (
                 <div className="mt-3">
-                  <p className="mb-2 text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Focus</p>
+                  <p className="mb-2 text-micro font-semibold tracking-[0.08em] text-ink-muted">Focus</p>
                   <div className="flex flex-wrap gap-2">
                     {latest.analysis.focus_areas.map((area) => (
                       <Badge key={area} variant="outline">{area}</Badge>
@@ -552,7 +552,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                 if (poseTimeline.length < 2) return null;
                 return (
                   <Card variant="plain" className="mb-3 border border-charcoal-borderSoft rounded-control p-3">
-                    <p className="mb-2 text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">{POSE_LABEL[filterPose]} over time</p>
+                    <p className="mb-2 text-micro font-semibold tracking-[0.08em] text-ink-muted">{POSE_LABEL[filterPose]} over time</p>
                     <div className="flex gap-2 overflow-x-auto pb-1">
                       {poseTimeline.map((e) => (
                         <div key={e.id} className="shrink-0 w-20">
@@ -710,7 +710,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
                         </div>
                     }
                     <div className="mt-2 flex flex-col gap-1">
-                      <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">{POSE_LABEL[e.pose] || e.pose || "--"}</p>
+                      <p className="text-micro font-semibold tracking-[0.08em] text-ink-muted">{POSE_LABEL[e.pose] || e.pose || "--"}</p>
                       <p className="text-caption text-ink-faint tabular-nums">{format(parseISO(e.taken_at), 'MMM d, yyyy')}</p>
                       {e.bodyfat_estimate != null && (
                         <p className="text-emph font-semibold text-ink tabular-nums">{e.bodyfat_estimate}% <span className="text-caption font-normal text-ink-muted">est. BF</span></p>
@@ -779,7 +779,7 @@ export default function PhysiqueTracker({ hideHeader = false }) {
             {/* Pose is editable in place: a wrong pose set on the picker is
                 correctable here before analysis commits. */}
             <div className="mt-3">
-              <p className="mb-2 text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Pose</p>
+              <p className="mb-2 text-micro font-semibold tracking-[0.08em] text-ink-muted">Pose</p>
               <PosePillRow
                 variant="solid"
                 value={pose}

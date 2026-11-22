@@ -377,7 +377,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
           {filterOpen && (
             <div className="rise-in pb-4 border-t hairline pt-3 space-y-3">
               <div>
-                <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-2">Type</p>
+                <p className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-2">Type</p>
                 <div className="flex flex-wrap gap-1.5">
                   {[
                     { value: 'all', label: 'All' },
@@ -397,7 +397,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
               </div>
               {folders.length > 0 && (
                 <div>
-                  <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-2">Folder</p>
+                  <p className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-2">Folder</p>
                   <div className="flex flex-wrap gap-1.5">
                     {['all', ...folders, 'unfiled'].map(f => {
                       if (f !== 'all' && f !== 'unfiled' && renamingFolder === f) {
@@ -548,7 +548,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                     key={value}
                     onClick={() => setProgramView(value)}
                     aria-pressed={programView === value}
-                    className={`flex items-center gap-1.5 px-3 min-h-[44px] rounded-full text-caption font-bold uppercase tracking-[0.06em] whitespace-nowrap transition-colors duration-200 ease-[var(--ease)] active:scale-[0.97] ${
+                    className={`flex items-center gap-1.5 px-3 min-h-[44px] rounded-full text-caption font-bold tracking-[0.06em] whitespace-nowrap transition-colors duration-200 ease-[var(--ease)] active:scale-[0.97] ${
                       programView === value
                         ? 'bg-track text-ink'
                         : 'text-ink-muted hover:text-ink'
@@ -626,7 +626,7 @@ export default function Workouts({ defaultTab = "activity-log", hideHeader = fal
                       the active-cards branch. */}
                   {pastEnrollments.length > 0 && (
                     <div>
-                      <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-3">
+                      <h3 className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-3">
                         Past programs
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

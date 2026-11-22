@@ -227,15 +227,15 @@ export default function TrainingLoadTab({ cardioSessions, workoutLogs, profile, 
               <div className="text-center py-6">
                 <div className="flex items-center justify-center gap-6">
                   <div>
-                    <div className="text-micro uppercase tracking-[0.08em] text-muted-2 font-bold">Fitness</div>
+                    <div className="text-micro tracking-[0.08em] text-muted-2 font-bold">Fitness</div>
                     <div className="text-xl font-technical font-extrabold text-teal">{Math.round(banister.fitness)}</div>
                   </div>
                   <div>
-                    <div className="text-micro uppercase tracking-[0.08em] text-muted-2 font-bold">Fatigue</div>
+                    <div className="text-micro tracking-[0.08em] text-muted-2 font-bold">Fatigue</div>
                     <div className="text-xl font-technical font-extrabold text-violet">{Math.round(banister.fatigue)}</div>
                   </div>
                   <div>
-                    <div className="text-micro uppercase tracking-[0.08em] text-muted-2 font-bold">Form</div>
+                    <div className="text-micro tracking-[0.08em] text-muted-2 font-bold">Form</div>
                     <div className={`text-xl font-technical font-extrabold ${banister.tsb_banister >= 0 ? "text-ok" : "text-bad"}`}>
                       {banister.tsb_banister >= 0 ? "+" : ""}{Number(banister.tsb_banister).toFixed(1)}
                     </div>

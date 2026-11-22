@@ -754,7 +754,7 @@ export default function ExerciseCard({
           return (
           <div key={setIndex}>
             {blockLabel && (
-              <div className="pt-2 pb-1 text-micro font-technical font-bold uppercase tracking-wider text-ink-faint">
+              <div className="pt-2 pb-1 text-micro font-technical font-bold text-ink-faint">
                 {blockLabel}
               </div>
             )}

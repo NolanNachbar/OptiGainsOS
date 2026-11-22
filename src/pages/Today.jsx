@@ -983,14 +983,14 @@ export default function Today() {
         )}
 
         {/* 6 — To-do checklist. Self-hides when empty. */}
-        <div className="-mx-4 sm:-mx-6 lg:mx-0">
+        <div>
           <TodayActions today={today} briefActions={briefActions} isError={briefError} />
         </div>
 
         {/* Below the fold: everything else — secondary or collapsed.
             Carb timing chip → Vitals + Brief/State/Muscle detail disclosure. */}
         {carbTimingToday && carbTimingToday.length > 0 && (
-          <div className="bg-charcoal-surface border border-charcoal-border px-4 sm:px-5 py-3.5 -mx-4 sm:-mx-6 lg:mx-0">
+          <div className="bg-charcoal-surface border border-charcoal-border px-4 sm:px-5 py-3.5">
             <div className="flex items-center gap-2 mb-1.5">
               <Flame className="w-3.5 h-3.5 text-ink-muted shrink-0" />
               <span className="text-micro text-ink-muted">
@@ -1014,7 +1014,7 @@ export default function Today() {
             card switched by the lighter inset SegmentedControl, plus the Vitals
             row. Now demoted below the four primary modules; still behind a
             mobile disclosure so it doesn't add scroll weight when collapsed. */}
-        <div className="surface overflow-hidden -mx-4 sm:-mx-6 lg:mx-0">
+        <div className="surface overflow-hidden">
           {/* Mobile-only disclosure trigger — ≥44px tap target. */}
           <button
             type="button"

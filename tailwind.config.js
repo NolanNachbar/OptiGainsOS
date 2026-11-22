@@ -91,13 +91,13 @@ export default {
       // Merge classes with `cn` from src/components/ui/system/cva.js: it knows
       // the named steps (plain twMerge treats `text-body` as a colour).
       fontSize: {
-        micro:   ['11px', { lineHeight: '14px' }],
-        caption: ['12px', { lineHeight: '16px' }],
-        body:    ['14px', { lineHeight: '20px' }],
-        emph:    ['15px', { lineHeight: '20px' }],
-        title:   ['17px', { lineHeight: '22px' }],
-        display: ['28px', { lineHeight: '32px' }],
-        hero:    ['44px', { lineHeight: '44px' }],
+        micro:   ['12px', { lineHeight: '16px', letterSpacing: '0' }],
+        caption: ['13px', { lineHeight: '18px' }],
+        body:    ['15px', { lineHeight: '20px', letterSpacing: '-0.005em' }],
+        emph:    ['16px', { lineHeight: '21px', letterSpacing: '-0.01em' }],
+        title:   ['17px', { lineHeight: '22px', letterSpacing: '-0.015em', fontWeight: '600' }],
+        display: ['28px', { lineHeight: '34px', letterSpacing: '-0.022em', fontWeight: '700' }],
+        hero:    ['44px', { lineHeight: '48px', letterSpacing: '-0.03em', fontWeight: '700' }],
         xs:   ['12px', { lineHeight: '16px' }],
         sm:   ['14px', { lineHeight: '20px' }],
         base: ['15px', { lineHeight: '20px' }],
@@ -132,12 +132,12 @@ export default {
       // Modules are additionally forced to 0 by `.surface/.glass/.tile`.
       borderRadius: {
         none: '0px',
-        module: '0px',
-        control: '10px',
+        module: '16px',
+        control: '12px',
         pill: '9999px',
-        'sm': '10px',
-        'DEFAULT': '10px',
-        'md': '10px',
+        'sm': '12px',
+        'DEFAULT': '12px',
+        'md': '12px',
         'lg': '10px',
         'xl': '10px',
         '2xl': '10px',

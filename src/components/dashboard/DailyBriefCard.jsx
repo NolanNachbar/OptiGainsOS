@@ -22,13 +22,13 @@ const COACHES = [
   { key: "learning",     label: "Learning",     icon: BookOpen },
 ];
 
-/** Coach-persona tag — tiny uppercase chip. Teal ONLY when the section is open
+/** Coach-persona tag — tiny chip. Teal ONLY when the section is open
  *  (the active datum); collapsed it rests as neutral ink so teal stays a state
  *  signal, not a per-row decoration on five identical chips. */
 function CoachTag({ children, active = false }) {
   return (
     <span
-      className={`text-micro font-extrabold tracking-wider uppercase rounded-sm px-2 py-1 whitespace-nowrap shrink-0 transition-colors duration-200 [transition-timing-function:var(--ease)] ${
+      className={`text-micro font-extrabold rounded-sm px-2 py-1 whitespace-nowrap shrink-0 transition-colors duration-200 [transition-timing-function:var(--ease)] ${
         active ? "text-teal bg-teal/10" : "text-secondary"
       }`}
     >

@@ -190,7 +190,7 @@ export default function MealPlanIdeas({ calorieGoal, proteinGoal, carbsGoal, fat
             return (
               <div key={mt}>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-caption font-semibold text-ink-muted uppercase tracking-wider">
+                  <span className="text-caption font-semibold text-ink-muted">
                     {MEAL_LABELS[mt]}
                   </span>
                   <div className="flex items-center gap-2">

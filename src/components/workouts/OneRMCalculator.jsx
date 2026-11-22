@@ -80,7 +80,7 @@ export default function OneRMCalculator({ weightUnit }) {
                 </div>
 
                 <div className="space-y-2 pt-3 border-t hairline">
-                  <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Weight for target reps</p>
+                  <p className="text-micro font-semibold tracking-[0.08em] text-ink-muted">Weight for target reps</p>
                   <div className="grid grid-cols-3 gap-2">
                     {repRanges.map((targetReps) => (
                       <div key={targetReps} className="text-center p-2 bg-charcoal-surface2 rounded-control">
@@ -108,7 +108,7 @@ export default function OneRMCalculator({ weightUnit }) {
                 </div>
 
                 <div className="space-y-2 pt-3 border-t hairline">
-                  <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted text-ink-faint">Weight for target reps</p>
+                  <p className="text-micro font-semibold tracking-[0.08em] text-ink-muted text-ink-faint">Weight for target reps</p>
                   <div className="grid grid-cols-3 gap-2">
                     {repRanges.map((targetReps) => (
                       <div key={targetReps} className="text-center p-2 bg-charcoal-surface2 rounded-control opacity-50">

@@ -19,7 +19,7 @@ export default function ReplaceExerciseDialog({ showReplaceDialog, setShowReplac
           </DialogDescription>
         </DialogHeader>
         <div className="mt-2">
-          <p className="text-xs font-semibold text-ink-muted uppercase tracking-wide mb-2">Swap to another exercise</p>
+          <p className="text-xs font-semibold text-ink-muted mb-2">Swap to another exercise</p>
           <div className="flex gap-2">
             <div className="flex-1">
               <Combobox

@@ -56,7 +56,7 @@ export default function WeighInModal({ open, onOpenChange }) {
       }
     >
       <form id="weigh-in-form" onSubmit={handleSubmit} className="flex flex-col gap-2 pt-2">
-        <Label htmlFor="weigh-in-value" className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">
+        <Label htmlFor="weigh-in-value" className="text-micro font-semibold tracking-[0.08em] text-ink-muted">
           Weight ({weightUnit})
         </Label>
         <div className="relative">

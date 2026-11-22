@@ -119,7 +119,7 @@ export function StickyMacroBar({ ingredients, servings }) {
           <div className="hero-metric text-display text-ink transition-[color,opacity] duration-200 [transition-timing-function:var(--ease)]">
             {Math.round(totals.total_calories)}
           </div>
-          <div className="text-caption font-medium text-ink-muted uppercase tracking-wide mt-0.5">
+          <div className="text-caption font-medium text-ink-muted mt-0.5">
             Calories
           </div>
         </div>
@@ -128,7 +128,7 @@ export function StickyMacroBar({ ingredients, servings }) {
             <div className="text-body font-bold text-coral font-technical tabular-nums transition-[color,opacity] duration-200 [transition-timing-function:var(--ease)]">
               {Math.round(totals.total_protein * 10) / 10}g
             </div>
-            <div className="text-caption font-medium text-ink-muted uppercase tracking-wide">
+            <div className="text-caption font-medium text-ink-muted">
               Protein
             </div>
           </div>
@@ -136,7 +136,7 @@ export function StickyMacroBar({ ingredients, servings }) {
             <div className="text-body font-bold text-carb font-technical tabular-nums transition-[color,opacity] duration-200 [transition-timing-function:var(--ease)]">
               {Math.round(totals.total_carbs * 10) / 10}g
             </div>
-            <div className="text-caption font-medium text-ink-muted uppercase tracking-wide">
+            <div className="text-caption font-medium text-ink-muted">
               Carbs
             </div>
           </div>
@@ -144,7 +144,7 @@ export function StickyMacroBar({ ingredients, servings }) {
             <div className="text-body font-bold text-fat font-technical tabular-nums transition-[color,opacity] duration-200 [transition-timing-function:var(--ease)]">
               {Math.round(totals.total_fats * 10) / 10}g
             </div>
-            <div className="text-caption font-medium text-ink-muted uppercase tracking-wide">
+            <div className="text-caption font-medium text-ink-muted">
               Fats
             </div>
           </div>
@@ -215,7 +215,7 @@ export function CollapsibleFoodSection({ label, icon, count, children }) {
           className={`w-3.5 h-3.5 text-ink-muted transition-transform duration-200 [transition-timing-function:var(--ease)] ${open ? "rotate-90" : ""}`}
         />
         {icon}
-        <span className="text-caption font-medium text-ink-muted uppercase tracking-wide">
+        <span className="text-caption font-medium text-ink-muted">
           {label}
         </span>
         <span className="text-caption text-ink-muted ml-auto">{count}</span>

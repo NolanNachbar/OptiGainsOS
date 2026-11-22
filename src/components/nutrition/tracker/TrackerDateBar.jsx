@@ -47,7 +47,7 @@ export default function TrackerDateBar({ changeDate, isViewingToday, resetForm, 
           {!isViewingToday && (
             <button
               onClick={() => setSelectedDate(getTodayString())}
-              className="text-caption font-semibold tracking-wide text-ink-secondary hover:text-ink glass-inset px-2.5 h-11 ml-1 flex items-center transition-colors duration-200 [transition-timing-function:var(--ease)]"
+              className="text-caption font-semibold text-ink-secondary hover:text-ink glass-inset px-2.5 h-11 ml-1 flex items-center transition-colors duration-200 [transition-timing-function:var(--ease)]"
             >
               Today
             </button>

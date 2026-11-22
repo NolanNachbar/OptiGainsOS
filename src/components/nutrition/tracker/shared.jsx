@@ -72,12 +72,12 @@ export const MacroResultLine = ({ cal, p, c, f, per100g = false }) => (
 // Shared dashed-ghost button primitive (fuel-nutrition-8). The CLEAN system ships
 // a solid `.cta-ghost` but no DASHED ghost — a genuine gap for these low-emphasis
 // "secondary setup" affordances (Save day as template, Edit goals, Set up TDEE)
-// that were each re-declaring the same dashed border + uppercase micro-label +
+// that were each re-declaring the same dashed border + micro-label +
 // neutral-ink hover. One base string, tokened transition; callers append width /
 // radius / hover-accent overrides. Documented here rather than in index.css since
 // this surface owns only FoodTracker.jsx.
 export const GHOST_DASHED =
-  "flex items-center justify-center gap-1.5 min-h-[44px] border border-dashed border-charcoal-border text-caption font-semibold uppercase tracking-widest text-ink-muted transition-all duration-200 [transition-timing-function:var(--ease)]";
+  "flex items-center justify-center gap-1.5 min-h-[44px] border border-dashed border-charcoal-border text-caption font-semibold text-ink-muted transition-all duration-200 [transition-timing-function:var(--ease)]";
 
 // Default neutral hover for the dashed ghost; the desktop "Set up TDEE / Edit
 // goals" affordance swaps this for a teal action-hover instead.

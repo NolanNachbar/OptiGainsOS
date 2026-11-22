@@ -1,6 +1,6 @@
 /**
  * Shared layout primitives for the Vapor×Macro design system.
- *   SectionLabel     — the uppercase micro-header (og-cap) used above every group.
+ *   SectionLabel     — the micro-header (og-cap) used above every group.
  *   GlassHero        — a frosted-glass hero card.
  *   Surface          — the standard frosted-glass data card.
  *   VerdictBanner    — the decision-first readiness verdict line.
@@ -24,7 +24,7 @@ import { verdictKey } from "./helpers";
  * px-6 gutter), matching the mockup's edge-to-edge module; desktop (lg:)
  * keeps the existing inset column since the grid there isn't full-bleed.
  */
-export function Module({ label, detail, detailHref, onDetailClick, right, children, className = "", bleed = true, ...rest }) {
+export function Module({ label, detail, detailHref, onDetailClick, right, children, className = "", bleed = false, ...rest }) {
   const bleedClass = bleed ? "-mx-4 sm:-mx-6 lg:mx-0" : "";
   return (
     <div className={`surface px-4 sm:px-5 lg:px-4 py-3 ${bleedClass} ${className}`} {...rest}>
@@ -247,7 +247,7 @@ export function ProfileStatsCard({
               {/* Stats are DATA, not the single action color: they read in
                   NEUTRAL ink. At most ONE stat (heroIndex) leads in brand teal. */}
               <p className={`font-bold leading-tight font-technical ${showAvatar ? "text-lg" : "text-2xl leading-none"} ${i === heroIndex ? "text-brand" : "text-ink"}`}>{value}</p>
-              <p className="text-ink-secondary text-micro uppercase tracking-wider mt-1">{label}</p>
+              <p className="text-ink-secondary text-micro mt-1">{label}</p>
             </div>
           ))}
         </div>

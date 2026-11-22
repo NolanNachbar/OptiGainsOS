@@ -754,7 +754,7 @@ export default function QuickWorkout() {
                     <Brain className="w-3.5 h-3.5 text-teal" />
                   </span>
                   <span className="flex-1 min-w-0">
-                    <span className="block text-micro text-teal uppercase tracking-[0.08em] font-bold mb-0.5">Coach</span>
+                    <span className="block text-micro text-teal tracking-[0.08em] font-bold mb-0.5">Coach</span>
                     <span className="block text-caption font-semibold text-ink-muted leading-relaxed">
                       {preSessionInsight.message}
                     </span>
@@ -779,7 +779,7 @@ export default function QuickWorkout() {
             <div className="mt-6 flex-1 min-h-0 flex flex-col justify-center lg:hidden">
               {recentExerciseNames.length > 0 ? (
                 <>
-                  <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-2.5">Recent lifts</p>
+                  <p className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-2.5">Recent lifts</p>
                   <div className="flex flex-col gap-2">
                     {recentExerciseNames.map((name) => (
                       <button
@@ -910,7 +910,7 @@ export default function QuickWorkout() {
           {/* Session notes — feed back to notes_parser for programming adjustments */}
           {exercises.length > 0 && (
             <div className="bg-charcoal-surface border border-charcoal-border rounded-module px-4 py-3 space-y-1.5">
-              <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Session notes</p>
+              <p className="text-micro font-semibold tracking-[0.08em] text-ink-muted">Session notes</p>
               <Textarea
                 value={sessionNotes}
                 onChange={(e) => setSessionNotes(e.target.value)}

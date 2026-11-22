@@ -177,7 +177,7 @@ export default function Lifts() {
                 )}
                 {prTable.length > 0 && (
                   <div className="pt-4">
-                    <p className="mb-1 text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Records by reps</p>
+                    <p className="mb-1 text-micro font-semibold tracking-[0.08em] text-ink-muted">Records by reps</p>
                     <table className="w-full text-caption tabular-nums">
                       <thead>
                         <tr className="text-left text-ink-muted">

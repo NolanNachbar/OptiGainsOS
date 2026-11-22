@@ -60,13 +60,13 @@ export default function PhaseRecommendationCard() {
 
       <div className="type-display text-lg">
         {applied || samePhase ? "Phase: " : "Recommended: "}
-        <span className="text-gold uppercase">{rec.phase}</span>
+        <span className="text-gold">{rec.phase}</span>
         {currentPhase && currentPhase !== rec.phase && !applied && (
           <span className="text-xs font-semibold text-muted-2"> (now: {currentPhase})</span>
         )}
       </div>
       {rec.reverse_diet && (
-        <div className="mt-1 inline-block px-2 py-0.5 rounded-full bg-warn/10 text-warn text-micro font-bold uppercase tracking-wide">
+        <div className="mt-1 inline-block px-2 py-0.5 rounded-full bg-warn/10 text-warn text-micro font-bold">
           End the cut · reverse diet
         </div>
       )}

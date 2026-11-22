@@ -1,4 +1,11 @@
 @tailwind base;
+
+/* Default border colour for every border/divide utility: the soft hairline
+   token, never Tailwind's light-gray default (which reads as a white bar on
+   the dark surfaces). */
+@layer base {
+  *, ::before, ::after { border-color: var(--color-border-soft); }
+}
 @tailwind components;
 @tailwind utilities;
 
@@ -13,7 +20,7 @@
    (button/input/badge/chip/tab) are NOT covered by this selector list and
    keep their own small radius from the compressed tailwind.config.js scale. */
 .surface, .surface-2, .tile, .glass {
-  border-radius: 0;
+  border-radius: var(--r-module);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -290,8 +297,8 @@
   --t-hero:    44px;  --t-hero-lh:    44px;  /* 700, tabular */
 
   /* Radius: three tokens only (mirrors borderRadius in tailwind.config.js). */
-  --r-module:  0;
-  --r-control: 10px;
+  --r-module:  16px;
+  --r-control: 12px;
   --r-pill:    9999px;
 
   /* Spacing: 4px grid, named steps (mirrors spacing in tailwind.config.js).
@@ -520,10 +527,10 @@ svg.rbh path:hover, svg.rbh polygon:hover,
 /* Micro section label — the og-cap. */
 .section-label {
   font-family: var(--font-ui);
-  font-size: 11px;
+  font-size: 13px;
+  line-height: 18px;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: -0.005em;
   color: var(--text-muted);
 }
 

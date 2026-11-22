@@ -88,7 +88,7 @@ export default function PhysiqueTrendChart({ sessions, weightEntries, weightUnit
 
   return (
     <div className={cn("w-full", className)}>
-      <p className="mb-1 text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Body fat, est.</p>
+      <p className="mb-1 text-micro font-semibold tracking-[0.08em] text-ink-muted">Body fat, est.</p>
       <SeriesChart
         data={bf}
         rawKey="value"
@@ -101,7 +101,7 @@ export default function PhysiqueTrendChart({ sessions, weightEntries, weightUnit
       />
       {inRange.length >= 2 && (
         <>
-          <p className="mb-1 mt-4 text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Bodyweight, {weightUnit}</p>
+          <p className="mb-1 mt-4 text-micro font-semibold tracking-[0.08em] text-ink-muted">Bodyweight, {weightUnit}</p>
           <SeriesChart
             data={inRange}
             rawKey="weight"

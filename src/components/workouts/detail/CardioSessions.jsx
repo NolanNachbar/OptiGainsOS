@@ -22,7 +22,7 @@ export default function CardioSessions({ programWorkout }) {
   if (allCardio.length === 0) return null;
   return (
     <div className="space-y-2">
-      <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Conditioning</p>
+      <p className="text-micro font-semibold tracking-[0.08em] text-ink-muted">Conditioning</p>
       {allCardio.map((c, i) => {
         const rtype = String(c.run_type || "").toLowerCase();
         const name = c._name || CARDIO_TYPE_LABEL[rtype] || (c.zone ? `${c.zone} ${c.activity_type || "run"}` : "Run");

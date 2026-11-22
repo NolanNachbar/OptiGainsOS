@@ -91,12 +91,12 @@ function StrengthEntryCard({ entry }) {
         </div>
         <div className="flex-1 min-w-0">
           <h4 className="text-emph font-semibold text-ink truncate">{entry.title}</h4>
-          <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">{hero.label}</span>
+          <span className="text-micro font-semibold tracking-[0.08em] text-ink-muted">{hero.label}</span>
         </div>
         {/* Dominant figure — the row's one hero metric. */}
         <div className="flex items-baseline gap-1 shrink-0">
           <span className="font-technical font-numeral text-display leading-none text-ink whitespace-nowrap">{hero.value}</span>
-          {hero.suffix && <span className="text-caption text-ink-muted uppercase">{hero.suffix}</span>}
+          {hero.suffix && <span className="text-caption text-ink-muted">{hero.suffix}</span>}
         </div>
       </div>
       {/* Stable 4-cell scaffold. Dividers derive from grid position so a wrapped
@@ -108,10 +108,10 @@ function StrengthEntryCard({ entry }) {
             key={cell.label}
             className={`flex flex-col ${i % 3 !== 0 ? 'border-l hairline pl-4' : ''}`}
           >
-            <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">{cell.label}</span>
+            <span className="text-micro font-semibold tracking-[0.08em] text-ink-muted">{cell.label}</span>
             <div className="flex items-baseline gap-1 mt-1">
               <span className={`font-technical font-bold text-emph whitespace-nowrap ${cell.value === '—' ? 'text-ink-faint' : 'text-ink-secondary'}`}>{cell.value}</span>
-              {cell.suffix && <span className="text-caption text-ink-muted uppercase">{cell.suffix}</span>}
+              {cell.suffix && <span className="text-caption text-ink-muted">{cell.suffix}</span>}
             </div>
           </div>
         ))}
@@ -186,12 +186,12 @@ function CardioEntryCard({ entry }) {
         </div>
         <div className="flex-1 min-w-0">
           <h4 className="text-emph font-semibold text-ink truncate">{entry.title}</h4>
-          <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">{hero.label}</p>
+          <p className="text-micro font-semibold tracking-[0.08em] text-ink-muted">{hero.label}</p>
         </div>
         {/* Dominant figure — the row's one hero metric. */}
         <div className="flex items-baseline gap-1 shrink-0">
           <span className="font-technical font-numeral text-display leading-none text-ink whitespace-nowrap">{hero.value}</span>
-          {hero.suffix && <span className="text-caption text-ink-muted uppercase">{hero.suffix}</span>}
+          {hero.suffix && <span className="text-caption text-ink-muted">{hero.suffix}</span>}
         </div>
       </div>
 
@@ -202,10 +202,10 @@ function CardioEntryCard({ entry }) {
               key={cell.label}
               className={`flex flex-col ${i % 3 !== 0 ? 'border-l hairline pl-4' : ''}`}
             >
-              <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">{cell.label}</span>
+              <span className="text-micro font-semibold tracking-[0.08em] text-ink-muted">{cell.label}</span>
               <div className="flex items-baseline gap-1 mt-1">
                 <span className="font-technical font-bold text-emph text-ink-secondary">{cell.value}</span>
-                {cell.suffix && <span className="text-caption text-ink-muted uppercase">{cell.suffix}</span>}
+                {cell.suffix && <span className="text-caption text-ink-muted">{cell.suffix}</span>}
               </div>
             </div>
           ))}
@@ -321,7 +321,7 @@ export function ActivityLogTab({ workoutLogs, cardioSessions, workouts, isLoadin
       <div className="flex items-stretch gap-4 p-4 bg-charcoal-surface2 border border-charcoal-border shadow-lg rounded-control mb-4">
         {/* Hero: This Week */}
         <div className="flex flex-col justify-center shrink-0 pr-4 border-r hairline">
-          <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-1">This Week</span>
+          <span className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-1">This Week</span>
           <span className="font-numeral tabular-nums font-bold leading-none tracking-tight text-display text-ink">
             {thisWeek.length}<span className="text-caption font-semibold text-ink-muted ml-1 align-baseline">sess</span>
           </span>
@@ -329,15 +329,15 @@ export function ActivityLogTab({ workoutLogs, cardioSessions, workouts, isLoadin
         {/* Secondary cells — no redundant 'sess' suffix (the hero owns the unit). */}
         <div className="flex-1 grid grid-cols-3 gap-3">
           <div className="flex flex-col justify-center">
-            <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-0.5">Strength</span>
+            <span className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-0.5">Strength</span>
             <span className="font-technical font-bold text-title text-ink">{weekStrength}</span>
           </div>
           <div className="flex flex-col justify-center">
-            <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-0.5">Cardio</span>
+            <span className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-0.5">Cardio</span>
             <span className="font-technical font-bold text-title text-ink">{weekCardio}</span>
           </div>
           <div className="flex flex-col justify-center">
-            <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-0.5">Distance</span>
+            <span className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-0.5">Distance</span>
             <span className="font-technical font-bold text-title text-ink">
               {weekMiles > 0 ? weekMiles.toFixed(1) : 0}<span className="text-caption font-semibold text-ink-muted ml-1 align-baseline">mi</span>
             </span>
@@ -379,7 +379,7 @@ export function ActivityLogTab({ workoutLogs, cardioSessions, workouts, isLoadin
             <section key={label} className={`${['rise-in', 'rise-in-2', 'rise-in-3'][Math.min(i, 2)]} ${i > 0 ? 'border-t hairline pt-3' : ''}`}>
               {/* Day header — its own tier (heavier + brighter) so it reads above
                   the in-card stat captions that share text-micro. */}
-              <h3 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted !font-extrabold text-ink mb-2.5">{label}</h3>
+              <h3 className="text-micro font-semibold tracking-[0.08em] text-ink-muted !font-extrabold text-ink mb-2.5">{label}</h3>
               <div className="space-y-2">
                 {entries.map(entry =>
                   entry.type === 'strength' ? (

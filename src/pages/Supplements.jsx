@@ -189,7 +189,7 @@ function SupplementForm({ initial, onSave, onClose }) {
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 // Units show in lowercase whatever was typed or seeded ("G" -> "g",
-// "MG" -> "mg"), except IU, which stays an uppercase abbreviation.
+// "MG" -> "mg"), except IU, which stays an abbreviation.
 function formatUnit(u) {
   if (!u) return "";
   const t = String(u).trim();

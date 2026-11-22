@@ -155,14 +155,14 @@ export default function Coach() {
         {/* Setup panel — lead with the working form so the input and CTA are
             reachable above the fold, not buried under a marketing explainer. */}
         <div className="bg-charcoal-surface border border-charcoal-border px-4 pt-4 pb-4 rise-in">
-          <div className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-2">The lift</div>
+          <div className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-2">The lift</div>
           <Input
             value={exercise} onChange={(e) => setExercise(e.target.value)}
             placeholder="e.g. Back squat, conventional deadlift"
             disabled={busy}
             className="mb-3"
           />
-          <div className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-2">What to look at (optional)</div>
+          <div className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-2">What to look at (optional)</div>
           <Input
             value={notes} onChange={(e) => setNotes(e.target.value)}
             placeholder="e.g. Knees cave on the way up?"
@@ -221,7 +221,7 @@ export default function Coach() {
         {/* Past reviews */}
         {!loadingReviews && reviews.length > 0 && (
           <div className="mt-6">
-            <div className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-2 flex items-center gap-1.5">
+            <div className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-2 flex items-center gap-1.5">
               <History className="w-3.5 h-3.5" /> Past reviews
             </div>
             <div className="space-y-2">
@@ -299,13 +299,13 @@ function Critique({ c, embedded = false }) {
     <div className={embedded ? "space-y-4" : "bg-charcoal-surface border border-charcoal-border px-4 py-4 mt-4 rise-in space-y-4"}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-1">{c.exercise || "Form review"}</div>
+          <div className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-1">{c.exercise || "Form review"}</div>
           <p className="text-sm text-secondary">{c.overall}</p>
         </div>
         {typeof c.rating === "number" && (
           <div className="text-right shrink-0">
             <div className={`type-display text-2xl ${RATING_COLOR(c.rating)}`}>{c.rating}<span className="text-sm text-muted-2">/10</span></div>
-            {c.confidence && <div className="text-caption uppercase tracking-wide text-muted-2">{c.confidence} confidence</div>}
+            {c.confidence && <div className="text-caption text-muted-2">{c.confidence} confidence</div>}
           </div>
         )}
       </div>
@@ -322,7 +322,7 @@ function Critique({ c, embedded = false }) {
 
       {Array.isArray(c.fixes) && c.fixes.length > 0 && (
         <div>
-          <div className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-2">Fixes, in order</div>
+          <div className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-2">Fixes, in order</div>
           <div className="space-y-2.5">
             {c.fixes.map((f, i) => (
               <div key={i} className="rounded-lg bg-white/[0.03] px-3 py-2">
@@ -337,7 +337,7 @@ function Critique({ c, embedded = false }) {
 
       {Array.isArray(c.good) && c.good.length > 0 && (
         <div>
-          <div className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-2">Working well</div>
+          <div className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-2">Working well</div>
           <div className="space-y-1">
             {c.good.map((g, i) => (
               <div key={i} className="flex items-start gap-1.5 text-xs text-secondary">

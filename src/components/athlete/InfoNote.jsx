@@ -6,7 +6,7 @@ import { Info, ChevronDown } from "lucide-react";
 export default function InfoNote({ children, label = "What do these mean?" }) {
   return (
     <details className="group mt-1">
-      <summary className="list-none flex items-center gap-1.5 cursor-pointer min-h-[44px] py-2.5 text-micro font-bold uppercase tracking-[0.08em] text-faint hover:text-muted-2 transition-colors duration-200 ease-[var(--ease)]">
+      <summary className="list-none flex items-center gap-1.5 cursor-pointer min-h-[44px] py-2.5 text-micro font-bold tracking-[0.08em] text-faint hover:text-muted-2 transition-colors duration-200 ease-[var(--ease)]">
         <Info className="w-3.5 h-3.5" />
         <span>{label}</span>
         <ChevronDown className="w-3.5 h-3.5 transition-transform duration-200 ease-[var(--ease)] group-open:rotate-180" />

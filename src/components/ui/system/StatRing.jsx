@@ -52,7 +52,7 @@ export default function StatRing({
           </div>
         )}
         <div
-          className="mt-0.5 uppercase font-bold text-muted-2"
+          className="mt-0.5 font-bold text-muted-2"
           style={{ fontSize: Math.max(8, size * 0.085), letterSpacing: "0.08em" }}
         >
           {label}

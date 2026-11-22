@@ -260,7 +260,7 @@ export default function WorkoutLoggingHeader({
                   className="absolute right-0 top-full mt-1.5 w-[248px] bg-charcoal-surface2 border border-charcoal-border shadow-lg rounded-control p-3 z-[10200] text-ink"
                 >
                   <div className="flex items-baseline justify-between pb-2">
-                    <span className="text-micro font-technical font-bold uppercase tracking-wider text-ink-muted">Rest</span>
+                    <span className="text-micro font-technical font-bold text-ink-muted">Rest</span>
                     <span className="font-technical text-display leading-none font-extrabold tabular-nums">
                       {restTimer === 0 ? '0:00' : formatRestTime(restTimer)}
                     </span>
@@ -331,7 +331,7 @@ export default function WorkoutLoggingHeader({
               type="button"
               onClick={onRenameTitle}
               aria-label="Rename session"
-              className="flex items-center gap-1.5 max-w-full min-h-[32px] text-left text-caption font-bold uppercase tracking-[0.02em] text-ink-muted touch-manipulation"
+              className="flex items-center gap-1.5 max-w-full min-h-[32px] text-left text-caption font-bold tracking-[0.02em] text-ink-muted touch-manipulation"
             >
               <span className="truncate">
                 {workoutTitle}
@@ -340,7 +340,7 @@ export default function WorkoutLoggingHeader({
               <Pencil className="w-3 h-3 flex-shrink-0 text-ink-faint" aria-hidden="true" />
             </button>
           ) : (
-            <div className="text-caption font-bold uppercase tracking-[0.02em] text-ink-muted truncate py-1">
+            <div className="text-caption font-bold tracking-[0.02em] text-ink-muted truncate py-1">
               {workoutTitle}
               {totalSets > 0 && <span className="text-ink-faint"> · {doneSets}/{totalSets} sets</span>}
             </div>

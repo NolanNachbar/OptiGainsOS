@@ -430,7 +430,7 @@ export function RecipeFormDialog({ open, onOpenChange, recipe, userId }) {
                                 />
                               ))}
                               {matchingCustomFoods.length > 0 && searchResults.length > 0 && (
-                                <div className="px-4 py-1.5 bg-charcoal-surface text-caption font-medium text-ink-muted uppercase tracking-wide">
+                                <div className="px-4 py-1.5 bg-charcoal-surface text-caption font-medium text-ink-muted">
                                   USDA Database
                                 </div>
                               )}

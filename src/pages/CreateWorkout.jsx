@@ -330,13 +330,13 @@ export default function CreateWorkout() {
 
               {/* Quiet supporting row (create-workout-4): Folder / Type /
                   Duration are metadata under the prominent Title, so they wear
-                  the smaller text-micro eyebrow voice (uppercase, faint
+                  the smaller text-micro eyebrow voice (, faint
                   ink) and a tighter internal gap than the Title block — one
                   demoted group, not three peer fields competing with the
                   subject above. */}
               <div className="space-y-2">
                 <div>
-                  <Label htmlFor="folder" className="text-caption uppercase tracking-[0.06em] text-ink-faint">Folder</Label>
+                  <Label htmlFor="folder" className="text-caption tracking-[0.06em] text-ink-faint">Folder</Label>
                   <Combobox
                     value={workout.folder}
                     onValueChange={(value) => setWorkout({ ...workout, folder: value })}
@@ -352,7 +352,7 @@ export default function CreateWorkout() {
 
                 <div className="grid grid-cols-2 gap-2 sm:gap-4">
                   <div>
-                    <Label htmlFor="type" className="text-caption uppercase tracking-[0.06em] text-ink-faint">Workout Type *</Label>
+                    <Label htmlFor="type" className="text-caption tracking-[0.06em] text-ink-faint">Workout Type *</Label>
                     <Select value={workout.focus} onValueChange={handleTypeChange}>
                       <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -364,7 +364,7 @@ export default function CreateWorkout() {
                   </div>
 
                   <div>
-                    <Label htmlFor="duration" className="text-caption uppercase tracking-[0.06em] text-ink-faint">Duration (min) *</Label>
+                    <Label htmlFor="duration" className="text-caption tracking-[0.06em] text-ink-faint">Duration (min) *</Label>
                     <Input
                       id="duration"
                       type="number" inputMode="numeric"
@@ -634,7 +634,7 @@ function CardioStepCard({ index, step, canRemove, onRemove, onChange }) {
   return (
     <div className="bg-charcoal-surface2 rounded-control p-3 sm:p-4 border-l-[3px] border-l-charcoal-border rise-in">
         <div className="flex justify-between items-start mb-3 sm:mb-4">
-          <span className="text-xs font-bold uppercase tracking-[0.06em] text-ink-muted">
+          <span className="text-xs font-bold tracking-[0.06em] text-ink-muted">
             Step {index + 1}
           </span>
           {canRemove && (

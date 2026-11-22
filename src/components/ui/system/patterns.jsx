@@ -34,7 +34,7 @@ export function PageHeader({ eyebrow, title, meta, action, back, mobileTitle = f
     <header className={cn("flex items-end justify-between gap-3 px-gutter pt-4 pb-3", mobileEmpty && "hidden lg:flex", className)}>
       <div className="min-w-0 flex-1">
         {back}
-        {eyebrow && <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">{eyebrow}</p>}
+        {eyebrow && <p className="text-micro font-semibold tracking-[0.08em] text-ink-muted">{eyebrow}</p>}
         {title && (
           <Tag className={cn("text-display font-semibold tracking-[-0.02em] text-ink truncate", !mobileTitle && "hidden lg:block")}>{title}</Tag>
         )}
@@ -131,7 +131,7 @@ const statValue = cva("font-numeral tabular-nums tracking-[-0.02em] leading-none
 export function Stat({ label, value, unit, delta, reason, size = "md", hue = "none", align = "left", truncate = false, className = "" }) {
   return (
     <div className={cn("min-w-0", align === "center" && "text-center", className)}>
-      {label && <p className="mb-1 text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">{label}</p>}
+      {label && <p className="mb-1 text-micro font-semibold tracking-[0.08em] text-ink-muted">{label}</p>}
       <p className="flex items-baseline gap-1 whitespace-nowrap" style={align === "center" ? { justifyContent: "center" } : undefined}>
         <span className={statValue({ size, hue })}>{value ?? "--"}</span>
         {unit && <span className={cn("font-normal text-ink-muted", size === "lg" ? "text-title" : "text-caption")}>{unit}</span>}

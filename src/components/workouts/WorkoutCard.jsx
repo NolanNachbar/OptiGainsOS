@@ -179,13 +179,13 @@ export default function WorkoutCard({ workout, userId, onEdit, onClone, onDelete
               card's dominant element, not the two metrics under it. */}
           <div className="flex">
             <div className="flex-1 flex flex-col">
-              <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Duration</span>
+              <span className="text-micro font-semibold tracking-[0.08em] text-ink-muted">Duration</span>
               <span className={`font-technical font-bold text-emph mt-0.5 ${validDuration ? "text-ink-secondary" : "text-ink-faint"}`}>
                 {validDuration ? `${validDuration} min` : "--"}
               </span>
             </div>
             <div className="flex-1 flex flex-col border-l hairline pl-4">
-              <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Exercises</span>
+              <span className="text-micro font-semibold tracking-[0.08em] text-ink-muted">Exercises</span>
               <span className="font-technical font-bold text-emph text-ink-secondary mt-0.5">{workout.exercises?.length || 0}</span>
             </div>
           </div>

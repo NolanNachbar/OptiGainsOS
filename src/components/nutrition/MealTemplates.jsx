@@ -405,7 +405,7 @@ function ApplyTemplateDialog({ open, onOpenChange, template, userId }) {
             <p className="section-label">Items to add ({template.items?.length || 0})</p>
             {/* Template total summary */}
             <div className="flex items-center justify-between gap-3 mt-2 px-3 py-2.5 rounded-lg glass-inset">
-              <span className="text-caption text-ink-muted uppercase tracking-wide">Total</span>
+              <span className="text-caption text-ink-muted">Total</span>
               <div className="flex gap-3 text-caption tabular-nums">
                 <span className="text-ink font-semibold">{Math.round(totals.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
                 <span className="text-coral font-semibold">P{Math.round(totals.protein)}g</span>
@@ -620,7 +620,7 @@ function EditTemplateDialog({ open, onOpenChange, template, onSave, isSaving, on
                 owns its hue: calories=gold, P=coral, C=carb, F=fat. */}
             {items.length > 0 && (
               <div className="sticky top-0 z-10 -mx-6 px-6 py-2 glass-sheet border-b border-charcoal-border/50 flex items-center justify-between gap-3">
-                <span className="text-caption text-ink-muted uppercase tracking-wide">Total</span>
+                <span className="text-caption text-ink-muted">Total</span>
                 <div className="flex gap-3 text-caption tabular-nums">
                   <span className="text-ink font-semibold">{Math.round(editTotals.calories)}<span className="text-ink-muted font-normal ml-0.5">cal</span></span>
                   <span className="text-coral font-semibold">P{Math.round(editTotals.protein)}g</span>

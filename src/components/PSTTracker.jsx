@@ -22,13 +22,13 @@ const PST_TARGETS = {
 };
 
 // Shared section-header pattern (mirrors the SectionHeader in AthleteState):
-// hue-coded icon + text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted heading. Kept local since the AthleteState
+// hue-coded icon + text-micro font-semibold tracking-[0.08em] text-ink-muted heading. Kept local since the AthleteState
 // copy is not exported; markup is intentionally identical so siblings match.
 function SectionHeader({ icon: Icon, title, color = "text-teal" }) {
   return (
     <div className="flex items-center gap-2">
       <Icon className={`w-3.5 h-3.5 ${color}`} />
-      <h2 className="text-micro font-semibold uppercase tracking-[0.08em] text-ink">{title}</h2>
+      <h2 className="text-micro font-semibold tracking-[0.08em] text-ink">{title}</h2>
     </div>
   );
 }
@@ -213,7 +213,7 @@ export default function PSTTracker() {
     <Card className="bg-charcoal-surface border border-charcoal-border transition-colors duration-base hover:bg-charcoal-surface2">
       <CardHeader className="pb-2 pt-4 px-5">
         <div className="flex items-center justify-between gap-2">
-          {/* Shared SectionHeader pattern (icon + text-micro font-semibold uppercase tracking-[0.08em] text-ink),
+          {/* Shared SectionHeader pattern (icon + text-micro font-semibold tracking-[0.08em] text-ink),
               matching the AthleteState sibling cards, with Log Test kept as a
               trailing action. Waves carries the endurance hue (teal). */}
           <SectionHeader icon={Waves} title="PST Performance" />
@@ -245,7 +245,7 @@ export default function PSTTracker() {
             {/* Comparison with previous */}
             {prev && (
               <div className="mt-3 pt-3 border-t hairline">
-                <p className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted mb-2">vs previous ({format(parseISO(prev.test_date), "MMM d, yyyy")})</p>
+                <p className="text-micro font-semibold tracking-[0.08em] text-ink-muted mb-2">vs previous ({format(parseISO(prev.test_date), "MMM d, yyyy")})</p>
                 <div className="grid grid-cols-5 gap-1 text-center text-caption">
                   {[
                     { label: "Swim", cur: latest.swim_seconds, prv: prev.swim_seconds, lower: true },

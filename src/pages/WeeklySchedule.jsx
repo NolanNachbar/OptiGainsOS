@@ -44,6 +44,19 @@ function formatDuration(seconds) {
   return `${h}:${String(m).padStart(2, "0")}`;
 }
 
+// Program day titles arrive as "Day 28 - Lower Squat (Hypertrophy)". Split them
+// into a short name and a meta line so rows don't truncate mid-word.
+function splitDayTitle(raw) {
+  if (!raw) return { name: raw, meta: null };
+  let name = String(raw).trim();
+  const meta = [];
+  const day = name.match(/^Day\s+(\d+)\s*[-–:·]\s*/i);
+  if (day) { meta.push(`Day ${day[1]}`); name = name.slice(day[0].length); }
+  const paren = name.match(/\s*\(([^)]+)\)\s*$/);
+  if (paren) { meta.push(paren[1]); name = name.slice(0, paren.index); }
+  return { name, meta: meta.length ? meta.join(" · ") : null };
+}
+
 const TYPE_LABELS = {
   STRENGTH: "Strength",
   CARDIO: "Cardio",
@@ -221,7 +234,7 @@ export default function WeeklySchedule() {
   // Day echo folded into each card's section-label so identity survives without
   // a redundant standalone caption above the card (e.g. "Fri — Completed").
   // ONE casing convention: source strings stay title-case ("Fri — Completed");
-  // .section-label owns the uppercase transform so every echo renders the same
+  // .section-label owns the transform so every echo renders the same
   // way without each call-site pre-uppercasing (which fought the title-cased
   // words after the em-dash).
   const dayEcho = format(selectedDay, "EEE");
@@ -256,7 +269,8 @@ export default function WeeklySchedule() {
   const heroTitle = selectedLog
     ? getWorkoutSplitTitle(selectedLog, selectedEntries[0]?.title)
     : (selectedEntries[0]?.title || "Session");
-  const heroEyebrow = `${isToday ? "Today" : dayEcho}, ${selectedLog ? "Logged" : (activeEnrollment?.program?.title || "Planned")}`;
+  const heroSplit = splitDayTitle(heroTitle);
+  const heroEyebrow = [isToday ? "Today" : dayEcho, selectedLog ? "Logged" : heroSplit.meta].filter(Boolean).join(" · ");
 
   // Weekly per-muscle SET volume — aggregate prescribed hard sets across the
   // displayed week (Mon–Sun) per muscle group. Surfaces the Program Synthesis
@@ -366,15 +380,15 @@ export default function WeeklySchedule() {
                 chevron={!isRest && !log && !isCurrentDay}
                 leading={
                   <span className={cn("w-[38px] text-center tabular-nums", isCurrentDay ? "text-ink" : "text-ink-muted")}>
-                    <span className="block text-micro font-semibold uppercase tracking-[0.08em]">{format(day, "EEE").slice(0, 2)}</span>
+                    <span className="block text-caption font-medium">{format(day, "EEE")}</span>
                     <span className="block text-emph font-semibold">{format(day, "d")}</span>
                   </span>
                 }
-                title={<span className={cn(isRest && "text-ink-muted font-normal", log && "text-ink-secondary")}>{isRest ? "Rest" : detail || "Session"}</span>}
-                detail={showType ? TYPE_LABELS[type] : undefined}
+                title={<span className={cn(isRest && "text-ink-muted font-normal", log && "text-ink-secondary")}>{isRest ? "Rest" : splitDayTitle(detail).name || "Session"}</span>}
+                detail={!isRest ? (splitDayTitle(detail).meta || (showType ? TYPE_LABELS[type] : undefined)) : undefined}
                 trailing={
                   isCurrentDay && !isRest && !log ? (
-                    <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink">Up next</span>
+                    <span className="text-caption font-semibold text-charcoal bg-ink rounded-pill px-2.5 py-1">Today</span>
                   ) : log && !isSelected ? (
                     <CheckCircle2 aria-label="Logged" className="w-4 h-4 text-leaf" />
                   ) : null
@@ -412,7 +426,7 @@ export default function WeeklySchedule() {
             <Card>
               <CardHeader>
                 <SectionLabel>{heroEyebrow}</SectionLabel>
-                <CardTitle>{heroTitle}</CardTitle>
+                <CardTitle>{heroSplit.name}</CardTitle>
               </CardHeader>
               <CardContent>
                 <Stat
@@ -434,7 +448,7 @@ export default function WeeklySchedule() {
                     aria-expanded={showCompleted}
                     className="w-full min-h-tap px-gutter py-3 flex items-center justify-between gap-3 text-left transition-colors duration-base active:bg-charcoal-surface2"
                   >
-                    <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">
+                    <span className="text-micro font-semibold tracking-[0.08em] text-ink-muted">
                       {showCompleted ? "Hide exercises" : "View exercises"}
                     </span>
                     <ChevronDown className={cn("w-4 h-4 text-ink-muted shrink-0 transition-transform duration-base", showCompleted && "rotate-180")} />
@@ -546,7 +560,7 @@ export default function WeeklySchedule() {
                   aria-expanded={showVolume}
                   className="w-full min-h-tap px-gutter py-3 flex items-center justify-between transition-colors duration-base active:bg-charcoal-surface2"
                 >
-                  <span className="text-micro font-semibold uppercase tracking-[0.08em] text-ink-muted">Weekly volume</span>
+                  <span className="text-micro font-semibold tracking-[0.08em] text-ink-muted">Weekly volume</span>
                   <span className="flex items-center gap-2">
                     <span className="text-caption text-ink-muted tabular-nums">
                       {totalWeeklySets} sets · {muscleVolume.length} muscles
