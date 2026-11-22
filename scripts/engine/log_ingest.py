@@ -74,37 +74,21 @@ def proximity_fatigue_factor(sets, coeff: float = EFFORT_COST_PRIOR,
         return 1.0
     return weighted / total_vol
 
-# Canonical exercise names (collapse case/plural/spacing dups).
-ALIASES = {
-    "bench": "Bench Press",
-    "bench press": "Bench Press",
-    "dumbbell bench": "Dumbbell Bench Press",
-    "barbell squats": "Barbell Squat",
-    "zercher squats": "Zercher Squat",
-    "chest-supported row": "Chest-Supported Row",
-    "chest-supported rows": "Chest-Supported Row",
-    "chest-supported row (machine)": "Chest-Supported Row",
-    "lat pulldowns": "Lat Pulldown",
-    "rdl": "Romanian Deadlift",
-    "calf raises": "Calf Raise",
-    "hanging leg raises": "Hanging Leg Raise",
-    "weighted pull-ups": "Weighted Pull-Up",
-    "pull-up": "Weighted Pull-Up",
-    "barbell curls": "Barbell Curl",
-    "db curls": "Dumbbell Curl",
-    "lateral raises": "Lateral Raise",
-}
+# Canonical exercise names and abbreviation expansion live in ONE catalog shared
+# with the app (src/data/exerciseCatalog.json), so the engine and the UI can never
+# disagree on which logged names are the same exercise. Abbreviation tokens are
+# expanded before alias lookup so "DB Bench" and "Dumbbell Bench Press" collide.
+import json as _json
+from pathlib import Path as _Path
 
-# Abbreviation tokens expanded before alias lookup so "DB Bench" and
-# "Dumbbell Bench Press" collide to one identity instead of reading as a swap.
-ABBREVIATIONS = {
-    "db":  "dumbbell",
-    "bb":  "barbell",
-    "kb":  "kettlebell",
-    "ohp": "overhead press",
-    "rdl": "romanian deadlift",
-    "dl":  "deadlift",
-}
+_CATALOG_PATH = _Path(__file__).resolve().parents[2] / "src" / "data" / "exerciseCatalog.json"
+CATALOG = _json.loads(_CATALOG_PATH.read_text())
+ALIASES = dict(CATALOG["aliases"])
+ABBREVIATIONS = dict(CATALOG["abbreviations"])
+# Display-only role folding ("Bench Press (Top Set)" -> the paused comp bench).
+# The engine's own goal grouping stays in GOAL_LIFTS below.
+ROLE_MAP = dict(CATALOG.get("role_map", {}))
+EXERCISES = dict(CATALOG["exercises"])
 
 # Big-three GOAL lifts = COMPETITION variants only. Per Nolan (2026-06-05):
 #   - Bench goal is the legit PAUSED competition bench, NOT the touch-and-go

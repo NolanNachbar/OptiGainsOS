@@ -16,8 +16,9 @@ import { workSets, isWarmupSet } from "./setTypes";
  * coachingEngine.js:65 already keys on `(ex.name || '').toLowerCase().trim()`,
  * so this makes the stats agree with the engine rather than inventing a rule.
  */
-const sameExercise = (a, b) =>
-  (a || "").toLowerCase().trim() === (b || "").toLowerCase().trim();
+// Same-exercise test now follows the shared catalog (aliases, abbreviations,
+// plurals), the same identity the engine uses.
+import { sameExercise, displayExercise, exerciseInfo } from "@/utils/exerciseCatalog";
 
 // Warm-up sets are not work: they never count toward volume, e1RM, PRs or
 // "last time". See utils/setTypes.js for the full mark semantics.
@@ -348,8 +349,7 @@ export const isE1rmEligibleSet = (s) =>
  * @param {string} name
  * @returns {string}
  */
-const normalizeExerciseName = (name) =>
-  (name || "").toLowerCase().trim().replace(/[\s-]+/g, " ");
+const normalizeExerciseName = (name) => displayExercise(name).toLowerCase();
 
 /**
  * Per-session estimated 1RM history for one exercise: the best (highest)
@@ -422,8 +422,11 @@ export const getLoggedExerciseSummaries = (logs) => {
         group = { displayName: ex.name, displayDate: log.log_date, sessions: [] };
         groups.set(key, group);
       }
-      // Most recently logged spelling wins for display.
-      if (log.log_date >= group.displayDate) {
+      // A catalogued lift shows its canonical name; anything else keeps the
+      // most recently logged spelling.
+      if (exerciseInfo(ex.name)) {
+        group.displayName = displayExercise(ex.name);
+      } else if (log.log_date >= group.displayDate) {
         group.displayName = ex.name;
         group.displayDate = log.log_date;
       }

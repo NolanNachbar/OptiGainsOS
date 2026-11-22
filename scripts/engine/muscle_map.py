@@ -309,6 +309,20 @@ SORENESS_REGION_MUSCLES: dict[str, list[str]] = {
 }
 
 
+def _catalog_entry(exercise_name: str):
+    """Catalog record for a logged name (alias, abbreviation, plural and set-role
+    variants all resolve), or None when the catalog doesn't know it."""
+    from engine.log_ingest import canon, ROLE_MAP, EXERCISES
+    key = " ".join((exercise_name or "").split()).lower()
+    name = ROLE_MAP.get(key) or canon(exercise_name)
+    return EXERCISES.get(name) or _EXERCISES_LOWER().get(name.lower())
+
+
+def _EXERCISES_LOWER():
+    from engine.log_ingest import EXERCISES
+    return {k.lower(): v for k, v in EXERCISES.items()}
+
+
 def get_muscles(exercise_name: str) -> list[str]:
     """Analysis-vocab muscles trained by an exercise (keyword substring match).
     A keyword contained in an already-matched longer keyword is suppressed, so
@@ -318,6 +332,9 @@ def get_muscles(exercise_name: str) -> list[str]:
 
     The name is normalized (hyphens to spaces) before matching, so "Weighted
     Pull-up" resolves against the "pull up" keyword."""
+    entry = _catalog_entry(exercise_name)
+    if entry:
+        return list(dict.fromkeys(entry["primary"] + entry["secondary"]))
     name = _norm(exercise_name)
     found: set[str] = set()
     matched: list[str] = []
@@ -337,6 +354,14 @@ def get_muscle_credit(exercise_name: str) -> dict:
     name = _norm(exercise_name)
     if any(kw in name for kw in VOLUME_EXEMPT_KEYWORDS):
         return {}
+    entry = _catalog_entry(exercise_name)
+    if entry:
+        # Same convention as the keyword map: first-listed muscle is the target
+        # (full set), everything else is a synergist (half set).
+        if entry.get("volume_exempt"):
+            return {}
+        ordered = list(dict.fromkeys(entry["primary"] + entry["secondary"]))
+        return {m: (1.0 if i == 0 else SECONDARY_MUSCLE_CREDIT) for i, m in enumerate(ordered)}
     matched: list[str] = []
     credit: dict[str, float] = {}
     for kw in _MUSCLE_KEYWORDS:

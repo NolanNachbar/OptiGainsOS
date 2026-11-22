@@ -5,6 +5,8 @@
    the dark surfaces). */
 @layer base {
   *, ::before, ::after { border-color: var(--color-border-soft); }
+  /* The page itself never scrolls sideways; wide rails scroll inside their own box. */
+  html, body { overflow-x: clip; }
 }
 @tailwind components;
 @tailwind utilities;

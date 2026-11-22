@@ -7,6 +7,18 @@ import { queryKeys } from "@/lib/queryKeys";
 import { PageHeader, Button, Card, CardHeader, CardTitle, CardDescription, ListRow, EmptyState, LoadingState, cn } from "@/components/ui";
 import ExerciseProgressChart from "@/components/progress/ExerciseProgressChart";
 import { getLoggedExerciseSummaries, getRepPRTable } from "@/utils/exerciseStats";
+import { exerciseInfo } from "@/utils/exerciseCatalog";
+
+// Muscle groups for the filter row, in the engine's muscle vocabulary.
+const MUSCLE_GROUPS = [
+  ["Chest", ["chest", "upper_chest"]],
+  ["Back", ["back", "traps", "lower_back"]],
+  ["Shoulders", ["shoulders", "side_delts", "rear_delts"]],
+  ["Arms", ["biceps", "triceps", "forearms"]],
+  ["Legs", ["quads", "hamstrings", "glutes", "adductors", "calves"]],
+  ["Core", ["abs", "neck"]],
+];
+const muscleLabel = (m) => m.replace("_", " ").replace(/^\w/, (c) => c.toUpperCase());
 import { format, parseISO } from "date-fns";
 import { ChevronDown, Search } from "lucide-react";
 
@@ -37,6 +49,7 @@ export default function Lifts() {
   const weightUnit = profile?.weight_unit || "lbs";
   const [expanded, setExpanded] = useState(null);
   const [query, setQuery] = useState("");
+  const [group, setGroup] = useState(null);
   const [visibleCount, setVisibleCount] = useState(LIFTS_PAGE);
 
   const { data: workoutLogs = [], isLoading } = useQuery({
@@ -55,10 +68,16 @@ export default function Lifts() {
   );
 
   const q = query.trim().toLowerCase();
-  const filtered = useMemo(
-    () => (q ? summaries.filter((s) => s.name.toLowerCase().includes(q)) : summaries),
-    [summaries, q]
-  );
+  const filtered = useMemo(() => {
+    const groupMuscles = group ? MUSCLE_GROUPS.find(([g]) => g === group)[1] : null;
+    return summaries.filter((s) => {
+      const info = exerciseInfo(s.name);
+      const muscles = info ? [...info.primary, ...info.secondary] : [];
+      if (groupMuscles && !(info && info.primary.some((m) => groupMuscles.includes(m)))) return false;
+      if (!q) return true;
+      return s.name.toLowerCase().includes(q) || muscles.some((m) => m.replace("_", " ").includes(q));
+    });
+  }, [summaries, q, group]);
   // An open row stays in view even if the page cut would hide it.
   const shown = useMemo(() => {
     const page = filtered.slice(0, visibleCount);
@@ -72,7 +91,7 @@ export default function Lifts() {
 
   const shell = (children) => (
     <div
-      className="min-h-full max-w-[720px] mx-auto"
+      className="min-h-full max-w-[720px] mx-auto px-4"
       style={{ paddingBottom: "calc(var(--floating-chrome-bottom) + 64px)" }}
     >
       <PageHeader className="max-lg:[&_h1]:sr-only" title="Lifts" meta={summaries.length > 0 ? `${summaries.length} logged, latest first` : undefined} />
@@ -111,8 +130,24 @@ export default function Lifts() {
           />
         </label>
       </div>
+      <div className="flex gap-2 overflow-x-auto no-scrollbar px-gutter pb-3" role="group" aria-label="Filter by muscle group">
+        {[null, ...MUSCLE_GROUPS.map(([g]) => g)].map((g) => (
+          <button
+            key={g || "all"}
+            type="button"
+            aria-pressed={group === g}
+            onClick={() => { setGroup(g); setVisibleCount(LIFTS_PAGE); }}
+            className={cn(
+              "shrink-0 min-h-[36px] rounded-pill px-3.5 text-caption font-semibold transition-colors duration-fast",
+              group === g ? "bg-ink text-charcoal" : "bg-charcoal-surface2 text-ink-secondary"
+            )}
+          >
+            {g || "All"}
+          </button>
+        ))}
+      </div>
       {filtered.length === 0 && (
-        <p className="px-gutter py-4 text-caption text-ink-muted">No lift matches "{query.trim()}".</p>
+        <p className="px-gutter py-4 text-caption text-ink-muted">No lift matches {query.trim() ? `"${query.trim()}"` : "this group"}.</p>
       )}
       {shown.map((s) => {
         const isOpen = expanded === s.name;
@@ -133,11 +168,13 @@ export default function Lifts() {
           unit = "reps";
         }
         const change = visibleChange(s);
+        const info = exerciseInfo(s.name);
+        const muscles = info ? [...info.primary, ...info.secondary].map(muscleLabel).join(", ") : null;
         return (
           <div key={s.name} className="border-b border-charcoal-borderSoft last:border-b-0">
             <ListRow
               title={s.name}
-              detail={`${format(parseISO(s.lastDate), "MMM d")} \u00b7 ${s.count} session${s.count === 1 ? "" : "s"}`}
+              detail={`${muscles ? `${muscles} \u00b7 ` : ""}${format(parseISO(s.lastDate), "MMM d")} \u00b7 ${s.count} session${s.count === 1 ? "" : "s"}`}
               value={value ?? "--"}
               unit={unit}
               chevron={false}

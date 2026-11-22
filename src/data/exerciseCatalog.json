@@ -1,0 +1,691 @@
+{
+  "_doc": "Single source of exercise identity for the app (src/utils/exerciseCatalog.js) and the engine (scripts/engine/log_ingest.py, muscle_map.py). aliases: lowercase logged name -> canonical name. roles: set-role suffixes that fold into the base exercise for display. exercises: canonical name -> muscles (engine analysis vocab), movement pattern, equipment. Muscles: primary first; secondary are synergists credited at half volume by the engine.",
+  "abbreviations": {
+    "db": "dumbbell",
+    "bb": "barbell",
+    "kb": "kettlebell",
+    "ohp": "overhead press",
+    "rdl": "romanian deadlift",
+    "dl": "deadlift",
+    "oh": "overhead",
+    "tricep": "triceps",
+    "bicep": "biceps",
+    "flyes": "fly",
+    "flys": "fly",
+    "peck": "pec"
+  },
+  "aliases": {
+    "bench": "Bench Press",
+    "bench press": "Bench Press",
+    "dumbbell bench": "Dumbbell Bench Press",
+    "barbell squats": "Barbell Squat",
+    "zercher squats": "Zercher Squat",
+    "chest-supported row": "Chest-Supported Row",
+    "chest-supported rows": "Chest-Supported Row",
+    "chest-supported row (machine)": "Chest-Supported Row",
+    "chest supported row": "Chest-Supported Row",
+    "lat pulldowns": "Lat Pulldown",
+    "rdl": "Romanian Deadlift",
+    "calf raises": "Calf Raise",
+    "hanging leg raises": "Hanging Leg Raise",
+    "weighted pull-ups": "Weighted Pull-Up",
+    "pull-up": "Weighted Pull-Up",
+    "barbell curls": "Barbell Curl",
+    "db curls": "Dumbbell Curl",
+    "lateral raises": "Lateral Raise",
+    "weighted pull-up": "Weighted Pull-Up",
+    "weighted dip": "Weighted Dip",
+    "weighted dips": "Weighted Dip",
+    "leg extension": "Leg Extension",
+    "leg extensions": "Leg Extension",
+    "face pull": "Face Pull",
+    "face pulls": "Face Pull",
+    "dumbbell curl": "Dumbbell Curl",
+    "biceps curl": "Dumbbell Curl",
+    "cable triceps pushdown": "Cable Triceps Pushdown",
+    "cable triceps extension": "Cable Triceps Pushdown",
+    "triceps overhead extension": "Overhead Triceps Extension",
+    "rear delt fly": "Rear Delt Fly",
+    "reverse pec deck": "Rear Delt Fly",
+    "hamstring curl": "Seated Leg Curl",
+    "leg curl": "Seated Leg Curl",
+    "seated or lying leg curl": "Seated Leg Curl",
+    "incline dumbbell press": "Incline Dumbbell Press",
+    "incline dumbbell curl": "Incline Dumbbell Curl",
+    "incline dumbbell fly": "Incline Dumbbell Fly",
+    "smith machine incline reverse grip press": "Reverse-Grip Incline Smith Press",
+    "smith machine reverse grip incline press": "Reverse-Grip Incline Smith Press",
+    "reverse grip incline smith machine press": "Reverse-Grip Incline Smith Press",
+    "overhead press (barbell)": "Overhead Press",
+    "barbell shoulder press": "Overhead Press",
+    "dumbbell shoulder press": "Dumbbell Shoulder Press",
+    "smith machine shoulder press": "Smith Shoulder Press",
+    "conventional deadlift": "Deadlift",
+    "loaded calf raise (leg press)": "Leg Press Calf Raise",
+    "leg press calf raise": "Leg Press Calf Raise",
+    "leg press machine calf press": "Leg Press Calf Raise",
+    "loaded seated calf raise": "Seated Calf Raise",
+    "loaded standing calf raise": "Calf Raise",
+    "push-up pyramid": "Push-Up Pyramid",
+    "pull-up pyramid": "Pull-Up Pyramid",
+    "leg press or hack squat": "Leg Press",
+    "barbell squat": "Barbell Squat",
+    "loaded calf raises (leg press)": "Leg Press Calf Raise",
+    "dumbbell incline press": "Incline Dumbbell Press"
+  },
+  "exercises": {
+    "Competition Bench Press - Paused": {
+      "primary": [
+        "chest"
+      ],
+      "secondary": [
+        "triceps",
+        "shoulders"
+      ],
+      "pattern": "horizontal press",
+      "equipment": "barbell",
+      "goal": "Bench (paused comp)"
+    },
+    "Bench Press": {
+      "primary": [
+        "chest"
+      ],
+      "secondary": [
+        "triceps",
+        "shoulders"
+      ],
+      "pattern": "horizontal press",
+      "equipment": "barbell"
+    },
+    "Larsen Press": {
+      "primary": [
+        "chest"
+      ],
+      "secondary": [
+        "triceps",
+        "shoulders"
+      ],
+      "pattern": "horizontal press",
+      "equipment": "barbell"
+    },
+    "Close Grip Bench Press": {
+      "primary": [
+        "triceps",
+        "chest"
+      ],
+      "secondary": [
+        "shoulders"
+      ],
+      "pattern": "horizontal press",
+      "equipment": "barbell"
+    },
+    "Dumbbell Bench Press": {
+      "primary": [
+        "chest"
+      ],
+      "secondary": [
+        "triceps",
+        "shoulders"
+      ],
+      "pattern": "horizontal press",
+      "equipment": "dumbbell"
+    },
+    "Incline Dumbbell Press": {
+      "primary": [
+        "upper_chest"
+      ],
+      "secondary": [
+        "shoulders",
+        "triceps"
+      ],
+      "pattern": "incline press",
+      "equipment": "dumbbell"
+    },
+    "Machine Incline Press": {
+      "primary": [
+        "upper_chest"
+      ],
+      "secondary": [
+        "shoulders",
+        "triceps"
+      ],
+      "pattern": "incline press",
+      "equipment": "machine"
+    },
+    "Reverse-Grip Incline Smith Press": {
+      "primary": [
+        "upper_chest"
+      ],
+      "secondary": [
+        "triceps",
+        "shoulders"
+      ],
+      "pattern": "incline press",
+      "equipment": "smith machine"
+    },
+    "Incline Dumbbell Fly": {
+      "primary": [
+        "upper_chest"
+      ],
+      "secondary": [],
+      "pattern": "chest fly",
+      "equipment": "dumbbell"
+    },
+    "Low-to-High Cable Fly": {
+      "primary": [
+        "upper_chest"
+      ],
+      "secondary": [],
+      "pattern": "chest fly",
+      "equipment": "cable"
+    },
+    "Cable Fly": {
+      "primary": [
+        "chest"
+      ],
+      "secondary": [],
+      "pattern": "chest fly",
+      "equipment": "cable"
+    },
+    "Weighted Dip": {
+      "primary": [
+        "chest",
+        "triceps"
+      ],
+      "secondary": [
+        "shoulders"
+      ],
+      "pattern": "vertical press",
+      "equipment": "bodyweight"
+    },
+    "Dip Pyramid": {
+      "primary": [
+        "triceps",
+        "chest"
+      ],
+      "secondary": [
+        "shoulders"
+      ],
+      "pattern": "vertical press",
+      "equipment": "bodyweight",
+      "volume_exempt": true
+    },
+    "Push-Up Pyramid": {
+      "primary": [
+        "chest"
+      ],
+      "secondary": [
+        "triceps"
+      ],
+      "pattern": "horizontal press",
+      "equipment": "bodyweight",
+      "volume_exempt": true
+    },
+    "Overhead Press": {
+      "primary": [
+        "shoulders"
+      ],
+      "secondary": [
+        "triceps",
+        "upper_chest"
+      ],
+      "pattern": "vertical press",
+      "equipment": "barbell"
+    },
+    "Dumbbell Shoulder Press": {
+      "primary": [
+        "shoulders"
+      ],
+      "secondary": [
+        "triceps"
+      ],
+      "pattern": "vertical press",
+      "equipment": "dumbbell"
+    },
+    "Smith Shoulder Press": {
+      "primary": [
+        "shoulders"
+      ],
+      "secondary": [
+        "triceps"
+      ],
+      "pattern": "vertical press",
+      "equipment": "smith machine"
+    },
+    "Lateral Raise": {
+      "primary": [
+        "side_delts"
+      ],
+      "secondary": [],
+      "pattern": "shoulder raise",
+      "equipment": "dumbbell"
+    },
+    "Cable Lateral Raise": {
+      "primary": [
+        "side_delts"
+      ],
+      "secondary": [],
+      "pattern": "shoulder raise",
+      "equipment": "cable"
+    },
+    "Rear Delt Fly": {
+      "primary": [
+        "rear_delts"
+      ],
+      "secondary": [
+        "traps"
+      ],
+      "pattern": "rear delt",
+      "equipment": "machine"
+    },
+    "Face Pull": {
+      "primary": [
+        "rear_delts"
+      ],
+      "secondary": [
+        "traps"
+      ],
+      "pattern": "rear delt",
+      "equipment": "cable"
+    },
+    "Chest-Supported Row": {
+      "primary": [
+        "back"
+      ],
+      "secondary": [
+        "rear_delts",
+        "biceps"
+      ],
+      "pattern": "horizontal pull",
+      "equipment": "machine"
+    },
+    "Lat Pulldown": {
+      "primary": [
+        "back"
+      ],
+      "secondary": [
+        "biceps"
+      ],
+      "pattern": "vertical pull",
+      "equipment": "cable"
+    },
+    "Weighted Pull-Up": {
+      "primary": [
+        "back"
+      ],
+      "secondary": [
+        "biceps"
+      ],
+      "pattern": "vertical pull",
+      "equipment": "bodyweight"
+    },
+    "Pull-Up Pyramid": {
+      "primary": [
+        "back"
+      ],
+      "secondary": [
+        "biceps"
+      ],
+      "pattern": "vertical pull",
+      "equipment": "bodyweight",
+      "volume_exempt": true
+    },
+    "Barbell Shrug": {
+      "primary": [
+        "traps"
+      ],
+      "secondary": [
+        "forearms"
+      ],
+      "pattern": "shrug",
+      "equipment": "barbell"
+    },
+    "Barbell Curl": {
+      "primary": [
+        "biceps"
+      ],
+      "secondary": [
+        "forearms"
+      ],
+      "pattern": "elbow flexion",
+      "equipment": "barbell"
+    },
+    "Dumbbell Curl": {
+      "primary": [
+        "biceps"
+      ],
+      "secondary": [
+        "forearms"
+      ],
+      "pattern": "elbow flexion",
+      "equipment": "dumbbell"
+    },
+    "Incline Dumbbell Curl": {
+      "primary": [
+        "biceps"
+      ],
+      "secondary": [],
+      "pattern": "elbow flexion",
+      "equipment": "dumbbell"
+    },
+    "Bayesian Curl": {
+      "primary": [
+        "biceps"
+      ],
+      "secondary": [],
+      "pattern": "elbow flexion",
+      "equipment": "cable"
+    },
+    "Preacher Curl": {
+      "primary": [
+        "biceps"
+      ],
+      "secondary": [],
+      "pattern": "elbow flexion",
+      "equipment": "machine"
+    },
+    "Hammer Curl": {
+      "primary": [
+        "biceps",
+        "forearms"
+      ],
+      "secondary": [],
+      "pattern": "elbow flexion",
+      "equipment": "dumbbell"
+    },
+    "Reverse Grip Preacher Curl": {
+      "primary": [
+        "forearms",
+        "biceps"
+      ],
+      "secondary": [],
+      "pattern": "elbow flexion",
+      "equipment": "machine"
+    },
+    "Cable Triceps Pushdown": {
+      "primary": [
+        "triceps"
+      ],
+      "secondary": [],
+      "pattern": "elbow extension",
+      "equipment": "cable"
+    },
+    "Overhead Triceps Extension": {
+      "primary": [
+        "triceps"
+      ],
+      "secondary": [],
+      "pattern": "elbow extension",
+      "equipment": "cable"
+    },
+    "Skull Crusher": {
+      "primary": [
+        "triceps"
+      ],
+      "secondary": [],
+      "pattern": "elbow extension",
+      "equipment": "barbell"
+    },
+    "Back Squat": {
+      "primary": [
+        "quads",
+        "glutes"
+      ],
+      "secondary": [
+        "adductors",
+        "lower_back"
+      ],
+      "pattern": "squat",
+      "equipment": "barbell"
+    },
+    "Competition Squat": {
+      "primary": [
+        "quads",
+        "glutes"
+      ],
+      "secondary": [
+        "adductors",
+        "lower_back"
+      ],
+      "pattern": "squat",
+      "equipment": "barbell",
+      "goal": "Squat (comp)"
+    },
+    "Barbell Squat": {
+      "primary": [
+        "quads",
+        "glutes"
+      ],
+      "secondary": [
+        "adductors",
+        "lower_back"
+      ],
+      "pattern": "squat",
+      "equipment": "barbell"
+    },
+    "Paused Squat": {
+      "primary": [
+        "quads",
+        "glutes"
+      ],
+      "secondary": [
+        "adductors"
+      ],
+      "pattern": "squat",
+      "equipment": "barbell"
+    },
+    "Front Squat": {
+      "primary": [
+        "quads"
+      ],
+      "secondary": [
+        "glutes",
+        "abs"
+      ],
+      "pattern": "squat",
+      "equipment": "barbell"
+    },
+    "Zercher Squat": {
+      "primary": [
+        "quads",
+        "glutes"
+      ],
+      "secondary": [
+        "abs",
+        "back"
+      ],
+      "pattern": "squat",
+      "equipment": "barbell"
+    },
+    "Leg Press": {
+      "primary": [
+        "quads"
+      ],
+      "secondary": [
+        "glutes"
+      ],
+      "pattern": "squat",
+      "equipment": "machine"
+    },
+    "Leg Extension": {
+      "primary": [
+        "quads"
+      ],
+      "secondary": [],
+      "pattern": "knee extension",
+      "equipment": "machine"
+    },
+    "Deadlift": {
+      "primary": [
+        "hamstrings",
+        "glutes"
+      ],
+      "secondary": [
+        "back",
+        "lower_back",
+        "traps"
+      ],
+      "pattern": "hinge",
+      "equipment": "barbell"
+    },
+    "Competition Deadlift": {
+      "primary": [
+        "hamstrings",
+        "glutes"
+      ],
+      "secondary": [
+        "back",
+        "lower_back",
+        "traps"
+      ],
+      "pattern": "hinge",
+      "equipment": "barbell",
+      "goal": "Deadlift (conventional comp)"
+    },
+    "Deficit Deadlift": {
+      "primary": [
+        "hamstrings",
+        "glutes"
+      ],
+      "secondary": [
+        "back",
+        "lower_back"
+      ],
+      "pattern": "hinge",
+      "equipment": "barbell"
+    },
+    "Paused Deadlift": {
+      "primary": [
+        "hamstrings",
+        "glutes"
+      ],
+      "secondary": [
+        "back",
+        "lower_back"
+      ],
+      "pattern": "hinge",
+      "equipment": "barbell"
+    },
+    "Romanian Deadlift": {
+      "primary": [
+        "hamstrings",
+        "glutes"
+      ],
+      "secondary": [
+        "lower_back"
+      ],
+      "pattern": "hinge",
+      "equipment": "barbell"
+    },
+    "Hip Thrust": {
+      "primary": [
+        "glutes"
+      ],
+      "secondary": [
+        "hamstrings"
+      ],
+      "pattern": "hip extension",
+      "equipment": "barbell"
+    },
+    "Seated Leg Curl": {
+      "primary": [
+        "hamstrings"
+      ],
+      "secondary": [],
+      "pattern": "knee flexion",
+      "equipment": "machine"
+    },
+    "Adductor": {
+      "primary": [
+        "adductors"
+      ],
+      "secondary": [],
+      "pattern": "hip adduction",
+      "equipment": "machine"
+    },
+    "Calf Raise": {
+      "primary": [
+        "calves"
+      ],
+      "secondary": [],
+      "pattern": "calf raise",
+      "equipment": "machine"
+    },
+    "Seated Calf Raise": {
+      "primary": [
+        "calves"
+      ],
+      "secondary": [],
+      "pattern": "calf raise",
+      "equipment": "machine"
+    },
+    "Leg Press Calf Raise": {
+      "primary": [
+        "calves"
+      ],
+      "secondary": [],
+      "pattern": "calf raise",
+      "equipment": "machine"
+    },
+    "Hanging Leg Raise": {
+      "primary": [
+        "abs"
+      ],
+      "secondary": [],
+      "pattern": "trunk flexion",
+      "equipment": "bodyweight"
+    },
+    "Weighted Cable Crunch": {
+      "primary": [
+        "abs"
+      ],
+      "secondary": [],
+      "pattern": "trunk flexion",
+      "equipment": "cable"
+    },
+    "Sit-Up Pyramid": {
+      "primary": [
+        "abs"
+      ],
+      "secondary": [],
+      "pattern": "trunk flexion",
+      "equipment": "bodyweight",
+      "volume_exempt": true
+    },
+    "Neck Curl": {
+      "primary": [
+        "neck"
+      ],
+      "secondary": [],
+      "pattern": "neck",
+      "equipment": "plate"
+    },
+    "Calf Machine Shrug": {
+      "primary": [
+        "traps"
+      ],
+      "secondary": [],
+      "pattern": "shrug",
+      "equipment": "machine"
+    }
+  },
+  "role_map": {
+    "bench press (top set)": "Competition Bench Press - Paused",
+    "bench press (back-off vol)": "Competition Bench Press - Paused",
+    "bench press (back-off int)": "Competition Bench Press - Paused",
+    "bench press (back-off)": "Competition Bench Press - Paused",
+    "bench press (daily single)": "Competition Bench Press - Paused",
+    "competition bench press - paused (top set)": "Competition Bench Press - Paused",
+    "competition bench press - paused (back-off)": "Competition Bench Press - Paused",
+    "back squat (top set)": "Competition Squat",
+    "back squat (back-off)": "Competition Squat",
+    "competition squat (top set)": "Competition Squat",
+    "competition squat (back-off)": "Competition Squat",
+    "squat (top set)": "Competition Squat",
+    "paused squat (3-count)": "Paused Squat",
+    "deadlift (top set)": "Competition Deadlift",
+    "competition deadlift (top set)": "Competition Deadlift",
+    "competition deadlift (back-off)": "Competition Deadlift",
+    "deadlift (speed/light)": "Deadlift"
+  }
+}
